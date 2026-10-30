@@ -136,6 +136,25 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .result-header { margin-bottom: 20px; }
 .result-header h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
 .result-header p { font-size: 12px; color: var(--text-3); }
+
+/* ADDRESS AUTOCOMPLETE */
+.addr-wrap { position: relative; }
+.addr-drop { position: absolute; top: calc(100% + 2px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,0.10); z-index: 200; max-height: 240px; overflow-y: auto; display: none; }
+.addr-item { padding: 9px 14px; cursor: pointer; font-size: 12.5px; border-bottom: 1px solid var(--border); transition: background 0.1s; color: var(--text-1); }
+.addr-item:last-child { border-bottom: none; }
+.addr-item:hover { background: rgba(5,150,105,0.07); }
+.addr-tag { font-size: 10.5px; color: var(--text-3); margin-top: 1px; }
+.addr-confirmed { font-size: 11px; color: var(--emerald); margin-top: 5px; display: none; }
+
+/* ROOF PANEL */
+.roof-panel { background: rgba(5,150,105,0.04); border: 1px solid rgba(5,150,105,0.20); border-radius: 8px; padding: 16px 18px; margin-bottom: 20px; }
+.roof-panel-title { font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.compass-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 5px; }
+.cdir { padding: 7px 4px; border: 1.5px solid var(--border); border-radius: 6px; text-align: center; cursor: pointer; font-size: 11.5px; font-weight: 600; color: var(--text-3); transition: all 0.15s; line-height: 1.2; }
+.cdir:hover { border-color: var(--text-4); }
+.cdir.sel { border-color: var(--emerald); color: var(--emerald); background: rgba(5,150,105,0.09); }
+.cdir small { display: block; font-size: 10px; font-weight: 400; color: var(--text-4); }
+.cdir.sel small { color: var(--emerald); opacity: 0.75; }
 </style>
 </head>
 <body>
@@ -171,21 +190,50 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
       <div class="card-title">Om dit hjem</div>
       <div class="card-sub">Vi bruger disse oplysninger til at beregne det rette anlæg for dig</div>
 
-      <div class="field-row">
-        <div class="field">
-          <label>Postnummer</label>
-          <input type="text" id="zipcode" placeholder="9000" maxlength="4" inputmode="numeric">
+      <div class="field">
+        <label>Din adresse</label>
+        <div class="addr-wrap">
+          <input type="text" id="addrInput" placeholder="F.eks. Buderupholmvej 8, Aalborg" autocomplete="off" inputmode="text">
+          <div class="addr-drop" id="addrDrop"></div>
         </div>
-        <div class="field">
-          <label>Antal personer i husstanden</label>
-          <select id="persons">
-            <option value="1">1 person</option>
-            <option value="2">2 personer</option>
-            <option value="3" selected>3 personer</option>
-            <option value="4">4 personer</option>
-            <option value="5">5+ personer</option>
-          </select>
+        <div class="addr-confirmed" id="addrConfirmed"></div>
+        <input type="hidden" id="zipcode">
+      </div>
+
+      <div id="roofPanel" class="roof-panel hidden">
+        <div class="roof-panel-title">🏠 Tagoplysninger</div>
+        <div class="field-row">
+          <div class="field" style="margin-bottom:0">
+            <label>Tagretning (himmelsretning mod solen)</label>
+            <div class="compass-grid" id="compassGrid">
+              <div class="cdir" data-dir="NW">NV<small>55%</small></div>
+              <div class="cdir" data-dir="N">N<small>40%</small></div>
+              <div class="cdir" data-dir="NE">NØ<small>55%</small></div>
+              <div class="cdir" data-dir="W">V<small>78%</small></div>
+              <div class="cdir sel" data-dir="S">S<small>100%</small></div>
+              <div class="cdir" data-dir="E">Ø<small>78%</small></div>
+              <div class="cdir" data-dir="SW">SV<small>92%</small></div>
+              <div class="cdir" data-dir="SE">SØ<small>92%</small></div>
+            </div>
+            <div style="font-size:10.5px;color:var(--text-3);margin-top:5px">Sydvendt tag giver max udbytte. Klik på din tagretning.</div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>Sydvendt tagflade (m²) — valgfrit</label>
+            <input type="text" id="roofAreaInput" placeholder="F.eks. 40" inputmode="numeric">
+            <div style="font-size:10.5px;color:var(--text-3);margin-top:5px">Typisk villa: 30–70 m² mod sol. Bruges til at begrænse anlæggsstørrelse.</div>
+          </div>
         </div>
+      </div>
+
+      <div class="field">
+        <label>Antal personer i husstanden</label>
+        <select id="persons">
+          <option value="1">1 person</option>
+          <option value="2">2 personer</option>
+          <option value="3" selected>3 personer</option>
+          <option value="4">4 personer</option>
+          <option value="5">5+ personer</option>
+        </select>
       </div>
 
       <div class="field">
@@ -456,7 +504,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 <script>
 /* ── STATE ── */
-const S = { zipcode:'', persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, nettarifAvg:null, actualSpotCost:null, actualNettarif:null, priceArea:null, dsoGLN:null };
+const S = { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, nettarifAvg:null, actualSpotCost:null, actualNettarif:null, priceArea:null, dsoGLN:null };
 let charts = {};
 let _lastRec = null;
 let _useAfgift = false;
@@ -549,13 +597,106 @@ function showErr(id, msg) {
 function show(id) { document.getElementById(id).classList.remove('hidden'); }
 function hide(id) { document.getElementById(id).classList.add('hidden'); }
 
+/* ── ADDRESS AUTOCOMPLETE (DAWA) ── */
+(function initAddr() {
+  let timer;
+  const inp = document.getElementById('addrInput');
+  const drop = document.getElementById('addrDrop');
+
+  inp.addEventListener('input', function () {
+    clearTimeout(timer);
+    const q = this.value.trim();
+    if (q.length < 3) { drop.style.display = 'none'; return; }
+    timer = setTimeout(() => fetchSuggestions(q), 280);
+  });
+
+  inp.addEventListener('keydown', function (e) {
+    const items = drop.querySelectorAll('.addr-item');
+    const cur = drop.querySelector('.addr-item.hover');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const next = cur ? cur.nextElementSibling : items[0];
+      if (next) { cur && cur.classList.remove('hover'); next.classList.add('hover'); next.scrollIntoView({block:'nearest'}); }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prev = cur ? cur.previousElementSibling : items[items.length - 1];
+      if (prev) { cur && cur.classList.remove('hover'); prev.classList.add('hover'); prev.scrollIntoView({block:'nearest'}); }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const active = cur || items[0];
+      if (active) active.click();
+    } else if (e.key === 'Escape') {
+      drop.style.display = 'none';
+    }
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!inp.contains(e.target) && !drop.contains(e.target)) drop.style.display = 'none';
+  });
+
+  async function fetchSuggestions(q) {
+    try {
+      const url = `https://api.dataforsyningen.dk/adresser/autocomplete?q=${encodeURIComponent(q)}&per_side=8&fuzzy`;
+      const res = await fetch(url);
+      const items = await res.json();
+      renderDropdown(items);
+    } catch (_) { drop.style.display = 'none'; }
+  }
+
+  function renderDropdown(items) {
+    if (!items.length) { drop.style.display = 'none'; return; }
+    drop.innerHTML = items.map((it, i) => {
+      const a = it.adresse || {};
+      const sub = [a.postnr, a.postnrnavn].filter(Boolean).join(' ');
+      return `<div class="addr-item" data-idx="${i}">
+        ${it.tekst}${sub ? `<div class="addr-tag">${sub}</div>` : ''}
+      </div>`;
+    }).join('');
+    drop._data = items;
+    drop.style.display = 'block';
+    drop.querySelectorAll('.addr-item').forEach(el => {
+      el.addEventListener('click', () => onAddrSelect(drop._data[+el.dataset.idx]));
+    });
+  }
+
+  function onAddrSelect(item) {
+    const a = item.adresse || {};
+    const zip = a.postnr || (item.tekst.match(/\b(\d{4})\b/) || [])[1] || '';
+    inp.value = item.tekst;
+    drop.style.display = 'none';
+    document.getElementById('zipcode').value = zip;
+    S.zipcode = zip;
+    S.address = item.tekst;
+    const conf = document.getElementById('addrConfirmed');
+    conf.textContent = `Postnummer ${zip}${a.postnrnavn ? ' ' + a.postnrnavn : ''} registreret`;
+    conf.style.display = 'block';
+    document.getElementById('roofPanel').classList.remove('hidden');
+  }
+})();
+
+/* ── COMPASS DIRECTION ── */
+document.getElementById('compassGrid').addEventListener('click', function (e) {
+  const btn = e.target.closest('.cdir');
+  if (!btn) return;
+  this.querySelectorAll('.cdir').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  S.roofOrientation = btn.dataset.dir;
+});
+
 function goStep1() { hide('step2'); show('step1'); setProgress(1); }
 
 function goStep2() {
-  const zip = document.getElementById('zipcode').value.trim();
-  if (!/^\d{4}$/.test(zip)) { showErr('err1','Indtast et gyldigt 4-cifret postnummer'); return; }
+  // Accept address selection (zip hidden) OR fallback: 4-digit zip typed directly in the address field
+  let zip = document.getElementById('zipcode').value.trim();
+  if (!zip) {
+    const typed = document.getElementById('addrInput').value.trim();
+    const m = typed.match(/\b(\d{4})\b/);
+    if (m) { zip = m[1]; S.zipcode = zip; }
+  }
+  if (!/^\d{4}$/.test(zip)) { showErr('err1','Vælg en adresse fra listen, eller skriv dit postnummer'); return; }
   showErr('err1','');
   S.zipcode = zip;
+  S.roofAreaM2 = parseInt(document.getElementById('roofAreaInput').value) || null;
   S.persons = parseInt(document.getElementById('persons').value);
   S.fixedPrice = parseFloat(document.getElementById('fixedPrice').value) || 2.70;
   S.spotSurcharge = parseFloat(document.getElementById('spotSurcharge').value) || 0;
@@ -565,7 +706,7 @@ function goStep2() {
 
 function restart() {
   hide('step3');
-  Object.assign(S, { zipcode:'', persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70 });
+  Object.assign(S, { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70 });
   document.getElementById('opt-spot').className = 'toggle-opt selected';
   document.getElementById('opt-fixed').className = 'toggle-opt';
   document.getElementById('fixed-price-field').className = 'field hidden';
@@ -581,6 +722,12 @@ function restart() {
   document.getElementById('ci-ev').className = 'check-item';
   document.getElementById('ci-hp').className = 'check-item';
   document.getElementById('zipcode').value = '';
+  document.getElementById('addrInput').value = '';
+  document.getElementById('addrConfirmed').style.display = 'none';
+  document.getElementById('roofPanel').classList.add('hidden');
+  document.getElementById('roofAreaInput').value = '';
+  document.getElementById('compassGrid').querySelectorAll('.cdir').forEach(b => b.classList.remove('sel'));
+  document.querySelector('.cdir[data-dir="S"]').classList.add('sel');
   document.getElementById('tokenInput').value = '';
   destroyCharts();
   show('step1'); setProgress(1);
@@ -678,16 +825,28 @@ function calcRec() {
   const wantsBat = kWp >= 6 && (evenKwh > 2.5 || (S.hasEV && S.evChargesHome));
   const batKwh   = !wantsBat ? 0 : evenKwh > 5 ? 10 : 5;
 
+  // Roof orientation yield factor (south = 1.0)
+  const orientFactor = { S:1.00, SW:0.92, SE:0.92, W:0.78, E:0.78, NW:0.55, NE:0.55, N:0.40 }[S.roofOrientation] || 1.00;
+
   // Economics
-  const prod       = Math.round(kWp * irr);
+  const prod       = Math.round(kWp * irr * orientFactor);
   const selfCons   = Math.round(Math.min(prod * scRatio, kwh * 0.78));
   const exported   = prod - selfCons;
   const selfPct    = Math.round((selfCons / kwh) * 100);
 
-  const buyPrice   = S.effectiveKwhPrice || 2.70;
+  // Buy price: use real calculated price if available, else annualBill/kWh, else safe fallback
+  const buyPrice = (S.spotAvg && S.nettarifAvg)
+    ? +((S.spotAvg + (S.spotSurcharge || 0) + S.nettarifAvg + 0.061) * 1.25).toFixed(3)
+    : (S.annualBill && S.annualKwh > 0)
+      ? +(S.annualBill / S.annualKwh).toFixed(3)
+      : (S.effectiveKwhPrice && S.effectiveKwhPrice < 2.0 ? S.effectiveKwhPrice : 1.35);
   const sellPrice  = 0.35;
 
-  const sav26   = Math.round(selfCons * buyPrice + exported * sellPrice + (batKwh > 0 ? 350 : 0));
+  // Annual electricity cost (for cap)
+  const annualCost = S.annualBill || (S.annualKwh && buyPrice ? Math.round(S.annualKwh * buyPrice) : null);
+
+  const sav26Raw = selfCons * buyPrice + exported * sellPrice + (batKwh > 0 ? 350 : 0);
+  const sav26    = Math.round(annualCost ? Math.min(sav26Raw, annualCost * 0.88) : sav26Raw);
   const houseShare = S.hasEV ? Math.max(0, (kwh - evKwhHome) / kwh) : 1.0;
   const afgift  = Math.round(selfCons * houseShare * 0.28);
   const sav28   = sav26 + afgift;
@@ -701,9 +860,9 @@ function calcRec() {
   // Monthly solar production (m-scaled from annual)
   const mScales = [0.15, 0.33, 0.57, 0.81, 0.91, 1.0, 0.91, 0.79, 0.60, 0.32, 0.16, 0.11];
   const mDays   = [31,28,31,30,31,30,31,31,30,31,30,31];
-  const monthlyProd = mScales.map((s, i) => Math.round(kWp * irr * s * mDays[i] / 365));
+  const monthlyProd = mScales.map((s, i) => Math.round(kWp * irr * orientFactor * s * mDays[i] / 365));
 
-  return { kWp, batKwh, prod, selfCons, exported, selfPct, sav26, sav28, afgift, sysCost, batCost, total, payback, irr, monthlyProd };
+  return { kWp, batKwh, prod, selfCons, exported, selfPct, sav26, sav28, afgift, sysCost, batCost, total, payback, irr, orientFactor, monthlyProd, buyPrice };
 }
 
 /* ── SHOW RESULTS ── */
@@ -740,11 +899,13 @@ function showResults() {
   }
   document.getElementById('rec-total-val').textContent = r.total.toLocaleString('da-DK') + ' kr';
   const priceSource = S.annualBill
-    ? `din faktiske regning (${S.annualBill.toLocaleString('da-DK')} kr ÷ ${S.annualKwh.toLocaleString('da-DK')} kWh)`
-    : S.priceType === 'spot' ? 'vægtet spotpris + nettarif + systemtarif (ingen el-afgift 2026)' : 'fast pris';
+    ? `faktisk regning (${S.annualBill.toLocaleString('da-DK')} kr ÷ ${S.annualKwh.toLocaleString('da-DK')} kWh)`
+    : (S.spotAvg && S.nettarifAvg) ? 'vægtet spot + nettarif + systemtarif (ingen el-afgift 2026)' : 'fast pris';
   document.getElementById('rec-price-val').textContent =
-    `${S.effectiveKwhPrice.toFixed(2).replace('.',',')} kr/kWh (${priceSource})`;
-  document.getElementById('rec-prod-val').textContent = r.prod.toLocaleString('da-DK') + ' kWh/år';
+    `${r.buyPrice.toFixed(2).replace('.',',')} kr/kWh (${priceSource})`;
+  const orientLabel = { S:'Sydvendt', SW:'Sydvestvendt', SE:'Sydøstvendt', W:'Vestvendt', E:'Østvendt', NW:'Nordvestvendt', NE:'Nordøstvendt', N:'Nordvendt' }[S.roofOrientation] || '';
+  const orientSuffix = r.orientFactor < 1 ? ` · ${orientLabel} tag (${Math.round(r.orientFactor*100)}% af max)` : '';
+  document.getElementById('rec-prod-val').textContent = r.prod.toLocaleString('da-DK') + ' kWh/år' + orientSuffix;
   document.getElementById('rec-self-val').textContent = `${r.selfPct}% (${r.selfCons.toLocaleString('da-DK')} kWh/år)`;
   document.getElementById('rec-sav-val').textContent = r.sav26.toLocaleString('da-DK') + ' kr/år';
 
