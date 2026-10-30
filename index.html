@@ -264,6 +264,12 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
         <div style="font-size:11px;color:var(--text-3);margin-top:4px">Nettarif + elafgift + moms (~1,50 kr/kWh) lægges automatisk oveni spotprisen</div>
       </div>
 
+      <div class="field">
+        <label>Din samlede elregning per år i kr (valgfrit — mest præcist)</label>
+        <input type="text" id="annualBill" value="" placeholder="F.eks. 12000" inputmode="numeric">
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Hvis du udfylder dette bruges din faktiske betalte pris i stedet for spotprisberegningen</div>
+      </div>
+
       <div class="error-box" id="err1"></div>
       <button class="btn btn-primary" onclick="goStep2()">Næste: Hent dit forbrug →</button>
     </div>
@@ -439,7 +445,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 <script>
 /* ── STATE ── */
-const S = { zipcode:'', persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70 };
+const S = { zipcode:'', persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70 };
 let charts = {};
 let _lastRec = null;
 let _useAfgift = false;
@@ -542,6 +548,7 @@ function goStep2() {
   S.persons = parseInt(document.getElementById('persons').value);
   S.fixedPrice = parseFloat(document.getElementById('fixedPrice').value) || 2.70;
   S.spotSurcharge = parseFloat(document.getElementById('spotSurcharge').value) || 0;
+  S.annualBill = parseFloat(document.getElementById('annualBill').value) || null;
   hide('step1'); show('step2'); setProgress(2);
 }
 
@@ -593,12 +600,17 @@ async function fetchData() {
 
     if (!res.ok || !data.success) throw new Error(data.error || 'Ukendt fejl');
 
-    S.annualKwh            = data.annualKwh;
+    // Normalize to 12 months (we fetch 13 months of data)
+    S.annualKwh            = Math.round(data.annualKwh * 12 / (data.monthsCovered || 13));
     S.hourlyProfile        = data.hourlyProfile;
     S.monthlyProfile       = data.monthlyProfile;
     S.summerHourlyProfile  = data.summerHourlyProfile;
     S.winterHourlyProfile  = data.winterHourlyProfile;
-    S.effectiveKwhPrice    = data.effectiveKwhPrice || S.fixedPrice || 2.70;
+    // Price: actual bill overrides everything if provided
+    const spotOrFixed = data.effectiveKwhPrice || S.fixedPrice || 2.70;
+    S.effectiveKwhPrice = S.annualBill && S.annualKwh > 0
+      ? +(S.annualBill / S.annualKwh).toFixed(3)
+      : spotOrFixed;
 
     hide('stepLoading');
     showResults();
@@ -705,10 +717,11 @@ function showResults() {
     document.getElementById('rec-battery').className = 'rec-row neutral';
   }
   document.getElementById('rec-total-val').textContent = r.total.toLocaleString('da-DK') + ' kr';
-  const priceLabel = S.priceType === 'spot'
-    ? `${S.effectiveKwhPrice.toFixed(2).replace('.',',')} kr/kWh (vægtet spotpris + afgifter)`
-    : `${S.effectiveKwhPrice.toFixed(2).replace('.',',')} kr/kWh (fast pris)`;
-  document.getElementById('rec-price-val').textContent = priceLabel;
+  const priceSource = S.annualBill
+    ? `din faktiske regning (${S.annualBill.toLocaleString('da-DK')} kr ÷ ${S.annualKwh.toLocaleString('da-DK')} kWh)`
+    : S.priceType === 'spot' ? 'vægtet spotpris + afgifter' : 'fast pris';
+  document.getElementById('rec-price-val').textContent =
+    `${S.effectiveKwhPrice.toFixed(2).replace('.',',')} kr/kWh (${priceSource})`;
   document.getElementById('rec-prod-val').textContent = r.prod.toLocaleString('da-DK') + ' kWh/år';
   document.getElementById('rec-self-val').textContent = `${r.selfPct}% (${r.selfCons.toLocaleString('da-DK')} kWh/år)`;
   document.getElementById('rec-sav-val').textContent = r.sav26.toLocaleString('da-DK') + ' kr/år';

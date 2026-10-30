@@ -73,9 +73,9 @@ exports.handler = async function (event) {
   if (!points.length) return { statusCode: 404, headers, body: JSON.stringify({ error: `Ingen målepunkter fundet. API svarede: ${JSON.stringify(mpData).slice(0, 200)}` }) };
   const meteringPointId = points[0].meteringPointId;
 
-  // 3. Fetch last 13 months of hourly data
+  // 3. Fetch last 12 months of hourly data (exact 12 months = clean annual figure)
   const now = new Date();
-  const from = new Date(now); from.setMonth(from.getMonth() - 13);
+  const from = new Date(now); from.setFullYear(from.getFullYear() - 1);
   const dateFrom = from.toISOString().split('T')[0];
   const dateTo = now.toISOString().split('T')[0];
 
