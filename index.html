@@ -435,6 +435,45 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
       <div class="rec-note" id="rec-note"></div>
     </div>
 
+    <!-- CAPACITY & PRICE SLIDERS -->
+    <div class="rec-card" id="sliderPanel" style="display:none;margin-bottom:16px">
+      <div class="rec-title" style="margin-bottom:14px">Justér kapacitet og pris</div>
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <label style="font-size:13px;color:var(--text-2);font-weight:500">☀️ Solcellekapacitet</label>
+            <span id="sliderKwpVal" style="font-size:13px;font-weight:700;color:var(--emerald)">—</span>
+          </div>
+          <input type="range" id="sliderKwp" min="3" max="20" step="1" style="width:100%;accent-color:#059669;cursor:pointer" oninput="onSliderKwp(this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-3);margin-top:2px"><span>3 kWp</span><span>20 kWp</span></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <label style="font-size:13px;color:var(--text-2);font-weight:500">🔋 Batterikapacitet</label>
+            <span id="sliderBatVal" style="font-size:13px;font-weight:700;color:var(--emerald)">—</span>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="toggle-opt" id="bat0"  onclick="onSliderBat(0)">Ingen</span>
+            <span class="toggle-opt" id="bat5"  onclick="onSliderBat(5)">5 kWh</span>
+            <span class="toggle-opt" id="bat10" onclick="onSliderBat(10)">10 kWh</span>
+            <span class="toggle-opt" id="bat15" onclick="onSliderBat(15)">15 kWh</span>
+            <span class="toggle-opt" id="bat20" onclick="onSliderBat(20)">20 kWh</span>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <label style="font-size:13px;color:var(--text-2);font-weight:500">💰 Tilbudspris (inkl. moms)</label>
+            <span id="sliderPriceHint" style="font-size:11.5px;color:var(--text-3)">Lad stå tomt for automatisk</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="number" id="sliderPrice" min="10000" max="500000" step="1000" placeholder="Automatisk" style="width:150px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-1);font-size:13px" oninput="onSliderPrice(this.value)">
+            <span style="font-size:12px;color:var(--text-3)">kr</span>
+            <button onclick="resetSliders()" style="margin-left:auto;padding:5px 14px;font-size:11.5px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-2);cursor:pointer">↩ Nulstil til anbefalet</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- PRICE BREAKDOWN BOX -->
     <div id="price-breakdown-box" style="display:none;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:16px"></div>
 
@@ -504,7 +543,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 <script>
 /* ── STATE ── */
-const S = { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, nettarifAvg:null, actualSpotCost:null, actualNettarif:null, priceArea:null, dsoGLN:null };
+const S = { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, nettarifAvg:null, actualSpotCost:null, actualNettarif:null, priceArea:null, dsoGLN:null, overrideKwp:null, overrideBatKwh:null, overrideSysCost:null };
 let charts = {};
 let _lastRec = null;
 let _useAfgift = false;
@@ -801,7 +840,7 @@ function goStep2() {
 
 function restart() {
   hide('step3');
-  Object.assign(S, { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70 });
+  Object.assign(S, { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70, overrideKwp:null, overrideBatKwh:null, overrideSysCost:null });
   document.getElementById('opt-spot').className = 'toggle-opt selected';
   document.getElementById('opt-fixed').className = 'toggle-opt';
   document.getElementById('fixed-price-field').className = 'field hidden';
@@ -890,11 +929,11 @@ async function fetchData() {
 /* ── IRRADIANCE BY ZIP ── */
 function getIrradiance(zip) {
   const f = parseInt(zip[0]);
-  if (f <= 3) return 1050;
-  if (f <= 5) return 1000;
-  if (f <= 7) return 950;
-  if (f === 8) return 940;
-  return 920;
+  if (f <= 3) return 985;   // Sjælland/Lolland (PVGIS kalibreret)
+  if (f <= 5) return 960;   // Fyn/Bornholm
+  if (f <= 7) return 940;   // Sønderjylland/Midtjylland
+  if (f === 8) return 935;  // Østjylland
+  return 920;               // Nordjylland
 }
 
 /* ── RECOMMENDATION ENGINE ── */
@@ -910,7 +949,7 @@ function calcRec() {
   const scRatio = S.hasEV && S.evChargesHome ? 0.73 : 0.64;
   const rawKwp  = (kwh * 0.80) / (irr * scRatio);
   const sizes   = [5, 6, 7, 8, 9, 10, 12, 15];
-  const kWp     = sizes.find(s => s >= rawKwp) || 15;
+  const kWp     = S.overrideKwp !== null ? S.overrideKwp : (sizes.find(s => s >= rawKwp) || 15);
 
   // Evening consumption 17-22 from hourly profile
   const prof    = S.hourlyProfile || new Array(24).fill(kwh / 24 / 365);
@@ -918,7 +957,7 @@ function calcRec() {
 
   // Battery: makes more sense if big evening load OR EV charges at home (can arbitrage)
   const wantsBat = kWp >= 6 && (evenKwh > 2.5 || (S.hasEV && S.evChargesHome));
-  const batKwh   = !wantsBat ? 0 : evenKwh > 5 ? 10 : 5;
+  const batKwh   = S.overrideBatKwh !== null ? S.overrideBatKwh : (!wantsBat ? 0 : evenKwh > 5 ? 10 : 5);
 
   // Roof orientation yield factor (south = 1.0)
   const orientFactor = { S:1.00, SW:0.92, SE:0.92, W:0.78, E:0.78, NW:0.55, NE:0.55, N:0.40 }[S.roofOrientation] || 1.00;
@@ -947,7 +986,7 @@ function calcRec() {
   const sav28   = sav26 + afgift;
 
   // Costs (inkl. 25% moms)
-  const sysCost = Math.round(kWp * 7500 * 1.25);
+  const sysCost = S.overrideSysCost !== null ? S.overrideSysCost : Math.round(kWp * 7500 * 1.25);
   const batCost = Math.round(batKwh * 3500 * 1.25);
   const total   = sysCost + batCost;
   const payback = +(total / sav26).toFixed(1);
@@ -955,9 +994,100 @@ function calcRec() {
   // Monthly solar production (m-scaled from annual)
   const mScales = [0.15, 0.33, 0.57, 0.81, 0.91, 1.0, 0.91, 0.79, 0.60, 0.32, 0.16, 0.11];
   const mDays   = [31,28,31,30,31,30,31,31,30,31,30,31];
-  const monthlyProd = mScales.map((s, i) => Math.round(kWp * irr * orientFactor * s * mDays[i] / 365));
+  const mNorm = mScales.reduce((a, s, i) => a + s * mDays[i], 0); // ~202.9
+  const monthlyProd = mScales.map((s, i) => Math.round(kWp * irr * orientFactor * s * mDays[i] / mNorm));
 
   return { kWp, batKwh, prod, selfCons, exported, selfPct, sav26, sav28, afgift, sysCost, batCost, total, payback, irr, orientFactor, monthlyProd, buyPrice };
+}
+
+/* ── SLIDER PANEL ── */
+function initSliders(r) {
+  document.getElementById('sliderPanel').style.display = '';
+  const kwpEl = document.getElementById('sliderKwp');
+  kwpEl.value = r.kWp;
+  document.getElementById('sliderKwpVal').textContent = r.kWp + ' kWp';
+  const batOptions = [0, 5, 10, 15, 20];
+  batOptions.forEach(v => {
+    const el = document.getElementById('bat' + v);
+    if (el) el.className = 'toggle-opt' + (v === r.batKwh ? ' selected' : '');
+  });
+  document.getElementById('sliderBatVal').textContent = r.batKwh === 0 ? 'Ingen' : r.batKwh + ' kWh';
+  document.getElementById('sliderPrice').value = '';
+}
+
+function onSliderKwp(v) {
+  S.overrideKwp = parseInt(v);
+  document.getElementById('sliderKwpVal').textContent = v + ' kWp';
+  rebuildAll();
+}
+
+function onSliderBat(v) {
+  S.overrideBatKwh = v;
+  [0,5,10,15,20].forEach(b => {
+    const el = document.getElementById('bat' + b);
+    if (el) el.className = 'toggle-opt' + (b === v ? ' selected' : '');
+  });
+  document.getElementById('sliderBatVal').textContent = v === 0 ? 'Ingen' : v + ' kWh';
+  rebuildAll();
+}
+
+function onSliderPrice(v) {
+  const price = parseInt(v);
+  S.overrideSysCost = (price > 0) ? price : null;
+  rebuildAll();
+}
+
+function resetSliders() {
+  S.overrideKwp = null;
+  S.overrideBatKwh = null;
+  S.overrideSysCost = null;
+  document.getElementById('sliderPrice').value = '';
+  const r = calcRec();
+  initSliders(r);
+  rebuildAll();
+}
+
+function rebuildAll() {
+  const r = calcRec();
+  _lastRec = r;
+
+  document.getElementById('kpi-kwp').textContent = r.kWp + ' kWp';
+  document.getElementById('kpi-kwp-sub').textContent = `~${r.prod.toLocaleString('da-DK')} kWh/år`;
+  if (r.batKwh > 0) {
+    document.getElementById('kpi-bat').textContent = r.batKwh + ' kWh';
+    document.getElementById('kpi-bat').className = 'kpi-value emerald';
+    document.getElementById('kpi-bat-sub').textContent = 'batteri anbefales';
+  } else {
+    document.getElementById('kpi-bat').textContent = 'Ikke nødvendigt';
+    document.getElementById('kpi-bat').className = 'kpi-value';
+    document.getElementById('kpi-bat-sub').textContent = 'baseret på dit mønster';
+  }
+  document.getElementById('kpi-savings').textContent = r.sav26.toLocaleString('da-DK');
+  document.getElementById('kpi-payback').textContent = '~' + r.payback;
+
+  document.getElementById('rec-solar-val').textContent = `${r.kWp} kWp · ${r.sysCost.toLocaleString('da-DK')} kr`;
+  if (r.batKwh > 0) {
+    document.getElementById('rec-battery-val').textContent = `${r.batKwh} kWh · ${r.batCost.toLocaleString('da-DK')} kr`;
+    document.getElementById('rec-battery').className = 'rec-row';
+  } else {
+    document.getElementById('rec-battery-val').textContent = 'Ikke inkluderet';
+    document.getElementById('rec-battery').className = 'rec-row neutral';
+  }
+  document.getElementById('rec-total-val').textContent = r.total.toLocaleString('da-DK') + ' kr';
+  const orientLabel = { S:'Sydvendt', SW:'Sydvestvendt', SE:'Sydøstvendt', W:'Vestvendt', E:'Østvendt', NW:'Nordvestvendt', NE:'Nordøstvendt', N:'Nordvendt' }[S.roofOrientation] || '';
+  const orientSuffix = r.orientFactor < 1 ? ` · ${orientLabel} tag (${Math.round(r.orientFactor*100)}% af max)` : '';
+  document.getElementById('rec-prod-val').textContent = r.prod.toLocaleString('da-DK') + ' kWh/år' + orientSuffix;
+  document.getElementById('rec-self-val').textContent = `${r.selfPct}% (${r.selfCons.toLocaleString('da-DK')} kWh/år)`;
+  document.getElementById('rec-sav-val').textContent = r.sav26.toLocaleString('da-DK') + ' kr/år';
+
+  destroyCharts();
+  buildProfileChart(r);
+  buildOptimalChart(r);
+  buildFlowChart(r, 'summer');
+  buildFlowChart(r, 'winter');
+  buildMonthlyChart(r);
+  buildPaybackChart(r, _useAfgift);
+  if (S.hasEV) buildEVHeatmap(r);
 }
 
 /* ── SHOW RESULTS ── */
@@ -1054,6 +1184,9 @@ function showResults() {
   if (S.hasHP) notes.push('Varmepumpe: stor del af forbruget er om vinteren — sol hjælper primært maj–september.');
   if (!S.isOwner) notes.push('Husk at indhente udlejers tilladelse inden installation.');
   document.getElementById('rec-note').textContent = notes.join(' ');
+
+  // Sliders
+  initSliders(r);
 
   // Charts
   destroyCharts();
@@ -1240,7 +1373,8 @@ function runBatterySim(solar, profile, batKwh) {
     const peakDeficit = Array.from({length:24},(_,h)=>h)
       .filter(h => PRICE_W[h] >= 1.0)
       .reduce((s,h) => s + Math.max(0, (profile[h]||0) - solar[h]), 0);
-    const toCharge = Math.min(peakDeficit, batKwh);
+    const solarSurplus = solar.reduce((s, v, h) => s + Math.max(0, v - (profile[h]||0)), 0);
+    const toCharge = Math.min(batKwh, Math.max(0, peakDeficit - solarSurplus));
     if (toCharge > 0) {
       const perHour = toCharge / 6;
       for (let h = 0; h < 6; h++) { gridChargeArr[h] = perHour; soc += perHour; }
@@ -1301,10 +1435,15 @@ function buildFlowChart(r, season) {
   const canvasId = season === 'summer' ? 'summerFlowChart' : 'winterFlowChart';
   const chartKey  = season === 'summer' ? 'summerFlow' : 'winterFlow';
 
-  const kWpScale = r.kWp / 10;
   const summerBase = [0,0,0,0,0,0,0.05,0.30,0.80,1.55,2.30,2.90,3.20,2.90,2.50,1.80,0.90,0.30,0.05,0,0,0,0,0];
   const winterBase = [0,0,0,0,0,0,0,0,0.10,0.35,0.60,0.75,0.78,0.65,0.40,0.12,0.01,0,0,0,0,0,0,0];
-  const solar = (season === 'summer' ? summerBase : winterBase).map(v => Math.max(0, +(v * kWpScale).toFixed(3)));
+  const base = season === 'summer' ? summerBase : winterBase;
+  const mDaysSF = [31,28,31,30,31,30,31,31,30,31,30,31];
+  const monthIdx = season === 'summer' ? 6 : 11; // July / December
+  const baseTotal = base.reduce((a,v) => a+v, 0);
+  const targetDayProd = r.monthlyProd[monthIdx] / mDaysSF[monthIdx];
+  const calibFactor = baseTotal > 0 ? targetDayProd / baseTotal : 1;
+  const solar = base.map(v => Math.max(0, +(v * calibFactor).toFixed(3)));
 
   const { direct, batCharge, gridExport, batDischarge, fromGrid } = runBatterySim(solar, profile || new Array(24).fill(0.2), r.batKwh || 0);
 
