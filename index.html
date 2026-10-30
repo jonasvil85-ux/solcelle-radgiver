@@ -695,6 +695,77 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
     conf.textContent = `Postnummer ${zip}${city ? ' ' + city : ''} registreret`;
     conf.style.display = 'block';
     document.getElementById('roofPanel').classList.remove('hidden');
+
+    // Hent bygningsomrids fra OSM og beregn tagorientering
+    const coords = feature.geometry && feature.geometry.coordinates;
+    if (coords) fetchBuildingOrientation(coords[1], coords[0]); // [lon,lat] → lat,lon
+  }
+
+  async function fetchBuildingOrientation(lat, lon) {
+    try {
+      const q = `[out:json];way["building"](around:50,${lat},${lon});out geom;`;
+      const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`;
+      const res = await fetch(url);
+      if (!res.ok) return;
+      const data = await res.json();
+      const ways = data.elements || [];
+      if (!ways.length) return;
+
+      // Find den bygning hvis centrum er tættest på adressen
+      const way = ways[0];
+      const nodes = way.geometry || [];
+      if (nodes.length < 3) return;
+
+      // Find den længste kant og dens bearing
+      let maxLen = 0, ridgeBearing = 0;
+      for (let i = 0; i < nodes.length - 1; i++) {
+        const a = nodes[i], b = nodes[i + 1];
+        const dlat = b.lat - a.lat;
+        const dlon = (b.lon - a.lon) * Math.cos(a.lat * Math.PI / 180);
+        const len = Math.sqrt(dlat * dlat + dlon * dlon);
+        if (len > maxLen) {
+          maxLen = len;
+          ridgeBearing = Math.atan2(dlon, dlat) * 180 / Math.PI;
+        }
+      }
+
+      // Tagflader er vinkelret på rygningen — to mulige retninger
+      const slope1 = ((ridgeBearing + 90) + 360) % 360;
+      const slope2 = ((ridgeBearing - 90) + 360) % 360;
+      // Vælg den retning der er tættest på syd (180°)
+      const southFacing = Math.abs(slope1 - 180) < Math.abs(slope2 - 180) ? slope1 : slope2;
+
+      // Map til kompas-knap
+      const dirs = [
+        { dir: 'N',  center: 0   },
+        { dir: 'NE', center: 45  },
+        { dir: 'E',  center: 90  },
+        { dir: 'SE', center: 135 },
+        { dir: 'S',  center: 180 },
+        { dir: 'SW', center: 225 },
+        { dir: 'W',  center: 270 },
+        { dir: 'NW', center: 315 },
+      ];
+      let best = 'S', bestDiff = 999;
+      for (const d of dirs) {
+        const diff = Math.abs(((southFacing - d.center + 540) % 360) - 180);
+        if (diff < bestDiff) { bestDiff = diff; best = d.dir; }
+      }
+
+      // Opdatér kompasrose og state
+      const grid = document.getElementById('compassGrid');
+      grid.querySelectorAll('.cdir').forEach(b => b.classList.remove('sel'));
+      const btn = grid.querySelector(`.cdir[data-dir="${best}"]`);
+      if (btn) btn.classList.add('sel');
+      S.roofOrientation = best;
+
+      // Vis note om at det er estimeret
+      const conf = document.getElementById('addrConfirmed');
+      conf.textContent = conf.textContent.replace(' registreret', '') +
+        ` — tagretning estimeret til ${best} (${Math.round(southFacing)}°) fra bygningsomrids`;
+    } catch (_) {
+      // Fejler lydløst — brugeren kan stadig vælge manuelt
+    }
   }
 })();
 
