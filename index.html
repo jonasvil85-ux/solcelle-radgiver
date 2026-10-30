@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="da" data-theme="">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solcelle-rådgiver</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #F9FAFB; --surface: #FFFFFF; --border: #E5E7EB;
+  --text-1: #111827; --text-2: #374151; --text-3: #6B7280; --text-4: #9CA3AF;
+  --emerald: #059669; --amber: #D97706; --blue: #2563EB; --red: #DC2626;
+  --purple: #7C3AED; --orange: #EA580C;
+}
+[data-theme="dark"] {
+  --bg: #0F172A; --surface: #1E293B; --border: #334155;
+  --text-1: #F1F5F9; --text-2: #CBD5E1; --text-3: #94A3B8; --text-4: #64748B;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-1); font-size: 13px; line-height: 1.5; transition: background 0.2s, color 0.2s; }
+
+.app { max-width: 680px; margin: 0 auto; padding: 32px 16px 64px; }
+
+/* HEADER */
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+.logo { font-size: 15px; font-weight: 600; color: var(--text-1); }
+.logo span { color: var(--emerald); }
+.theme-btn { font-size: 11px; font-family: inherit; background: none; border: 1px solid var(--border); color: var(--text-3); padding: 4px 10px; border-radius: 4px; cursor: pointer; }
+
+/* PROGRESS */
+.progress { display: flex; align-items: center; gap: 0; margin-bottom: 40px; }
+.prog-step { display: flex; align-items: center; gap: 8px; flex: 1; }
+.prog-step:last-child { flex: 0; }
+.prog-dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--text-4); background: var(--surface); transition: all 0.2s; flex-shrink: 0; }
+.prog-dot.active { border-color: var(--emerald); color: var(--emerald); }
+.prog-dot.done { border-color: var(--emerald); background: var(--emerald); color: #fff; }
+.prog-label { font-size: 11px; color: var(--text-4); white-space: nowrap; }
+.prog-label.active { color: var(--text-2); font-weight: 500; }
+.prog-line { flex: 1; height: 1px; background: var(--border); margin: 0 8px; }
+.prog-line.done { background: var(--emerald); }
+
+/* CARD */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 28px 32px; margin-bottom: 16px; }
+.card-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+.card-sub { font-size: 12px; color: var(--text-3); margin-bottom: 28px; }
+
+/* FORM */
+.field { margin-bottom: 20px; }
+.field label { display: block; font-size: 12px; font-weight: 500; color: var(--text-2); margin-bottom: 6px; }
+.field input[type=text], .field input[type=password], .field select {
+  width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 6px;
+  font-family: inherit; font-size: 13px; background: var(--surface); color: var(--text-1);
+  transition: border-color 0.15s;
+}
+.field input:focus, .field select:focus { outline: none; border-color: var(--emerald); }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* TOGGLE */
+.toggle-group { display: flex; gap: 8px; }
+.toggle-opt { flex: 1; padding: 8px; border: 1.5px solid var(--border); border-radius: 6px; text-align: center; cursor: pointer; font-size: 12px; font-weight: 500; color: var(--text-3); transition: all 0.15s; user-select: none; }
+.toggle-opt.selected { border-color: var(--emerald); color: var(--emerald); background: rgba(5,150,105,0.06); }
+
+/* CHECKBOX ROW */
+.check-row { display: flex; flex-direction: column; gap: 10px; }
+.ev-details { background: rgba(5,150,105,0.04); border: 1px solid rgba(5,150,105,0.18); border-top: none; border-radius: 0 0 6px 6px; padding: 12px 14px 10px; margin-top: -10px; }
+.ev-details .field { margin-bottom: 8px; }
+.ev-est { font-size: 11px; color: var(--emerald); margin-top: 2px; }
+.check-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 6px; cursor: pointer; transition: border-color 0.15s; }
+.check-item:hover { border-color: var(--text-4); }
+.check-item.checked { border-color: var(--emerald); background: rgba(5,150,105,0.04); }
+.check-item input { display: none; }
+.check-box { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+.check-item.checked .check-box { background: var(--emerald); border-color: var(--emerald); }
+.check-box svg { display: none; }
+.check-item.checked .check-box svg { display: block; }
+.check-label { flex: 1; }
+.check-label strong { display: block; font-size: 12.5px; font-weight: 500; }
+.check-label span { font-size: 11px; color: var(--text-3); }
+
+/* BUTTON */
+.btn { width: 100%; padding: 12px; border-radius: 7px; border: none; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; margin-top: 8px; }
+.btn-primary { background: var(--emerald); color: #fff; }
+.btn-primary:hover { opacity: 0.9; }
+.btn-secondary { background: var(--surface); border: 1px solid var(--border); color: var(--text-2); }
+.btn-back { background: none; border: none; color: var(--text-3); font-size: 12px; cursor: pointer; font-family: inherit; padding: 8px 0; margin-bottom: 4px; }
+.btn-back:hover { color: var(--text-1); }
+
+/* TOKEN STEP */
+.steps-ol { margin: 16px 0 20px; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; }
+.steps-ol li { font-size: 13px; color: var(--text-2); line-height: 1.5; }
+.steps-ol a { color: var(--emerald); }
+.token-note { font-size: 11px; color: var(--text-3); margin-top: 10px; display: flex; gap: 6px; align-items: flex-start; }
+
+/* LOADING */
+.loading-wrap { text-align: center; padding: 60px 0; }
+.spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--emerald); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-label { font-size: 13px; color: var(--text-3); }
+
+/* ERROR */
+.error-box { background: rgba(220,38,38,0.06); border: 1px solid rgba(220,38,38,0.25); border-radius: 6px; padding: 12px 16px; font-size: 12px; color: var(--red); margin-bottom: 16px; display: none; }
+
+/* RESULTS */
+.hidden { display: none !important; }
+
+/* KPI */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+@media(max-width:600px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+.kpi-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+.kpi-label { font-size: 10.5px; color: var(--text-3); margin-bottom: 4px; font-weight: 500; }
+.kpi-value { font-size: 20px; font-weight: 700; color: var(--text-1); line-height: 1.1; }
+.kpi-value.emerald { color: var(--emerald); }
+.kpi-value.amber { color: var(--amber); }
+.kpi-sub { font-size: 10px; color: var(--text-4); margin-top: 3px; }
+
+/* RECOMMENDATION CARD */
+.rec-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px 28px; margin-bottom: 16px; }
+.rec-title { font-size: 14px; font-weight: 600; margin-bottom: 20px; }
+.rec-items { display: flex; flex-direction: column; gap: 10px; }
+.rec-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-radius: 6px; background: rgba(5,150,105,0.05); border: 1px solid rgba(5,150,105,0.15); }
+.rec-row.neutral { background: rgba(107,114,128,0.05); border-color: rgba(107,114,128,0.15); }
+.rec-row-label { font-size: 12.5px; font-weight: 500; }
+.rec-row-val { font-size: 12.5px; color: var(--text-3); }
+.rec-divider { height: 1px; background: var(--border); margin: 12px 0; }
+.rec-total { display: flex; justify-content: space-between; font-weight: 600; font-size: 13px; }
+.rec-note { font-size: 11px; color: var(--text-3); margin-top: 14px; }
+
+/* CHARTS */
+.chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; margin-bottom: 16px; }
+.chart-card-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.chart-card-sub { font-size: 11px; color: var(--text-3); margin-bottom: 14px; }
+.chart-wrap { position: relative; }
+
+/* RESULT HEADER */
+.result-header { margin-bottom: 20px; }
+.result-header h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.result-header p { font-size: 12px; color: var(--text-3); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">Solcelle<span>rådgiver</span></div>
+    <button class="theme-btn" onclick="toggleTheme()">Mørk / Lys</button>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress" id="progressBar">
+    <div class="prog-step">
+      <div class="prog-dot active" id="dot1">1</div>
+      <div class="prog-label active" id="lbl1">Dit hjem</div>
+    </div>
+    <div class="prog-line" id="line1"></div>
+    <div class="prog-step">
+      <div class="prog-dot" id="dot2">2</div>
+      <div class="prog-label" id="lbl2">Dit forbrug</div>
+    </div>
+    <div class="prog-line" id="line2"></div>
+    <div class="prog-step">
+      <div class="prog-dot" id="dot3">3</div>
+      <div class="prog-label" id="lbl3">Din anbefaling</div>
+    </div>
+  </div>
+
+  <!-- ── STEP 1: QUESTIONNAIRE ── -->
+  <div id="step1">
+    <div class="card">
+      <div class="card-title">Om dit hjem</div>
+      <div class="card-sub">Vi bruger disse oplysninger til at beregne det rette anlæg for dig</div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Postnummer</label>
+          <input type="text" id="zipcode" placeholder="9000" maxlength="4" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label>Antal personer i husstanden</label>
+          <select id="persons">
+            <option value="1">1 person</option>
+            <option value="2">2 personer</option>
+            <option value="3" selected>3 personer</option>
+            <option value="4">4 personer</option>
+            <option value="5">5+ personer</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Ejer eller lejer du din bolig?</label>
+        <div class="toggle-group">
+          <div class="toggle-opt selected" id="opt-owner" onclick="selectOwnership('owner')">Ejer</div>
+          <div class="toggle-opt" id="opt-renter" onclick="selectOwnership('renter')">Lejer</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Hvad har du i husstanden? (valgfrit)</label>
+        <div class="check-row">
+          <label class="check-item" id="ci-ev" onclick="toggleCheck('ev')">
+            <div class="check-box">
+              <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                <path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="check-label">
+              <strong>Elbil</strong>
+              <span id="ev-summary">Angiv km/år for præcis beregning</span>
+            </div>
+          </label>
+          <div id="ev-details" class="ev-details hidden">
+            <div class="field-row">
+              <div class="field">
+                <label>Km/år med elbilen</label>
+                <input type="text" id="evKm" value="15000" inputmode="numeric" oninput="updateEvEst()">
+                <div class="ev-est" id="ev-kwh-est">≈ 2.400 kWh/år</div>
+              </div>
+              <div class="field">
+                <label>Lader primært hjemme?</label>
+                <div class="toggle-group">
+                  <div class="toggle-opt selected" id="opt-evhome" onclick="selectEvHome(true)">Ja, hjemme</div>
+                  <div class="toggle-opt" id="opt-evaway" onclick="selectEvHome(false)">Nej, ude/arbejde</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <label class="check-item" id="ci-hp" onclick="toggleCheck('hp')">
+            <div class="check-box">
+              <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                <path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="check-label">
+              <strong>Varmepumpe</strong>
+              <span>Højt vinterforbrug — sol hjælper primært om sommeren</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div id="renter-warn" class="hidden" style="font-size:11.5px;color:var(--amber);padding:10px 14px;background:rgba(217,119,6,0.06);border:1px solid rgba(217,119,6,0.2);border-radius:6px;margin-bottom:16px;">
+        Som lejer kræver solceller normalt udlejers tilladelse. Tjek din lejekontrakt eller tal med din udlejer.
+      </div>
+
+      <div class="error-box" id="err1"></div>
+      <button class="btn btn-primary" onclick="goStep2()">Næste: Hent dit forbrug →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: ELOVERBLIK TOKEN ── -->
+  <div id="step2" class="hidden">
+    <div class="card">
+      <button class="btn-back" onclick="goStep1()">← Tilbage</button>
+      <div class="card-title">Hent dit faktiske forbrug</div>
+      <div class="card-sub">Vi bruger dit rigtige forbrug til at give en præcis anbefaling</div>
+
+      <ol class="steps-ol">
+        <li>Gå til <a href="https://eloverblik.dk" target="_blank" rel="noopener">eloverblik.dk</a> og klik <strong>"Log på som privat"</strong> → log ind med MitID</li>
+        <li>Tryk på de <strong>tre vandrette streger</strong> (☰) øverst og vælg <strong>"Datadeling"</strong></li>
+        <li>Vælg <strong>"API adgang"</strong></li>
+        <li>Klik <strong>"Opret token"</strong>, giv det et navn (fx "Solcelle"), og kopiér den lange tekststreng</li>
+        <li>Indsæt token herunder</li>
+      </ol>
+
+      <div class="field">
+        <label>Dit Eloverblik-token</label>
+        <input type="password" id="tokenInput" placeholder="Indsæt token her…" autocomplete="off">
+        <div class="token-note">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="margin-top:1px;flex-shrink:0"><circle cx="6" cy="6" r="5.5" stroke="#9CA3AF"/><rect x="5.5" y="5" width="1" height="4" rx=".5" fill="#9CA3AF"/><rect x="5.5" y="3" width="1" height="1.5" rx=".5" fill="#9CA3AF"/></svg>
+          Tokenet sendes krypteret og gemmes ikke. Det bruges kun til at hente dine forbrugsdata én gang.
+        </div>
+      </div>
+
+      <div class="error-box" id="err2"></div>
+      <button class="btn btn-primary" onclick="fetchData()">Hent mine data →</button>
+    </div>
+  </div>
+
+  <!-- ── LOADING ── -->
+  <div id="stepLoading" class="hidden">
+    <div class="card loading-wrap">
+      <div class="spinner"></div>
+      <div class="loading-label" id="loadingLabel">Henter dine forbrugsdata…</div>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: RESULTS ── -->
+  <div id="step3" class="hidden">
+
+    <div class="result-header">
+      <h2>Din personlige anbefaling</h2>
+      <p id="resultSub">Baseret på dit faktiske forbrug og din boligsituation</p>
+    </div>
+
+    <!-- KPI STRIP -->
+    <div class="kpi-grid">
+      <div class="kpi-tile">
+        <div class="kpi-label">Anbefalet anlæg</div>
+        <div class="kpi-value emerald" id="kpi-kwp">— kWp</div>
+        <div class="kpi-sub" id="kpi-kwp-sub">solceller</div>
+      </div>
+      <div class="kpi-tile">
+        <div class="kpi-label">Batteri</div>
+        <div class="kpi-value" id="kpi-bat">—</div>
+        <div class="kpi-sub" id="kpi-bat-sub"></div>
+      </div>
+      <div class="kpi-tile">
+        <div class="kpi-label">Årsbesparelse</div>
+        <div class="kpi-value emerald" id="kpi-savings">—</div>
+        <div class="kpi-sub">kr/år</div>
+      </div>
+      <div class="kpi-tile">
+        <div class="kpi-label">Break-even</div>
+        <div class="kpi-value" id="kpi-payback">—</div>
+        <div class="kpi-sub">år</div>
+      </div>
+    </div>
+
+    <!-- RECOMMENDATION CARD -->
+    <div class="rec-card">
+      <div class="rec-title">Anbefalet konfiguration & økonomi</div>
+      <div class="rec-items">
+        <div class="rec-row" id="rec-solar">
+          <span class="rec-row-label">☀️ Solcelleanlæg</span>
+          <span class="rec-row-val" id="rec-solar-val">—</span>
+        </div>
+        <div class="rec-row" id="rec-battery">
+          <span class="rec-row-label">🔋 Batteri</span>
+          <span class="rec-row-val" id="rec-battery-val">—</span>
+        </div>
+        <div class="rec-divider"></div>
+        <div class="rec-total">
+          <span>Total investering (inkl. moms)</span>
+          <span id="rec-total-val">—</span>
+        </div>
+        <div class="rec-divider"></div>
+        <div class="rec-row neutral">
+          <span class="rec-row-label">📈 Årsproduktion</span>
+          <span class="rec-row-val" id="rec-prod-val">—</span>
+        </div>
+        <div class="rec-row neutral">
+          <span class="rec-row-label">⚡ Selvforsyning</span>
+          <span class="rec-row-val" id="rec-self-val">—</span>
+        </div>
+        <div class="rec-row neutral">
+          <span class="rec-row-label">💰 Besparelse 2026</span>
+          <span class="rec-row-val" id="rec-sav-val">—</span>
+        </div>
+        <div class="rec-row neutral">
+          <span class="rec-row-label">💰 Besparelse fra 2028 <small style="color:var(--text-4)">(el-afgift)</small></span>
+          <span class="rec-row-val" id="rec-sav28-val">—</span>
+        </div>
+      </div>
+      <div class="rec-note" id="rec-note"></div>
+    </div>
+
+    <!-- CONSUMPTION PROFILE CHART -->
+    <div class="chart-card">
+      <div class="chart-card-title">Dit forbrugsmønster — gennemsnitsdag</div>
+      <div class="chart-card-sub" id="profileSub">Timeforbrug baseret på dine faktiske data · Orange = estimeret solproduktion på dit anlæg</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="profileChart"></canvas></div>
+    </div>
+
+    <!-- MONTHLY CHART -->
+    <div class="chart-card">
+      <div class="chart-card-title">Månedlig produktion vs. forbrug</div>
+      <div class="chart-card-sub">Grøn = dækket af sol · Grå = købt fra nettet · Orange linje = total produktion</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="monthlyChart"></canvas></div>
+    </div>
+
+    <!-- PAYBACK CHART -->
+    <div class="chart-card">
+      <div class="chart-card-title">Hvornår har du tjent anlægget hjem?</div>
+      <div class="chart-card-sub">Kumulativ økonomi over 15 år · Grøn: med el-afgift 2028 · Grå: ren baseline</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="paybackChart"></canvas></div>
+    </div>
+
+    <div style="text-align:center;margin-top:24px">
+      <button class="btn btn-secondary" style="width:auto;padding:10px 24px" onclick="restart()">← Beregn for en anden adresse</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ── STATE ── */
+const S = { zipcode:'', persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null };
+let charts = {};
+
+/* ── THEME ── */
+function toggleTheme() {
+  const h = document.documentElement;
+  h.setAttribute('data-theme', h.getAttribute('data-theme') === 'dark' ? '' : 'dark');
+}
+
+/* ── PROGRESS ── */
+function setProgress(step) {
+  [1,2,3].forEach(i => {
+    const dot = document.getElementById('dot'+i);
+    const lbl = document.getElementById('lbl'+i);
+    dot.className = 'prog-dot' + (i < step ? ' done' : i === step ? ' active' : '');
+    lbl.className = 'prog-label' + (i === step ? ' active' : '');
+    if (i < 3) {
+      const line = document.getElementById('line'+i);
+      line.className = 'prog-line' + (i < step ? ' done' : '');
+    }
+  });
+}
+
+/* ── FORM HELPERS ── */
+function selectOwnership(type) {
+  S.isOwner = type === 'owner';
+  document.getElementById('opt-owner').className = 'toggle-opt' + (S.isOwner ? ' selected' : '');
+  document.getElementById('opt-renter').className = 'toggle-opt' + (!S.isOwner ? ' selected' : '');
+  document.getElementById('renter-warn').className = S.isOwner ? 'hidden' : '';
+}
+
+function toggleCheck(key) {
+  if (key === 'ev') {
+    S.hasEV = !S.hasEV;
+    document.getElementById('ci-ev').className = 'check-item' + (S.hasEV ? ' checked' : '');
+    document.getElementById('ev-details').className = S.hasEV ? 'ev-details' : 'ev-details hidden';
+    updateEvEst();
+  }
+  if (key === 'hp') { S.hasHP = !S.hasHP; document.getElementById('ci-hp').className = 'check-item' + (S.hasHP ? ' checked' : ''); }
+}
+
+function selectEvHome(val) {
+  S.evChargesHome = val;
+  document.getElementById('opt-evhome').className = 'toggle-opt' + (val ? ' selected' : '');
+  document.getElementById('opt-evaway').className = 'toggle-opt' + (!val ? ' selected' : '');
+}
+
+function updateEvEst() {
+  S.evKm = parseInt(document.getElementById('evKm').value) || 15000;
+  const kwh = Math.round(S.evKm * 0.16);
+  document.getElementById('ev-kwh-est').textContent = '≈ ' + kwh.toLocaleString('da-DK') + ' kWh/år';
+  document.getElementById('ev-summary').textContent = S.evKm.toLocaleString('da-DK') + ' km/år · ~' + kwh.toLocaleString('da-DK') + ' kWh';
+}
+
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+
+/* ── NAVIGATION ── */
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+
+function goStep1() { hide('step2'); show('step1'); setProgress(1); }
+
+function goStep2() {
+  const zip = document.getElementById('zipcode').value.trim();
+  if (!/^\d{4}$/.test(zip)) { showErr('err1','Indtast et gyldigt 4-cifret postnummer'); return; }
+  showErr('err1','');
+  S.zipcode = zip;
+  S.persons = parseInt(document.getElementById('persons').value);
+  hide('step1'); show('step2'); setProgress(2);
+}
+
+function restart() {
+  hide('step3');
+  Object.assign(S, { zipcode:'', persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null });
+  document.getElementById('evKm').value = '15000';
+  document.getElementById('ev-details').className = 'ev-details hidden';
+  document.getElementById('opt-evhome').className = 'toggle-opt selected';
+  document.getElementById('opt-evaway').className = 'toggle-opt';
+  document.getElementById('opt-owner').className = 'toggle-opt selected';
+  document.getElementById('opt-renter').className = 'toggle-opt';
+  document.getElementById('ci-ev').className = 'check-item';
+  document.getElementById('ci-hp').className = 'check-item';
+  document.getElementById('zipcode').value = '';
+  document.getElementById('tokenInput').value = '';
+  destroyCharts();
+  show('step1'); setProgress(1);
+}
+
+function destroyCharts() {
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+}
+
+/* ── DATA FETCH ── */
+async function fetchData() {
+  const token = document.getElementById('tokenInput').value.trim();
+  if (!token) { showErr('err2','Indsæt dit Eloverblik-token'); return; }
+  showErr('err2','');
+
+  hide('step2');
+  show('stepLoading');
+  setProgress(3);
+
+  try {
+    const res = await fetch('/api/eloverblik', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: token })
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.success) throw new Error(data.error || 'Ukendt fejl');
+
+    S.annualKwh    = data.annualKwh;
+    S.hourlyProfile = data.hourlyProfile;
+    S.monthlyProfile = data.monthlyProfile;
+
+    hide('stepLoading');
+    showResults();
+
+  } catch (err) {
+    hide('stepLoading');
+    show('step2');
+    setProgress(2);
+    showErr('err2', err.message || 'Kunne ikke hente data — prøv igen');
+  }
+}
+
+/* ── IRRADIANCE BY ZIP ── */
+function getIrradiance(zip) {
+  const f = parseInt(zip[0]);
+  if (f <= 3) return 1050;
+  if (f <= 5) return 1000;
+  if (f <= 7) return 950;
+  if (f === 8) return 940;
+  return 920;
+}
+
+/* ── RECOMMENDATION ENGINE ── */
+function calcRec() {
+  const irr = getIrradiance(S.zipcode);
+  const kwh = S.annualKwh;
+
+  // EV: actual kWh based on km and charging location
+  const evKwhTotal = S.hasEV ? S.evKm * 0.16 : 0;
+  const evKwhHome  = S.hasEV ? evKwhTotal * (S.evChargesHome ? 0.85 : 0.12) : 0;
+
+  // Self-consumption ratio: higher if EV charges at home (more flexibility to use solar)
+  const scRatio = S.hasEV && S.evChargesHome ? 0.73 : 0.64;
+  const rawKwp  = (kwh * 0.80) / (irr * scRatio);
+  const sizes   = [5, 6, 7, 8, 9, 10, 12, 15];
+  const kWp     = sizes.find(s => s >= rawKwp) || 15;
+
+  // Evening consumption 17-22 from hourly profile
+  const prof    = S.hourlyProfile || new Array(24).fill(kwh / 24 / 365);
+  const evenKwh = prof.slice(17, 22).reduce((a, b) => a + b, 0);
+
+  // Battery: makes more sense if big evening load OR EV charges at home (can arbitrage)
+  const wantsBat = kWp >= 6 && (evenKwh > 2.5 || (S.hasEV && S.evChargesHome));
+  const batKwh   = !wantsBat ? 0 : evenKwh > 5 ? 10 : 5;
+
+  // Economics
+  const prod       = Math.round(kWp * irr);
+  const selfCons   = Math.round(Math.min(prod * scRatio, kwh * 0.78));
+  const exported   = prod - selfCons;
+  const selfPct    = Math.round((selfCons / kwh) * 100);
+
+  const buyPrice   = 2.70; // kr/kWh 2026
+  const sellPrice  = 0.35;
+
+  const sav26   = Math.round(selfCons * buyPrice + exported * sellPrice + (batKwh > 0 ? 350 : 0));
+  const houseShare = S.hasEV ? Math.max(0, (kwh - evKwhHome) / kwh) : 1.0;
+  const afgift  = Math.round(selfCons * houseShare * 0.28);
+  const sav28   = sav26 + afgift;
+
+  // Costs (inkl. 25% moms)
+  const sysCost = Math.round(kWp * 7500 * 1.25);
+  const batCost = Math.round(batKwh * 3500 * 1.25);
+  const total   = sysCost + batCost;
+  const payback = +(total / sav26).toFixed(1);
+
+  // Monthly solar production (m-scaled from annual)
+  const mScales = [0.15, 0.33, 0.57, 0.81, 0.91, 1.0, 0.91, 0.79, 0.60, 0.32, 0.16, 0.11];
+  const mDays   = [31,28,31,30,31,30,31,31,30,31,30,31];
+  const monthlyProd = mScales.map((s, i) => Math.round(kWp * irr * s * mDays[i] / 365));
+
+  return { kWp, batKwh, prod, selfCons, exported, selfPct, sav26, sav28, afgift, sysCost, batCost, total, payback, irr, monthlyProd };
+}
+
+/* ── SHOW RESULTS ── */
+function showResults() {
+  const r = calcRec();
+
+  // KPI strip
+  document.getElementById('kpi-kwp').textContent = r.kWp + ' kWp';
+  document.getElementById('kpi-kwp-sub').textContent = `~${r.prod.toLocaleString('da-DK')} kWh/år`;
+  if (r.batKwh > 0) {
+    document.getElementById('kpi-bat').textContent = r.batKwh + ' kWh';
+    document.getElementById('kpi-bat').className = 'kpi-value emerald';
+    document.getElementById('kpi-bat-sub').textContent = 'batteri anbefales';
+  } else {
+    document.getElementById('kpi-bat').textContent = 'Ikke nødvendigt';
+    document.getElementById('kpi-bat').className = 'kpi-value';
+    document.getElementById('kpi-bat-sub').textContent = 'baseret på dit mønster';
+  }
+  document.getElementById('kpi-savings').textContent = r.sav26.toLocaleString('da-DK');
+  document.getElementById('kpi-payback').textContent = '~' + r.payback;
+
+  // Rec card
+  document.getElementById('rec-solar-val').textContent = `${r.kWp} kWp · ${r.sysCost.toLocaleString('da-DK')} kr`;
+  if (r.batKwh > 0) {
+    document.getElementById('rec-battery-val').textContent = `${r.batKwh} kWh · ${r.batCost.toLocaleString('da-DK')} kr`;
+    document.getElementById('rec-battery').className = 'rec-row';
+  } else {
+    document.getElementById('rec-battery-val').textContent = 'Ikke inkluderet';
+    document.getElementById('rec-battery').className = 'rec-row neutral';
+  }
+  document.getElementById('rec-total-val').textContent = r.total.toLocaleString('da-DK') + ' kr';
+  document.getElementById('rec-prod-val').textContent = r.prod.toLocaleString('da-DK') + ' kWh/år';
+  document.getElementById('rec-self-val').textContent = `${r.selfPct}% (${r.selfCons.toLocaleString('da-DK')} kWh/år)`;
+  document.getElementById('rec-sav-val').textContent = r.sav26.toLocaleString('da-DK') + ' kr/år';
+  document.getElementById('rec-sav28-val').textContent = r.sav28.toLocaleString('da-DK') + ' kr/år (+' + r.afgift.toLocaleString('da-DK') + ')';
+
+  const notes = [];
+  if (S.hasEV && S.evChargesHome) notes.push(`Elbil (${S.evKm.toLocaleString('da-DK')} km/år · ~${Math.round(evKwhTotal).toLocaleString('da-DK')} kWh/år): lad i dagstimerne om sommeren fra solenergi og om natten om vinteren på billig natarif.`);
+  if (S.hasEV && !S.evChargesHome) notes.push(`Elbil (${S.evKm.toLocaleString('da-DK')} km/år): da du primært lader ude, bidrager elbilen minimalt til dit hjemmeforbrug — solanlægget er dimensioneret efter husforbruget.`);
+  if (S.hasHP) notes.push('Varmepumpe: stor del af forbruget er om vinteren — sol hjælper primært maj–september.');
+  if (!S.isOwner) notes.push('Husk at indhente udlejers tilladelse inden installation.');
+  document.getElementById('rec-note').textContent = notes.join(' ');
+
+  // Charts
+  destroyCharts();
+  buildProfileChart(r);
+  buildMonthlyChart(r);
+  buildPaybackChart(r);
+
+  show('step3');
+}
+
+/* ── CHARTS ── */
+const C = { grid: 'rgba(107,114,128,0.12)', text3: '#6B7280' };
+
+function isDark() { return document.documentElement.getAttribute('data-theme') === 'dark'; }
+
+function profileBase() { return { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { position:'bottom', labels: { boxWidth:16, boxHeight:2, padding:14, color:C.text3, font:{size:10.5} } }, tooltip: { backgroundColor: isDark()?'#1E293B':'#fff', titleColor:isDark()?'#F1F5F9':'#111', bodyColor:C.text3, borderColor:'#E5E7EB', borderWidth:1, padding:10 } }, scales: { x: { grid:{display:false}, ticks:{color:C.text3, font:{size:10.5}, callback:(_,i)=>i%4===0?i+':00':''} }, y: { grid:{color:C.grid}, ticks:{color:C.text3, font:{size:10.5}}, border:{dash:[3,3]} } } }; }
+
+function buildProfileChart(r) {
+  const prof = S.hourlyProfile;
+  const mScales = [0.15,0.33,0.57,0.81,0.91,1.0,0.91,0.79,0.60,0.32,0.16,0.11];
+  const mDays   = [31,28,31,30,31,30,31,31,30,31,30,31];
+  const summerSolar = [0,0,0,0,0,0,0,0,0.48,1.93,4.32,6.72,8.16,8.64,7.20,5.28,2.88,1.44,0.19,0,0,0,0,0];
+  const kWpScale = r.kWp / 10;
+  // Annual avg solar
+  const solar = Array.from({length:24}, (_,h) => {
+    let w = 0;
+    for (let m=0; m<12; m++) w += Math.min(prof[h], summerSolar[h]*kWpScale*mScales[m])*mDays[m];
+    return +(w/365).toFixed(3);
+  });
+
+  const opts = profileBase();
+  opts.plugins.tooltip.callbacks = { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} kWh` };
+  opts.scales.y.title = { display:true, text:'kWh/time', color:C.text3, font:{size:10} };
+
+  charts.profile = new Chart(document.getElementById('profileChart'), {
+    type:'bar',
+    data: {
+      labels: Array.from({length:24},(_,i)=>i),
+      datasets: [
+        { label:'Forbrug', data:prof, backgroundColor:'rgba(107,114,128,0.35)', borderColor:'#6B7280', borderWidth:1, borderRadius:2 },
+        { label:'Solproduktion (estimeret)', data:solar, backgroundColor:'rgba(217,119,6,0.55)', borderColor:'#D97706', borderWidth:1, borderRadius:2 },
+      ]
+    },
+    options: opts
+  });
+}
+
+function buildMonthlyChart(r) {
+  const mp = S.monthlyProfile;
+  const prod = r.monthlyProd;
+  const selfC = mp.map((m, i) => Math.min(m, prod[i]));
+  const bought = mp.map((m, i) => Math.max(0, m - prod[i]));
+
+  const opts = profileBase();
+  opts.scales.y.stacked = true;
+  opts.plugins.tooltip.callbacks = { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('da-DK')} kWh` };
+  opts.scales.y.title = { display:true, text:'kWh', color:C.text3, font:{size:10} };
+
+  charts.monthly = new Chart(document.getElementById('monthlyChart'), {
+    type:'bar',
+    data: {
+      labels:['Jan','Feb','Mar','Apr','Maj','Jun','Jul','Aug','Sep','Okt','Nov','Dec'],
+      datasets: [
+        { label:'Dækket af sol', data:selfC, backgroundColor:'rgba(217,119,6,0.55)', borderColor:'#D97706', borderWidth:1, borderRadius:{topLeft:2,topRight:2}, stack:'a' },
+        { label:'Købt fra nettet', data:bought, backgroundColor:'rgba(107,114,128,0.30)', borderColor:'#9CA3AF', borderWidth:1, borderRadius:{topLeft:2,topRight:2}, stack:'a' },
+        { type:'line', label:'Produktion', data:prod, borderColor:'#EA580C', borderWidth:2, pointRadius:3, pointBackgroundColor:'#EA580C', fill:false, tension:0.3, yAxisID:'y2' },
+      ]
+    },
+    options: {
+      ...opts,
+      scales: {
+        ...opts.scales,
+        y2: { display:false, max: Math.max(...prod)*1.3, position:'right' }
+      }
+    }
+  });
+}
+
+function buildPaybackChart(r) {
+  const INV = r.total;
+  const BASE26 = r.sav26;
+  const BASE28 = r.sav28;
+  const DEG = 0.005; const N = 16;
+  const AFGIFT_YR = 3;
+
+  function cumul(base28) {
+    const a = [-INV];
+    for (let y=1; y<N; y++) {
+      const sav = base28 && y>=AFGIFT_YR ? BASE28 : BASE26;
+      a.push(Math.round(a[a.length-1] + sav * Math.pow(1-DEG, y-1)));
+    }
+    return a;
+  }
+  function beYear(d) {
+    for (let i=1; i<d.length; i++) if (d[i-1]<0 && d[i]>=0) return +(i-1+(-d[i-1])/(d[i]-d[i-1])).toFixed(1);
+    return null;
+  }
+  const d1 = cumul(true); const d2 = cumul(false);
+  const be1 = beYear(d1); const be2 = beYear(d2);
+
+  const paybackPlugin = {
+    id:'pb',
+    afterDatasetsDraw(chart) {
+      const {ctx, chartArea:{top,bottom,left}, scales:{x,y}} = chart;
+      if (!x||!y) return;
+      ctx.save();
+      const y0 = y.getPixelForValue(0);
+      ctx.font='10px Inter,sans-serif'; ctx.textBaseline='top'; ctx.textAlign='left';
+      ctx.fillStyle='rgba(220,38,38,0.4)'; ctx.fillText('Investering udestående',left+6,y0+5);
+      ctx.textBaseline='bottom'; ctx.fillStyle='rgba(5,150,105,0.5)'; ctx.fillText('Fortjeneste',left+6,y0-5);
+
+      [[be1,'#059669',2],[be2,'#9CA3AF',1]].forEach(([be,col,lw],idx)=>{
+        if(!be) return;
+        const xb = x.getPixelForValue(+be);
+        ctx.beginPath(); ctx.strokeStyle=col+'99'; ctx.lineWidth=lw; ctx.setLineDash([4,4]);
+        ctx.moveTo(xb,top+28); ctx.lineTo(xb,bottom); ctx.stroke(); ctx.setLineDash([]);
+        const txt=`År ${String(be).replace('.',',')}`;
+        ctx.font=`${lw>1?'bold ':''}10px Inter,sans-serif`; ctx.textAlign='center';
+        const tw=ctx.measureText(txt).width+8;
+        const ly=top+28+idx*16;
+        ctx.fillStyle=isDark()?'rgba(30,41,59,0.9)':'rgba(255,255,255,0.9)';
+        ctx.fillRect(xb-tw/2,ly,tw,14);
+        ctx.fillStyle=col; ctx.textBaseline='top'; ctx.fillText(txt,xb,ly+1);
+      });
+      ctx.restore();
+    }
+  };
+
+  charts.payback = new Chart(document.getElementById('paybackChart'), {
+    type:'line',
+    plugins:[paybackPlugin],
+    data:{
+      labels:Array.from({length:N},(_,i)=>i),
+      datasets:[
+        { label:'Med el-afgift 2028', data:d1, borderColor:'#059669', borderWidth:2.5, pointRadius:2, pointBackgroundColor:'#059669', fill:{target:'origin',above:'rgba(5,150,105,0.10)',below:'rgba(220,38,38,0.08)'}, tension:0.15 },
+        { label:'Baseline (nu)', data:d2, borderColor:'#9CA3AF', borderWidth:1.5, borderDash:[5,4], pointRadius:0, fill:false, tension:0.15 },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, animation:false,
+      plugins:{ legend:{position:'bottom',labels:{boxWidth:16,boxHeight:2,padding:14,color:C.text3,font:{size:10.5}}}, tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('da-DK')} kr`}} },
+      scales:{
+        x:{grid:{display:false},ticks:{color:C.text3,font:{size:10.5},callback:(_,i)=>`År ${i}`}},
+        y:{grid:{color:C.grid},ticks:{color:C.text3,font:{size:10.5},callback:v=>v.toLocaleString('da-DK')+' kr'},border:{dash:[3,3]}}
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>
