@@ -38,12 +38,12 @@ exports.handler = async function (event) {
   try {
     const tokenText = await tokenRes.text();
     const tokenJson = JSON.parse(tokenText);
-    // Log structure to debug
-    const keys = Object.keys(tokenJson);
-    const resultKeys = tokenJson.result ? Object.keys(tokenJson.result) : [];
-    dataToken = tokenJson.result?.token ?? tokenJson.token ?? tokenJson.access_token;
+    // result is the data token string directly
+    dataToken = typeof tokenJson.result === 'string'
+      ? tokenJson.result
+      : tokenJson.result?.token ?? tokenJson.token ?? tokenJson.access_token;
     if (!dataToken) {
-      return { statusCode: 502, headers, body: JSON.stringify({ error: `Token-svar struktur: ${keys.join(',')} / result: ${resultKeys.join(',')} / preview: ${tokenText.slice(0,200)}` }) };
+      return { statusCode: 502, headers, body: JSON.stringify({ error: 'Kunne ikke udtrække data-token fra svar' }) };
     }
   } catch (e) {
     return { statusCode: 502, headers, body: JSON.stringify({ error: 'Uventet svar fra eloverblik.dk ved token-udveksling: ' + e.message }) };
