@@ -607,7 +607,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
     clearTimeout(timer);
     const q = this.value.trim();
     if (q.length < 3) { drop.style.display = 'none'; return; }
-    timer = setTimeout(() => fetchSuggestions(q), 280);
+    timer = setTimeout(() => fetchSuggestions(q), 400);
   });
 
   inp.addEventListener('keydown', function (e) {
@@ -636,8 +636,8 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
 
   async function fetchSuggestions(q) {
     try {
-      // /adresser er det stabile søge-endpoint (ingen autocomplete-wrapper)
-      const url = `https://api.dataforsyningen.dk/adresser?q=${encodeURIComponent(q)}&per_side=8&struktur=mini`;
+      // OpenStreetMap Nominatim — gratis, ingen nøgle, god DK-dækning
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=8&countrycodes=dk`;
       const res = await fetch(url);
       if (!res.ok) { showDropErr('Søgning fejlede (' + res.status + ')'); return; }
       const items = await res.json();
@@ -654,23 +654,26 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
   }
 
   function addrTekst(a) {
-    let t = (a.vejnavn || '') + ' ' + (a.husnr || '');
-    if (a.etage) t += ', ' + a.etage + '.';
-    if (a.dør)   t += ' ' + a.dør;
-    if (a.postnr) t += ', ' + a.postnr + ' ' + (a.postnrnavn || '');
-    return t.trim();
+    // Byg læsbar tekst fra Nominatim address-objekt
+    const addr = a.address || {};
+    let t = [addr.road, addr.house_number].filter(Boolean).join(' ');
+    if (addr.postcode) t += ', ' + addr.postcode + ' ' + (addr.city || addr.town || addr.village || '');
+    return t.trim() || a.display_name || '';
   }
 
   function renderDropdown(items) {
-    if (!items.length) { drop.style.display = 'none'; return; }
-    drop.innerHTML = items.map((a, i) => {
-      const tekst = addrTekst(a);
-      const sub = [a.postnr, a.postnrnavn].filter(Boolean).join(' ');
+    // Filtrér: kun resultater med vej og husnummer (eller veje)
+    const filtered = items.filter(x => x.address && (x.address.road || x.address.highway));
+    if (!filtered.length) { drop.style.display = 'none'; return; }
+    drop.innerHTML = filtered.map((item, i) => {
+      const tekst = addrTekst(item);
+      const zip = (item.address || {}).postcode || '';
+      const city = (item.address || {}).city || (item.address || {}).town || '';
       return `<div class="addr-item" data-idx="${i}">
-        ${tekst}${sub ? `<div class="addr-tag">${sub}</div>` : ''}
+        ${tekst}${zip ? `<div class="addr-tag">${zip} ${city}</div>` : ''}
       </div>`;
     }).join('');
-    drop._data = items;
+    drop._data = filtered;
     drop.style.display = 'block';
     drop.querySelectorAll('.addr-item').forEach(el => {
       el.addEventListener('click', () => onAddrSelect(drop._data[+el.dataset.idx]));
@@ -678,17 +681,17 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
   }
 
   function onAddrSelect(item) {
-    // item er nu direkte et adresse-objekt fra /adresser (ikke {tekst, data})
-    const a = item;
-    const zip = a.postnr || '';
-    const tekst = addrTekst(a);
+    const a = item.address || {};
+    const zip = a.postcode || '';
+    const tekst = addrTekst(item);
     inp.value = tekst;
     drop.style.display = 'none';
     document.getElementById('zipcode').value = zip;
     S.zipcode = zip;
     S.address = tekst;
     const conf = document.getElementById('addrConfirmed');
-    conf.textContent = `Postnummer ${zip}${a.postnrnavn ? ' ' + a.postnrnavn : ''} registreret`;
+    const city = a.city || a.town || a.village || '';
+    conf.textContent = `Postnummer ${zip}${city ? ' ' + city : ''} registreret`;
     conf.style.display = 'block';
     document.getElementById('roofPanel').classList.remove('hidden');
   }
