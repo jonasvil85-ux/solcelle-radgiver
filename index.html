@@ -1213,70 +1213,70 @@ function buildFlowChart(r, season) {
   const canvasId = season === 'summer' ? 'summerFlowChart' : 'winterFlowChart';
   const chartKey  = season === 'summer' ? 'summerFlow' : 'winterFlow';
 
-  // Representative average-day solar production per kWp (kWh/h), summer Apr-Sep, winter Oct-Mar
   const kWpScale = r.kWp / 10;
   const summerBase = [0,0,0,0,0,0,0.05,0.30,0.80,1.55,2.30,2.90,3.20,2.90,2.50,1.80,0.90,0.30,0.05,0,0,0,0,0];
   const winterBase = [0,0,0,0,0,0,0,0,0.10,0.35,0.60,0.75,0.78,0.65,0.40,0.12,0.01,0,0,0,0,0,0,0];
-  const solar = (season === 'summer' ? summerBase : winterBase).map(v => +(v * kWpScale).toFixed(3));
+  const solar = (season === 'summer' ? summerBase : winterBase).map(v => Math.max(0, +(v * kWpScale).toFixed(3)));
 
-  // Battery simulation hour-by-hour
   const batKwh = r.batKwh || 0;
   let soc = batKwh * 0.5;
-  const direct=[], batCharge=[], batDischarge=[], fromGrid=[], toGrid=[];
+  const direct = [], surplus = [], batDischarge = [], fromGrid = [];
 
   for (let h = 0; h < 24; h++) {
-    const cons = profile[h], sol = solar[h];
-    let d=0, c=0, dis=0, g=0, tg=0;
+    const cons = Math.max(0, profile[h]);
+    const sol  = solar[h];
+    let d, s, dis, g;
     if (sol >= cons) {
       d = cons;
-      const surplus = sol - cons;
-      c = Math.min(surplus, batKwh - soc);
-      soc = Math.min(batKwh, soc + c);
-      tg = surplus - c;
+      const excess = sol - cons;
+      const charge = batKwh > 0 ? Math.min(excess, Math.max(0, batKwh - soc)) : 0;
+      soc = Math.min(batKwh, soc + charge);
+      s   = excess;   // alt overskud: opladning + eksport
+      dis = 0; g = 0;
     } else {
       const deficit = cons - sol;
-      d = sol;
+      d = sol; s = 0;
       dis = Math.min(deficit, soc);
       soc = Math.max(0, soc - dis);
-      g = deficit - dis;
+      g   = deficit - dis;
     }
-    direct.push(+d.toFixed(3));
-    batCharge.push(+(-c).toFixed(3));
-    batDischarge.push(+dis.toFixed(3));
-    fromGrid.push(+g.toFixed(3));
-    toGrid.push(+(-tg).toFixed(3));
+    direct.push(Math.max(0, +d.toFixed(3)));
+    surplus.push(Math.max(0, +s.toFixed(3)));
+    batDischarge.push(Math.max(0, +dis.toFixed(3)));
+    fromGrid.push(Math.max(0, +g.toFixed(3)));
   }
 
-  // Stakkens logik fra bund til top:
-  // 1. Solel direkte (grøn)
-  // 2. Eksport/oplad (amber) — grøn+amber = solproduktionslinje
-  // 3. Batteri aflader (blå) — batteribidrag til forbrug
-  // 4. Fra elnet (grå) — netköb
-  const surplus = solar.map((s, h) => +(Math.max(0, s - direct[h]).toFixed(3)));
-
-  const opts = profileBase();
-  opts.scales.x.stacked = true;
-  opts.scales.y.stacked = true;
-  opts.scales.y.min = 0;
-  opts.plugins.tooltip.callbacks = {
-    label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} kWh`
-  };
-  opts.scales.y.title = { display:true, text:'kWh/time', color:C.text3, font:{size:10} };
-
   if (charts[chartKey]) { charts[chartKey].destroy(); delete charts[chartKey]; }
+
+  const dark = isDark();
+  const txt  = dark ? '#94A3B8' : '#6B7280';
+  const grid = dark ? 'rgba(100,116,139,0.15)' : 'rgba(107,114,128,0.12)';
+
   charts[chartKey] = new Chart(document.getElementById(canvasId), {
     type: 'bar',
     data: {
       labels: HOURS,
       datasets: [
-        { label:'Solel direkte',   data:direct,       backgroundColor:'rgba(5,150,105,0.70)',  borderColor:'#059669', borderWidth:1, stack:'s', order:2 },
-        { label:'Eksport/oplad',   data:surplus,      backgroundColor:'rgba(245,158,11,0.45)', borderColor:'#F59E0B', borderWidth:1, stack:'s', order:2 },
-        { label:'Batteri aflader', data:batDischarge, backgroundColor:'rgba(8,145,178,0.65)',  borderColor:'#0891B2', borderWidth:1, stack:'s', order:2 },
-        { label:'Fra elnet',       data:fromGrid,     backgroundColor:'rgba(107,114,128,0.40)',borderColor:'#6B7280', borderWidth:1, stack:'s', order:2 },
-        { type:'line', label:'Solproduktion', data:solar, borderColor:'#EA580C', backgroundColor:'transparent', borderWidth:2.5, pointRadius:0, tension:0.4, order:1 },
+        { label:'Solel direkte',   data: direct,       backgroundColor:'rgba(5,150,105,0.75)',  stack:'s' },
+        { label:'Eksport/oplad',   data: surplus,      backgroundColor:'rgba(245,158,11,0.55)', stack:'s' },
+        { label:'Batteri aflader', data: batDischarge, backgroundColor:'rgba(8,145,178,0.70)',  stack:'s' },
+        { label:'Fra elnet',       data: fromGrid,     backgroundColor:'rgba(107,114,128,0.45)',stack:'s' },
+        { type:'line', label:'Solproduktion', data: solar,
+          borderColor:'#EA580C', backgroundColor:'transparent',
+          borderWidth:2.5, pointRadius:0, tension:0.4 },
       ]
     },
-    options: opts
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: {
+        legend: { position:'bottom', labels:{ boxWidth:16, boxHeight:8, padding:12, color:txt, font:{size:10.5} } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${Math.abs(ctx.parsed.y).toFixed(2)} kWh` } }
+      },
+      scales: {
+        x: { stacked:true, grid:{display:false}, ticks:{ color:txt, font:{size:10}, maxRotation:45, callback:(_,i)=>i%2===0?HOURS[i]:'' } },
+        y: { stacked:true, min:0, grid:{color:grid}, ticks:{color:txt, font:{size:10.5}}, title:{display:true, text:'kWh/time', color:txt, font:{size:10}} }
+      }
+    }
   });
 }
 
