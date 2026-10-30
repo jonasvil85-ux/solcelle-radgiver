@@ -48,13 +48,21 @@ exports.handler = async function (event) {
     const mpRes = await fetch('https://api.eloverblik.dk/customerapi/api/meteringpoints/meteringpoints', {
       headers: { Authorization: `Bearer ${dataToken}`, Accept: 'application/json' },
     });
-    mpData = await mpRes.json();
+    const mpText = await mpRes.text();
+    if (!mpText || mpText.trim() === '') {
+      return { statusCode: 502, headers, body: JSON.stringify({ error: 'Tomt svar fra eloverblik.dk ved målepunkter (HTTP ' + mpRes.status + ')' }) };
+    }
+    mpData = JSON.parse(mpText);
   } catch (e) {
     return { statusCode: 502, headers, body: JSON.stringify({ error: 'Kunne ikke hente målepunkter: ' + e.message }) };
   }
 
-  const points = (mpData.result || []).filter(p => p.typeOfMP === 'E17');
-  if (!points.length) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Ingen forbrugsmåler fundet på denne konto' }) };
+  const allPoints = mpData.result || [];
+  // Try E17 (consumption) first, fall back to any point
+  const points = allPoints.filter(p => p.typeOfMP === 'E17').length
+    ? allPoints.filter(p => p.typeOfMP === 'E17')
+    : allPoints;
+  if (!points.length) return { statusCode: 404, headers, body: JSON.stringify({ error: `Ingen målepunkter fundet. API svarede: ${JSON.stringify(mpData).slice(0, 200)}` }) };
   const meteringPointId = points[0].meteringPointId;
 
   // 3. Fetch last 13 months of hourly data
