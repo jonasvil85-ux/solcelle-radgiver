@@ -261,7 +261,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
       <div class="field" id="spot-surcharge-field">
         <label>Spot-tillæg fra dit elselskab (kr/kWh, 0 hvis ingen)</label>
         <input type="text" id="spotSurcharge" value="0" inputmode="decimal">
-        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Nettarif + elafgift + moms (~1,50 kr/kWh) lægges automatisk oveni spotprisen</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Nettarif + systemtarif + moms (~0,36–0,44 kr/kWh) lægges oveni. Ingen el-afgift i 2026.</div>
       </div>
 
       <div class="field">
@@ -732,7 +732,7 @@ function showResults() {
   document.getElementById('rec-total-val').textContent = r.total.toLocaleString('da-DK') + ' kr';
   const priceSource = S.annualBill
     ? `din faktiske regning (${S.annualBill.toLocaleString('da-DK')} kr ÷ ${S.annualKwh.toLocaleString('da-DK')} kWh)`
-    : S.priceType === 'spot' ? 'vægtet spotpris + afgifter' : 'fast pris';
+    : S.priceType === 'spot' ? 'vægtet spotpris + nettarif + systemtarif (ingen el-afgift 2026)' : 'fast pris';
   document.getElementById('rec-price-val').textContent =
     `${S.effectiveKwhPrice.toFixed(2).replace('.',',')} kr/kWh (${priceSource})`;
   document.getElementById('rec-prod-val').textContent = r.prod.toLocaleString('da-DK') + ' kWh/år';

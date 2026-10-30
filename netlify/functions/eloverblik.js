@@ -141,8 +141,11 @@ exports.handler = async function (event) {
 
       if (totalKwh > 0) {
         const avgSpot = totalCost / totalKwh; // weighted avg spot kr/kWh (ex-moms)
-        // nettarif ~0.55 + systemtarif 0.04 + elafgift 0.761 (all ex-moms) × 1.25 moms
-        const overhead = 0.55 + 0.04 + 0.761;
+        // El-afgift: 0 kr/kWh i 2026 (afskaffet — vender tilbage 2028)
+        // Nettarif: sæsonbaseret gennemsnit, DK1 (Jylland/Fyn) ~0.22, DK2 (Sjælland) ~0.28 kr/kWh ex moms
+        // Systemtarif: ~0.07 kr/kWh ex moms
+        const nettarif = priceArea === 'DK2' ? 0.28 : 0.22;
+        const overhead = nettarif + 0.07; // ingen el-afgift i 2026
         effectiveKwhPrice = +((avgSpot + spotSurcharge + overhead) * 1.25).toFixed(3);
         processed.spotAvg = +avgSpot.toFixed(4);
         processed.priceArea = priceArea;
