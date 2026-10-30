@@ -1233,8 +1233,22 @@ function buildPaybackChart(r, withAfgift) {
 const PRICE_W = [0.3,0.3,0.3,0.3,0.3,0.3, 0.6,0.6,0.6,0.6,0.6,0.6, 0.6,0.6,0.6,0.6,0.6,1.0, 1.0,1.0,1.0,0.6,0.5,0.4];
 
 function runBatterySim(solar, profile, batKwh) {
-  // Pass 1: oplad fra solceller — split excess i batCharge + gridExport
+  // Pass 0: oplad batteriet fra billig natel (00-05) til at dække peak-timer (17-21)
+  const gridChargeArr = new Array(24).fill(0);
   let soc = 0;
+  if (batKwh > 0) {
+    const peakDeficit = Array.from({length:24},(_,h)=>h)
+      .filter(h => PRICE_W[h] >= 1.0)
+      .reduce((s,h) => s + Math.max(0, (profile[h]||0) - solar[h]), 0);
+    const toCharge = Math.min(peakDeficit, batKwh);
+    if (toCharge > 0) {
+      const perHour = toCharge / 6;
+      for (let h = 0; h < 6; h++) { gridChargeArr[h] = perHour; soc += perHour; }
+      soc = Math.min(batKwh, soc);
+    }
+  }
+
+  // Pass 1: oplad fra solceller — split excess i batCharge + gridExport
   const directArr = [], batChargeArr = [], gridExportArr = [], deficitArr = [];
   for (let h = 0; h < 24; h++) {
     const cons   = Math.max(0, profile[h] || 0);
@@ -1254,6 +1268,7 @@ function runBatterySim(solar, profile, batKwh) {
       deficitArr[h]   = cons - sol;
     }
   }
+
   // Pass 2: udlad ved dyreste timer først
   const disArr  = new Array(24).fill(0);
   const gridArr = new Array(24).fill(0);
@@ -1267,12 +1282,15 @@ function runBatterySim(solar, profile, batKwh) {
     disArr[h]  = dis;
     gridArr[h] = deficitArr[h] - dis;
   }
+
+  // batCharge = sol-oplad + net-oplad (begge vises som lilla)
+  // fromGrid  = forbrug dækket af net + net-oplad af batteri
   return {
-    direct:       directArr.map(v   => Math.max(0, +v.toFixed(3))),
-    batCharge:    batChargeArr.map(v => Math.max(0, +v.toFixed(3))),
-    gridExport:   gridExportArr.map(v=> Math.max(0, +v.toFixed(3))),
-    batDischarge: disArr.map(v       => Math.max(0, +v.toFixed(3))),
-    fromGrid:     gridArr.map(v      => Math.max(0, +v.toFixed(3))),
+    direct:       directArr.map(v    => Math.max(0, +v.toFixed(3))),
+    batCharge:    batChargeArr.map((v,h) => Math.max(0, +(v + gridChargeArr[h]).toFixed(3))),
+    gridExport:   gridExportArr.map(v => Math.max(0, +v.toFixed(3))),
+    batDischarge: disArr.map(v        => Math.max(0, +v.toFixed(3))),
+    fromGrid:     gridArr.map((g,h)   => Math.max(0, +(g + gridChargeArr[h]).toFixed(3))),
   };
 }
 
