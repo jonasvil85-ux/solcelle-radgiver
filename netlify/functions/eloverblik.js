@@ -146,6 +146,8 @@ exports.handler = async function (event) {
         effectiveKwhPrice = +((avgSpot + spotSurcharge + overhead) * 1.25).toFixed(3);
         processed.spotAvg = +avgSpot.toFixed(4);
         processed.priceArea = priceArea;
+        // Calculate estimated annual cost from actual consumption × derived price
+        processed.calculatedAnnualCost = Math.round(processed.annualKwh * effectiveKwhPrice);
       }
     } catch (_) {
       // Fall back to default if Energidataservice fails
