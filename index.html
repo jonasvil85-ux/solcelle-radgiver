@@ -462,7 +462,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
     <!-- CHART 2: OPTIMIZED PROFILE -->
     <div class="chart-card">
       <div class="chart-card-title">Optimeret forbrugsmønster — gennemsnitsdag</div>
-      <div class="chart-card-sub">Grøn = solel direkte · Amber = eksport/oplad · Blå = batteri · Grå = elnet · Orange linje = solproduktion · <span id="optimalExtra" style="color:var(--emerald);font-weight:600"></span></div>
+      <div class="chart-card-sub"><span style="color:#059669">■</span> Sol direkte · <span style="color:#7C3AED">■</span> Bat. oplader · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#0891B2">■</span> Bat. aflader · <span style="color:#6B7280">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion · <span id="optimalExtra" style="color:var(--emerald);font-weight:600"></span></div>
       <div style="font-size:11.5px;color:var(--text-3);line-height:1.6;margin:8px 0 12px;padding:10px 12px;background:rgba(5,150,105,0.04);border-radius:6px;border-left:3px solid var(--emerald)">
         Med solceller gælder det om at <strong style="color:var(--text-2)">flytte forbrug til soltimerne</strong> (ca. 09–16). Kør opvaskemaskine, vaskemaskine og tørretumbler midt på dagen. Elbilen lades direkte fra solen om sommeren. Om vinteren lades batteriet og elbilen billigst om natten (00–06). Jo mere du kan flytte, jo kortere er tilbagebetalingstiden.
       </div>
@@ -472,14 +472,14 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
     <!-- CHART 3: SUMMER FLOW -->
     <div class="chart-card">
       <div class="chart-card-title">Sommerdag — Energiflow</div>
-      <div class="chart-card-sub">Typisk sommerdag · <span style="color:#059669">■</span> Sol direkte · <span style="color:#0891B2">■</span> Batteri aflader · <span style="color:#6B7280">■</span> Fra elnet · <span style="color:#F59E0B">■</span> Eksport/oplad · <span style="color:#EA580C">—</span> Solproduktion</div>
+      <div class="chart-card-sub">Typisk sommerdag · <span style="color:#059669">■</span> Sol direkte · <span style="color:#7C3AED">■</span> Bat. oplader · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#0891B2">■</span> Bat. aflader · <span style="color:#6B7280">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion</div>
       <div class="chart-wrap" style="height:220px"><canvas id="summerFlowChart"></canvas></div>
     </div>
 
     <!-- CHART 4: WINTER FLOW -->
     <div class="chart-card">
       <div class="chart-card-title">Vinterdag — Energiflow</div>
-      <div class="chart-card-sub">Typisk vinterdag · <span style="color:#059669">■</span> Sol direkte · <span style="color:#0891B2">■</span> Batteri aflader · <span style="color:#6B7280">■</span> Fra elnet · <span style="color:#F59E0B">■</span> Eksport/oplad · <span style="color:#EA580C">—</span> Solproduktion</div>
+      <div class="chart-card-sub">Typisk vinterdag · <span style="color:#059669">■</span> Sol direkte · <span style="color:#7C3AED">■</span> Bat. oplader · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#0891B2">■</span> Bat. aflader · <span style="color:#6B7280">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion</div>
       <div class="chart-wrap" style="height:220px"><canvas id="winterFlowChart"></canvas></div>
     </div>
 
@@ -1210,23 +1210,25 @@ function buildPaybackChart(r, withAfgift) {
 const PRICE_W = [0.3,0.3,0.3,0.3,0.3,0.3, 0.6,0.6,0.6,0.6,0.6,0.6, 0.6,0.6,0.6,0.6,0.6,1.0, 1.0,1.0,1.0,0.6,0.5,0.4];
 
 function runBatterySim(solar, profile, batKwh) {
-  // Pass 1: oplad fra solceller
+  // Pass 1: oplad fra solceller — split excess i batCharge + gridExport
   let soc = 0;
-  const directArr = [], surplusArr = [], deficitArr = [];
+  const directArr = [], batChargeArr = [], gridExportArr = [], deficitArr = [];
   for (let h = 0; h < 24; h++) {
-    const cons = Math.max(0, profile[h] || 0);
-    const sol  = solar[h];
+    const cons   = Math.max(0, profile[h] || 0);
+    const sol    = solar[h];
     if (sol >= cons) {
-      directArr[h]  = cons;
-      const excess  = sol - cons;
-      const charge  = batKwh > 0 ? Math.min(excess, Math.max(0, batKwh - soc)) : 0;
+      directArr[h]    = cons;
+      const excess    = sol - cons;
+      const charge    = batKwh > 0 ? Math.min(excess, Math.max(0, batKwh - soc)) : 0;
       soc = Math.min(batKwh, soc + charge);
-      surplusArr[h] = excess;
-      deficitArr[h] = 0;
+      batChargeArr[h]  = charge;
+      gridExportArr[h] = excess - charge;
+      deficitArr[h]    = 0;
     } else {
-      directArr[h]  = sol;
-      surplusArr[h] = 0;
-      deficitArr[h] = cons - sol;
+      directArr[h]    = sol;
+      batChargeArr[h] = 0;
+      gridExportArr[h]= 0;
+      deficitArr[h]   = cons - sol;
     }
   }
   // Pass 2: udlad ved dyreste timer først
@@ -1243,10 +1245,11 @@ function runBatterySim(solar, profile, batKwh) {
     gridArr[h] = deficitArr[h] - dis;
   }
   return {
-    direct:       directArr.map(v => Math.max(0, +v.toFixed(3))),
-    surplus:      surplusArr.map(v => Math.max(0, +v.toFixed(3))),
-    batDischarge: disArr.map(v => Math.max(0, +v.toFixed(3))),
-    fromGrid:     gridArr.map(v => Math.max(0, +v.toFixed(3))),
+    direct:       directArr.map(v   => Math.max(0, +v.toFixed(3))),
+    batCharge:    batChargeArr.map(v => Math.max(0, +v.toFixed(3))),
+    gridExport:   gridExportArr.map(v=> Math.max(0, +v.toFixed(3))),
+    batDischarge: disArr.map(v       => Math.max(0, +v.toFixed(3))),
+    fromGrid:     gridArr.map(v      => Math.max(0, +v.toFixed(3))),
   };
 }
 
@@ -1262,7 +1265,7 @@ function buildFlowChart(r, season) {
   const winterBase = [0,0,0,0,0,0,0,0,0.10,0.35,0.60,0.75,0.78,0.65,0.40,0.12,0.01,0,0,0,0,0,0,0];
   const solar = (season === 'summer' ? summerBase : winterBase).map(v => Math.max(0, +(v * kWpScale).toFixed(3)));
 
-  const { direct, surplus, batDischarge, fromGrid } = runBatterySim(solar, profile || new Array(24).fill(0.2), r.batKwh || 0);
+  const { direct, batCharge, gridExport, batDischarge, fromGrid } = runBatterySim(solar, profile || new Array(24).fill(0.2), r.batKwh || 0);
 
   if (charts[chartKey]) { charts[chartKey].destroy(); delete charts[chartKey]; }
 
@@ -1275,10 +1278,11 @@ function buildFlowChart(r, season) {
     data: {
       labels: HOURS,
       datasets: [
-        { label:'Solel direkte',   data: direct,       backgroundColor:'rgba(5,150,105,0.75)',  stack:'s' },
-        { label:'Eksport/oplad',   data: surplus,      backgroundColor:'rgba(245,158,11,0.55)', stack:'s' },
-        { label:'Batteri aflader', data: batDischarge, backgroundColor:'rgba(8,145,178,0.70)',  stack:'s' },
-        { label:'Fra elnet',       data: fromGrid,     backgroundColor:'rgba(107,114,128,0.45)',stack:'s' },
+        { label:'Solel direkte',    data: direct,       backgroundColor:'rgba(5,150,105,0.75)',  stack:'s' },
+        { label:'Batteri oplader',  data: batCharge,    backgroundColor:'rgba(124,58,237,0.60)', stack:'s' },
+        { label:'Eksport til net',  data: gridExport,   backgroundColor:'rgba(245,158,11,0.55)', stack:'s' },
+        { label:'Batteri aflader',  data: batDischarge, backgroundColor:'rgba(8,145,178,0.70)',  stack:'s' },
+        { label:'Fra elnet',        data: fromGrid,     backgroundColor:'rgba(107,114,128,0.45)',stack:'s' },
         { type:'line', label:'Solproduktion', data: solar,
           borderColor:'#EA580C', backgroundColor:'transparent',
           borderWidth:2.5, pointRadius:0, tension:0.4 },
@@ -1323,7 +1327,7 @@ function buildOptimalChart(r) {
   const extra = extraKwh > 0 ? `Ekstra selvforbrug: ~${extraKwh.toLocaleString('da-DK')} kWh/år` : '';
   document.getElementById('optimalExtra').textContent = extra;
 
-  const { direct, surplus, batDischarge, fromGrid } = runBatterySim(solar, profile, r.batKwh || 0);
+  const { direct, batCharge, gridExport, batDischarge, fromGrid } = runBatterySim(solar, profile, r.batKwh || 0);
 
   if (charts.optimal) { charts.optimal.destroy(); delete charts.optimal; }
 
@@ -1336,10 +1340,11 @@ function buildOptimalChart(r) {
     data: {
       labels: HOURS,
       datasets: [
-        { label:'Solel direkte',   data: direct,       backgroundColor:'rgba(5,150,105,0.75)',  stack:'s' },
-        { label:'Eksport/oplad',   data: surplus,      backgroundColor:'rgba(245,158,11,0.55)', stack:'s' },
-        { label:'Batteri aflader', data: batDischarge, backgroundColor:'rgba(8,145,178,0.70)',  stack:'s' },
-        { label:'Fra elnet',       data: fromGrid,     backgroundColor:'rgba(107,114,128,0.45)',stack:'s' },
+        { label:'Solel direkte',    data: direct,       backgroundColor:'rgba(5,150,105,0.75)',  stack:'s' },
+        { label:'Batteri oplader',  data: batCharge,    backgroundColor:'rgba(124,58,237,0.60)', stack:'s' },
+        { label:'Eksport til net',  data: gridExport,   backgroundColor:'rgba(245,158,11,0.55)', stack:'s' },
+        { label:'Batteri aflader',  data: batDischarge, backgroundColor:'rgba(8,145,178,0.70)',  stack:'s' },
+        { label:'Fra elnet',        data: fromGrid,     backgroundColor:'rgba(107,114,128,0.45)',stack:'s' },
         { type:'line', label:'Solproduktion', data: solar,
           borderColor:'#EA580C', backgroundColor:'transparent',
           borderWidth:2.5, pointRadius:0, tension:0.4 },
