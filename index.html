@@ -472,14 +472,14 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
     <!-- CHART 3: SUMMER FLOW -->
     <div class="chart-card">
       <div class="chart-card-title">Sommerdag — Energiflow</div>
-      <div class="chart-card-sub">Typisk sommerdag (juni) · <span style="color:#059669">■</span> Sol direkte · <span style="color:#0891B2">■</span> Batteri aflader · <span style="color:#6B7280">■</span> Netköb · <span style="color:#F59E0B">■</span> Batteri oplader · <span style="color:#7C3AED">■</span> Netsalg</div>
+      <div class="chart-card-sub">Typisk sommerdag · <span style="color:#059669">■</span> Sol direkte · <span style="color:#0891B2">■</span> Batteri aflader · <span style="color:#6B7280">■</span> Fra elnet · <span style="color:#F59E0B">■</span> Eksport/oplad · <span style="color:#EA580C">—</span> Solproduktion</div>
       <div class="chart-wrap" style="height:220px"><canvas id="summerFlowChart"></canvas></div>
     </div>
 
     <!-- CHART 4: WINTER FLOW -->
     <div class="chart-card">
       <div class="chart-card-title">Vinterdag — Energiflow</div>
-      <div class="chart-card-sub">Typisk vinterdag (januar) · <span style="color:#059669">■</span> Sol direkte · <span style="color:#0891B2">■</span> Batteri aflader · <span style="color:#6B7280">■</span> Netköb · <span style="color:#F59E0B">■</span> Batteri oplader · <span style="color:#7C3AED">■</span> Netsalg</div>
+      <div class="chart-card-sub">Typisk vinterdag · <span style="color:#059669">■</span> Sol direkte · <span style="color:#0891B2">■</span> Batteri aflader · <span style="color:#6B7280">■</span> Fra elnet · <span style="color:#F59E0B">■</span> Eksport/oplad · <span style="color:#EA580C">—</span> Solproduktion</div>
       <div class="chart-wrap" style="height:220px"><canvas id="winterFlowChart"></canvas></div>
     </div>
 
@@ -1247,11 +1247,16 @@ function buildFlowChart(r, season) {
     toGrid.push(+(-tg).toFixed(3));
   }
 
+  // Eksport og batterioplad er implicit: solar-linje over stakkens top = eksport/oplad
+  // Alle bars er positive — stacked = "hvor strømmen kom fra"
+  const exportArr = solar.map((s, h) => +(Math.max(0, s - direct[h] - batCharge[h]).toFixed(3)));
+
   const opts = profileBase();
   opts.scales.x.stacked = true;
   opts.scales.y.stacked = true;
+  opts.scales.y.min = 0;
   opts.plugins.tooltip.callbacks = {
-    label: ctx => ` ${ctx.dataset.label}: ${Math.abs(ctx.parsed.y).toFixed(2)} kWh`
+    label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} kWh`
   };
   opts.scales.y.title = { display:true, text:'kWh/time', color:C.text3, font:{size:10} };
 
@@ -1261,12 +1266,11 @@ function buildFlowChart(r, season) {
     data: {
       labels: HOURS,
       datasets: [
-        { type:'line', label:'Solproduktion', data:solar, borderColor:'#EA580C', backgroundColor:'transparent', borderWidth:2, pointRadius:0, tension:0.4, stack:'_line' },
-        { label:'Solel direkte', data:direct, backgroundColor:'rgba(5,150,105,0.65)', borderColor:'#059669', borderWidth:1, stack:'pos' },
-        { label:'Batteri aflader', data:batDischarge, backgroundColor:'rgba(8,145,178,0.60)', borderColor:'#0891B2', borderWidth:1, stack:'pos' },
-        { label:'Fra elnet', data:fromGrid, backgroundColor:'rgba(107,114,128,0.35)', borderColor:'#6B7280', borderWidth:1, stack:'pos' },
-        { label:'Batteri oplader', data:batCharge, backgroundColor:'rgba(245,158,11,0.55)', borderColor:'#F59E0B', borderWidth:1, stack:'neg' },
-        { label:'Salg til net', data:toGrid, backgroundColor:'rgba(124,58,237,0.50)', borderColor:'#7C3AED', borderWidth:1, stack:'neg' },
+        { label:'Solel direkte', data:direct, backgroundColor:'rgba(5,150,105,0.70)', borderColor:'#059669', borderWidth:1, stack:'s', order:2 },
+        { label:'Batteri aflader', data:batDischarge, backgroundColor:'rgba(8,145,178,0.65)', borderColor:'#0891B2', borderWidth:1, stack:'s', order:2 },
+        { label:'Fra elnet', data:fromGrid, backgroundColor:'rgba(107,114,128,0.40)', borderColor:'#6B7280', borderWidth:1, stack:'s', order:2 },
+        { label:'Eksport/oplad', data:exportArr, backgroundColor:'rgba(245,158,11,0.35)', borderColor:'#F59E0B', borderWidth:1, borderDash:[3,3], stack:'s', order:2 },
+        { type:'line', label:'Solproduktion', data:solar, borderColor:'#EA580C', backgroundColor:'transparent', borderWidth:2.5, pointRadius:0, tension:0.4, order:1 },
       ]
     },
     options: opts
