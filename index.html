@@ -367,13 +367,15 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
           <span class="rec-row-label">⚡ Beregnet elpris</span>
           <span class="rec-row-val" id="rec-price-val">—</span>
         </div>
-        <div class="rec-row neutral">
-          <span class="rec-row-label">💰 Besparelse 2026</span>
-          <span class="rec-row-val" id="rec-sav-val">—</span>
-        </div>
-        <div class="rec-row neutral">
-          <span class="rec-row-label">💰 Besparelse fra 2028 <small style="color:var(--text-4)">(el-afgift)</small></span>
-          <span class="rec-row-val" id="rec-sav28-val">—</span>
+        <div class="rec-row neutral" style="align-items:flex-start;flex-wrap:wrap;gap:6px">
+          <span class="rec-row-label">💰 Årsbesparelse</span>
+          <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span class="rec-row-val" id="rec-sav-val">—</span>
+            <span style="display:flex;gap:4px">
+              <span class="toggle-opt selected" id="afgift-off" onclick="setAfgift(false)" style="padding:3px 8px;font-size:11px">Uden afgift</span>
+              <span class="toggle-opt" id="afgift-on" onclick="setAfgift(true)" style="padding:3px 8px;font-size:11px">Med afgift 2028</span>
+            </span>
+          </span>
         </div>
       </div>
       <div class="rec-note" id="rec-note"></div>
@@ -439,6 +441,8 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 /* ── STATE ── */
 const S = { zipcode:'', persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70 };
 let charts = {};
+let _lastRec = null;
+let _useAfgift = false;
 
 /* ── THEME ── */
 function toggleTheme() {
@@ -476,6 +480,22 @@ function toggleCheck(key) {
     updateEvEst();
   }
   if (key === 'hp') { S.hasHP = !S.hasHP; document.getElementById('ci-hp').className = 'check-item' + (S.hasHP ? ' checked' : ''); }
+}
+
+function setAfgift(on) {
+  _useAfgift = on;
+  document.getElementById('afgift-off').className = 'toggle-opt' + (!on ? ' selected' : '');
+  document.getElementById('afgift-on').className  = 'toggle-opt' + (on  ? ' selected' : '');
+  if (!_lastRec) return;
+  const r = _lastRec;
+  const sav = on ? r.sav28 : r.sav26;
+  const pb  = on ? +(r.total / r.sav28).toFixed(1) : r.payback;
+  document.getElementById('rec-sav-val').textContent     = sav.toLocaleString('da-DK') + ' kr/år';
+  document.getElementById('kpi-savings').textContent     = sav.toLocaleString('da-DK');
+  document.getElementById('kpi-payback').textContent     = '~' + pb;
+  // Rebuild payback chart with new scenario
+  if (charts.payback) { charts.payback.destroy(); delete charts.payback; }
+  buildPaybackChart(r, on);
 }
 
 function selectPriceType(type) {
@@ -655,6 +675,10 @@ function calcRec() {
 /* ── SHOW RESULTS ── */
 function showResults() {
   const r = calcRec();
+  _lastRec = r;
+  _useAfgift = false;
+  document.getElementById('afgift-off').className = 'toggle-opt selected';
+  document.getElementById('afgift-on').className  = 'toggle-opt';
 
   // KPI strip
   document.getElementById('kpi-kwp').textContent = r.kWp + ' kWp';
@@ -688,7 +712,6 @@ function showResults() {
   document.getElementById('rec-prod-val').textContent = r.prod.toLocaleString('da-DK') + ' kWh/år';
   document.getElementById('rec-self-val').textContent = `${r.selfPct}% (${r.selfCons.toLocaleString('da-DK')} kWh/år)`;
   document.getElementById('rec-sav-val').textContent = r.sav26.toLocaleString('da-DK') + ' kr/år';
-  document.getElementById('rec-sav28-val').textContent = r.sav28.toLocaleString('da-DK') + ' kr/år (+' + r.afgift.toLocaleString('da-DK') + ')';
 
   const notes = [];
   if (S.hasEV && S.evChargesHome) notes.push(`Elbil (${S.evKm.toLocaleString('da-DK')} km/år · ~${Math.round(S.evKm * 0.16).toLocaleString('da-DK')} kWh/år): lad i dagstimerne om sommeren fra solenergi og om natten om vinteren på billig natarif.`);
@@ -701,7 +724,7 @@ function showResults() {
   destroyCharts();
   buildProfileChart(r);
   buildMonthlyChart(r);
-  buildPaybackChart(r);
+  buildPaybackChart(r, false);
   buildSeasonChart(r);
   buildBatteryChart(r);
   if (S.hasEV) { document.getElementById('evChartCard').style.display=''; buildEVChart(r); }
@@ -780,17 +803,17 @@ function buildMonthlyChart(r) {
   });
 }
 
-function buildPaybackChart(r) {
+function buildPaybackChart(r, withAfgift) {
   const INV = r.total;
   const BASE26 = r.sav26;
   const BASE28 = r.sav28;
   const DEG = 0.005; const N = 16;
   const AFGIFT_YR = 3;
 
-  function cumul(base28) {
+  function cumul(useAfgift) {
     const a = [-INV];
     for (let y=1; y<N; y++) {
-      const sav = base28 && y>=AFGIFT_YR ? BASE28 : BASE26;
+      const sav = useAfgift && y>=AFGIFT_YR ? BASE28 : BASE26;
       a.push(Math.round(a[a.length-1] + sav * Math.pow(1-DEG, y-1)));
     }
     return a;
@@ -799,8 +822,8 @@ function buildPaybackChart(r) {
     for (let i=1; i<d.length; i++) if (d[i-1]<0 && d[i]>=0) return +(i-1+(-d[i-1])/(d[i]-d[i-1])).toFixed(1);
     return null;
   }
-  const d1 = cumul(true); const d2 = cumul(false);
-  const be1 = beYear(d1); const be2 = beYear(d2);
+  const d1 = cumul(withAfgift || false);
+  const be1 = beYear(d1);
 
   const paybackPlugin = {
     id:'pb',
@@ -813,19 +836,17 @@ function buildPaybackChart(r) {
       ctx.fillStyle='rgba(220,38,38,0.4)'; ctx.fillText('Investering udestående',left+6,y0+5);
       ctx.textBaseline='bottom'; ctx.fillStyle='rgba(5,150,105,0.5)'; ctx.fillText('Fortjeneste',left+6,y0-5);
 
-      [[be1,'#059669',2],[be2,'#9CA3AF',1]].forEach(([be,col,lw],idx)=>{
-        if(!be) return;
-        const xb = x.getPixelForValue(+be);
-        ctx.beginPath(); ctx.strokeStyle=col+'99'; ctx.lineWidth=lw; ctx.setLineDash([4,4]);
+      if (be1) {
+        const xb = x.getPixelForValue(+be1);
+        ctx.beginPath(); ctx.strokeStyle='#05966999'; ctx.lineWidth=2; ctx.setLineDash([4,4]);
         ctx.moveTo(xb,top+28); ctx.lineTo(xb,bottom); ctx.stroke(); ctx.setLineDash([]);
-        const txt=`År ${String(be).replace('.',',')}`;
-        ctx.font=`${lw>1?'bold ':''}10px Inter,sans-serif`; ctx.textAlign='center';
-        const tw=ctx.measureText(txt).width+8;
-        const ly=top+28+idx*16;
+        const txt=`År ${String(be1).replace('.',',')}`;
+        ctx.font='bold 10px Inter,sans-serif'; ctx.textAlign='center';
+        const tw=ctx.measureText(txt).width+8; const ly=top+28;
         ctx.fillStyle=isDark()?'rgba(30,41,59,0.9)':'rgba(255,255,255,0.9)';
         ctx.fillRect(xb-tw/2,ly,tw,14);
-        ctx.fillStyle=col; ctx.textBaseline='top'; ctx.fillText(txt,xb,ly+1);
-      });
+        ctx.fillStyle='#059669'; ctx.textBaseline='top'; ctx.fillText(txt,xb,ly+1);
+      }
       ctx.restore();
     }
   };
@@ -836,8 +857,7 @@ function buildPaybackChart(r) {
     data:{
       labels:Array.from({length:N},(_,i)=>i),
       datasets:[
-        { label:'Med el-afgift 2028', data:d1, borderColor:'#059669', borderWidth:2.5, pointRadius:2, pointBackgroundColor:'#059669', fill:{target:'origin',above:'rgba(5,150,105,0.10)',below:'rgba(220,38,38,0.08)'}, tension:0.15 },
-        { label:'Baseline (nu)', data:d2, borderColor:'#9CA3AF', borderWidth:1.5, borderDash:[5,4], pointRadius:0, fill:false, tension:0.15 },
+        { label: withAfgift ? 'Med el-afgift 2028' : 'Uden el-afgift', data:d1, borderColor:'#059669', borderWidth:2.5, pointRadius:2, pointBackgroundColor:'#059669', fill:{target:'origin',above:'rgba(5,150,105,0.10)',below:'rgba(220,38,38,0.08)'}, tension:0.15 },
       ]
     },
     options:{
