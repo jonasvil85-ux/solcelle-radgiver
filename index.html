@@ -613,7 +613,7 @@ function showResults() {
   document.getElementById('rec-sav28-val').textContent = r.sav28.toLocaleString('da-DK') + ' kr/år (+' + r.afgift.toLocaleString('da-DK') + ')';
 
   const notes = [];
-  if (S.hasEV && S.evChargesHome) notes.push(`Elbil (${S.evKm.toLocaleString('da-DK')} km/år · ~${Math.round(evKwhTotal).toLocaleString('da-DK')} kWh/år): lad i dagstimerne om sommeren fra solenergi og om natten om vinteren på billig natarif.`);
+  if (S.hasEV && S.evChargesHome) notes.push(`Elbil (${S.evKm.toLocaleString('da-DK')} km/år · ~${Math.round(S.evKm * 0.16).toLocaleString('da-DK')} kWh/år): lad i dagstimerne om sommeren fra solenergi og om natten om vinteren på billig natarif.`);
   if (S.hasEV && !S.evChargesHome) notes.push(`Elbil (${S.evKm.toLocaleString('da-DK')} km/år): da du primært lader ude, bidrager elbilen minimalt til dit hjemmeforbrug — solanlægget er dimensioneret efter husforbruget.`);
   if (S.hasHP) notes.push('Varmepumpe: stor del af forbruget er om vinteren — sol hjælper primært maj–september.');
   if (!S.isOwner) notes.push('Husk at indhente udlejers tilladelse inden installation.');
