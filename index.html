@@ -1206,6 +1206,50 @@ function buildPaybackChart(r, withAfgift) {
   });
 }
 
+// Typisk dansk timepris-vægt (lav nettarif nat, høj 17-21)
+const PRICE_W = [0.3,0.3,0.3,0.3,0.3,0.3, 0.6,0.6,0.6,0.6,0.6,0.6, 0.6,0.6,0.6,0.6,0.6,1.0, 1.0,1.0,1.0,0.6,0.5,0.4];
+
+function runBatterySim(solar, profile, batKwh) {
+  // Pass 1: oplad fra solceller
+  let soc = 0;
+  const directArr = [], surplusArr = [], deficitArr = [];
+  for (let h = 0; h < 24; h++) {
+    const cons = Math.max(0, profile[h] || 0);
+    const sol  = solar[h];
+    if (sol >= cons) {
+      directArr[h]  = cons;
+      const excess  = sol - cons;
+      const charge  = batKwh > 0 ? Math.min(excess, Math.max(0, batKwh - soc)) : 0;
+      soc = Math.min(batKwh, soc + charge);
+      surplusArr[h] = excess;
+      deficitArr[h] = 0;
+    } else {
+      directArr[h]  = sol;
+      surplusArr[h] = 0;
+      deficitArr[h] = cons - sol;
+    }
+  }
+  // Pass 2: udlad ved dyreste timer først
+  const disArr  = new Array(24).fill(0);
+  const gridArr = new Array(24).fill(0);
+  const dHours  = Array.from({length:24},(_,h)=>h)
+    .filter(h => deficitArr[h] > 0)
+    .sort((a,b) => PRICE_W[b] - PRICE_W[a]);
+  let avail = soc;
+  for (const h of dHours) {
+    const dis = Math.min(deficitArr[h], avail);
+    avail -= dis;
+    disArr[h]  = dis;
+    gridArr[h] = deficitArr[h] - dis;
+  }
+  return {
+    direct:       directArr.map(v => Math.max(0, +v.toFixed(3))),
+    surplus:      surplusArr.map(v => Math.max(0, +v.toFixed(3))),
+    batDischarge: disArr.map(v => Math.max(0, +v.toFixed(3))),
+    fromGrid:     gridArr.map(v => Math.max(0, +v.toFixed(3))),
+  };
+}
+
 function buildFlowChart(r, season) {
   const profile = season === 'summer'
     ? (S.summerHourlyProfile || S.hourlyProfile)
@@ -1218,33 +1262,7 @@ function buildFlowChart(r, season) {
   const winterBase = [0,0,0,0,0,0,0,0,0.10,0.35,0.60,0.75,0.78,0.65,0.40,0.12,0.01,0,0,0,0,0,0,0];
   const solar = (season === 'summer' ? summerBase : winterBase).map(v => Math.max(0, +(v * kWpScale).toFixed(3)));
 
-  const batKwh = r.batKwh || 0;
-  let soc = batKwh * 0.5;
-  const direct = [], surplus = [], batDischarge = [], fromGrid = [];
-
-  for (let h = 0; h < 24; h++) {
-    const cons = Math.max(0, profile[h]);
-    const sol  = solar[h];
-    let d, s, dis, g;
-    if (sol >= cons) {
-      d = cons;
-      const excess = sol - cons;
-      const charge = batKwh > 0 ? Math.min(excess, Math.max(0, batKwh - soc)) : 0;
-      soc = Math.min(batKwh, soc + charge);
-      s   = excess;   // alt overskud: opladning + eksport
-      dis = 0; g = 0;
-    } else {
-      const deficit = cons - sol;
-      d = sol; s = 0;
-      dis = Math.min(deficit, soc);
-      soc = Math.max(0, soc - dis);
-      g   = deficit - dis;
-    }
-    direct.push(Math.max(0, +d.toFixed(3)));
-    surplus.push(Math.max(0, +s.toFixed(3)));
-    batDischarge.push(Math.max(0, +dis.toFixed(3)));
-    fromGrid.push(Math.max(0, +g.toFixed(3)));
-  }
+  const { direct, surplus, batDischarge, fromGrid } = runBatterySim(solar, profile || new Array(24).fill(0.2), r.batKwh || 0);
 
   if (charts[chartKey]) { charts[chartKey].destroy(); delete charts[chartKey]; }
 
@@ -1305,32 +1323,7 @@ function buildOptimalChart(r) {
   const extra = extraKwh > 0 ? `Ekstra selvforbrug: ~${extraKwh.toLocaleString('da-DK')} kWh/år` : '';
   document.getElementById('optimalExtra').textContent = extra;
 
-  // Battery simulation — same logic as buildFlowChart
-  const batKwh = r.batKwh || 0;
-  let soc = batKwh * 0.5;
-  const direct = [], surplus = [], batDischarge = [], fromGrid = [];
-
-  for (let h = 0; h < 24; h++) {
-    const cons = profile[h], sol = solar[h];
-    let d, s, dis, g;
-    if (sol >= cons) {
-      d = cons;
-      const excess = sol - cons;
-      const charge = batKwh > 0 ? Math.min(excess, Math.max(0, batKwh - soc)) : 0;
-      soc = Math.min(batKwh, soc + charge);
-      s = excess; dis = 0; g = 0;
-    } else {
-      const deficit = cons - sol;
-      d = sol; s = 0;
-      dis = Math.min(deficit, soc);
-      soc = Math.max(0, soc - dis);
-      g = deficit - dis;
-    }
-    direct.push(Math.max(0, +d.toFixed(3)));
-    surplus.push(Math.max(0, +s.toFixed(3)));
-    batDischarge.push(Math.max(0, +dis.toFixed(3)));
-    fromGrid.push(Math.max(0, +g.toFixed(3)));
-  }
+  const { direct, surplus, batDischarge, fromGrid } = runBatterySim(solar, profile, r.batKwh || 0);
 
   if (charts.optimal) { charts.optimal.destroy(); delete charts.optimal; }
 
