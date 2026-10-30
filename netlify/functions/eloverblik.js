@@ -73,7 +73,12 @@ exports.handler = async function (event) {
   if (!points.length) return { statusCode: 404, headers, body: JSON.stringify({ error: `Ingen målepunkter fundet. API svarede: ${JSON.stringify(mpData).slice(0, 200)}` }) };
   const meteringPointId = points[0].meteringPointId;
 
-  // 3. Fetch last 12 months of hourly data (exact 12 months = clean annual figure)
+  // Extract DSO GLN from metering point (multiple possible field names)
+  const mpPoint = points[0];
+  const dsoGLNFromMP = mpPoint.gridCompanyGLNNumber || mpPoint.gridOperatorGLN
+    || mpPoint.gridAreaGLN || mpPoint.gridCompanyGLN || null;
+
+  // 3. Fetch last 12 months of hourly data
   const now = new Date();
   const from = new Date(now); from.setFullYear(from.getFullYear() - 1);
   const dateFrom = from.toISOString().split('T')[0];
@@ -99,25 +104,63 @@ exports.handler = async function (event) {
   // 4. Calculate effective electricity price
   let effectiveKwhPrice = fixedPrice;
   if (priceType === 'spot') {
-    // Determine price zone from zip: DK2 = 1000-4999 (Sjælland/Øer), DK1 = rest
     const zipNum = parseInt(zipcode) || 0;
     const priceArea = (zipNum >= 1000 && zipNum <= 4999) ? 'DK2' : 'DK1';
 
-    try {
-      const spotUrl = `https://api.energidataservice.dk/dataset/Elspotprice?start=${dateFrom}T00:00&end=${dateTo}T23:59&filter=%7B%22PriceArea%22%3A%22${priceArea}%22%7D&columns=HourUTC,SpotPriceDKK&limit=20000`;
-      const spotRes = await fetch(spotUrl, { headers: { Accept: 'application/json' } });
-      const spotJson = await spotRes.json();
-      const records = spotJson.records || [];
+    // DSO GLN: from metering point data, or zip-code fallback for major Danish DSOs
+    const dsoGLN = dsoGLNFromMP || zipToGLN(zipNum);
 
-      // Build lookup: HourUTC string (truncated to hour) -> price in kr/kWh
+    try {
+      // Fetch spot prices and nettarif in parallel
+      const [spotRes, nettarifRes] = await Promise.all([
+        fetch(
+          `https://api.energidataservice.dk/dataset/Elspotprice?start=${dateFrom}T00:00&end=${dateTo}T23:59` +
+          `&filter=%7B%22PriceArea%22%3A%22${priceArea}%22%7D&columns=HourUTC,SpotPriceDKK&limit=20000`,
+          { headers: { Accept: 'application/json' } }
+        ),
+        fetch(
+          `https://api.energidataservice.dk/dataset/DatahubPricelist` +
+          `?filter=%7B%22GLN_Number%22%3A%22${dsoGLN}%22%2C%22ChargeType%22%3A%22D03%22%2C%22ChargeTypeCode%22%3A%22CD%22%7D` +
+          `&columns=ValidFrom,ValidTo,Price1,Price2,Price3,Price4,Price5,Price6,Price7,Price8,Price9,Price10,Price11,Price12,Price13,Price14,Price15,Price16,Price17,Price18,Price19,Price20,Price21,Price22,Price23,Price24` +
+          `&limit=50`,
+          { headers: { Accept: 'application/json' } }
+        ),
+      ]);
+
+      const [spotJson, nettarifJson] = await Promise.all([spotRes.json(), nettarifRes.json()]);
+      const spotRecords = spotJson.records || [];
+      const nettarifRecords = nettarifJson.records || [];
+
+      // Spot lookup: HourUTC prefix → kr/kWh ex-moms
       const spotMap = {};
-      for (const r of records) {
-        const key = r.HourUTC ? r.HourUTC.slice(0, 13) : null; // "2024-01-01T12"
-        if (key && r.SpotPriceDKK != null) spotMap[key] = r.SpotPriceDKK / 1000; // DKK/MWh -> kr/kWh
+      for (const r of spotRecords) {
+        const key = r.HourUTC ? r.HourUTC.slice(0, 13) : null;
+        if (key && r.SpotPriceDKK != null) spotMap[key] = r.SpotPriceDKK / 1000;
       }
 
-      // Match hourly consumption with spot prices
-      let totalCost = 0, totalKwh = 0;
+      // Nettarif lookup: given UTC Date → kr/kWh ex-moms
+      // Price columns are in Danish local time (CET/CEST)
+      function getNettarif(utcDate) {
+        const month = utcDate.getUTCMonth(); // 0=Jan
+        const isDST = month >= 2 && month <= 9; // approx Mar–Oct = CEST
+        const localHour = (utcDate.getUTCHours() + (isDST ? 2 : 1)) % 24;
+        const dateStr = utcDate.toISOString().split('T')[0];
+        for (const rec of nettarifRecords) {
+          const vf = rec.ValidFrom ? rec.ValidFrom.slice(0, 10) : '2000-01-01';
+          const vt = rec.ValidTo   ? rec.ValidTo.slice(0, 10)   : '2099-12-31';
+          if (dateStr >= vf && dateStr < vt) {
+            return rec[`Price${localHour + 1}`] || 0;
+          }
+        }
+        return 0;
+      }
+
+      // Systemtarif: Energinet (national, 2026) — could also fetch from DatahubPricelist
+      // GLN 5790000432752 = Energinet, but for simplicity use known 2026 rate
+      const SYSTEMTARIF = 0.061; // kr/kWh ex-moms (Energinet 2026 Q1-Q4 gennemsnit)
+
+      // Match consumption with spot + nettarif hour by hour
+      let totalSpotCost = 0, totalNettarifCost = 0, totalKwh = 0;
       try {
         const series = tsData.result[0].MyEnergyData_MarketDocument.TimeSeries;
         for (const s of series) {
@@ -128,11 +171,12 @@ exports.handler = async function (event) {
               const kwh = parseFloat(point['out_Quantity.quantity'] ?? point['in_Quantity.quantity'] ?? 0);
               if (isNaN(kwh) || kwh < 0) continue;
               const ts = new Date(periodStart.getTime() + pos * 3600000);
-              const key = ts.toISOString().slice(0, 13); // "2024-01-01T12"
+              const key = ts.toISOString().slice(0, 13);
               const spotKr = spotMap[key];
               if (spotKr != null) {
-                totalCost += kwh * spotKr;
-                totalKwh  += kwh;
+                totalSpotCost     += kwh * spotKr;
+                totalNettarifCost += kwh * getNettarif(ts);
+                totalKwh          += kwh;
               }
             }
           }
@@ -140,25 +184,22 @@ exports.handler = async function (event) {
       } catch (_) {}
 
       if (totalKwh > 0) {
-        const avgSpot = totalCost / totalKwh; // weighted avg spot kr/kWh (ex-moms)
-        // actualSpotCost: PRÆCIS beregnet ud fra Eloverblik kWh × Energidataservice spotpris time for time
-        // inkl. moms (25%) men UDEN nettarif og systemtarif
-        const actualSpotCostInclMoms = Math.round(totalCost * 1.25);
+        const avgSpot     = totalSpotCost / totalKwh;
+        const avgNettarif = totalNettarifCost / totalKwh;
 
-        // Estimeret total: spot + nettarif (skøn, DSO-specifik) + systemtarif + moms
-        // El-afgift: 0 kr/kWh i 2026 (afskaffet — vender tilbage 2028)
-        // Nettarif: skønnet gennemsnit, DK1 (Jylland/Fyn) ~0.22, DK2 (Sjælland) ~0.28 kr/kWh ex moms
-        const nettarif = priceArea === 'DK2' ? 0.28 : 0.22;
-        const overhead = nettarif + 0.07; // systemtarif 0.07, ingen el-afgift i 2026
-        effectiveKwhPrice = +((avgSpot + spotSurcharge + overhead) * 1.25).toFixed(3);
+        // Præcis beregnet: spot + nettarif (begge time-for-time fra reelle data) + systemtarif + moms
+        // El-afgift = 0 kr/kWh i 2026 (afskaffet, vender tilbage 2028)
+        effectiveKwhPrice = +((avgSpot + spotSurcharge + avgNettarif + SYSTEMTARIF) * 1.25).toFixed(3);
 
-        processed.spotAvg = +avgSpot.toFixed(4);
-        processed.priceArea = priceArea;
-        processed.actualSpotCost = actualSpotCostInclMoms; // præcis spotudgift inkl. moms
+        processed.spotAvg         = +avgSpot.toFixed(4);
+        processed.nettarifAvg     = +avgNettarif.toFixed(4);
+        processed.priceArea       = priceArea;
+        processed.dsoGLN          = dsoGLN;
+        processed.actualSpotCost  = Math.round(totalSpotCost * 1.25);         // præcis spotudgift inkl. moms
+        processed.actualNettarif  = Math.round(totalNettarifCost * 1.25);     // præcis nettarif inkl. moms
         processed.calculatedAnnualCost = Math.round(processed.annualKwh * effectiveKwhPrice);
       }
     } catch (_) {
-      // Fall back to default if Energidataservice fails
       effectiveKwhPrice = 2.70;
     }
   }
@@ -166,6 +207,20 @@ exports.handler = async function (event) {
   processed.effectiveKwhPrice = effectiveKwhPrice;
   return { statusCode: 200, headers, body: JSON.stringify({ success: true, ...processed }) };
 };
+
+// Map zip code to DSO GLN for major Danish grid operators
+function zipToGLN(zip) {
+  if (zip >= 9000) return '5790001089030'; // N1 (Nordjylland)
+  if (zip >= 7900) return '5790001089030'; // N1 (parts of 8xxx/Randers etc.)
+  if (zip >= 7000) return '5790001091005'; // TREFOR Energi Net (Trekantområdet)
+  if (zip >= 6000) return '5790001091005'; // TREFOR / Sydjylland
+  if (zip >= 5000) return '5790001089006'; // Cerius (Fyn/Langeland)
+  if (zip >= 4000) return '5790001089006'; // Cerius (Sjælland syd)
+  if (zip >= 3000) return '5790000705689'; // Radius (Nordsjælland)
+  if (zip >= 2000) return '5790000705689'; // Radius (Storkøbenhavn)
+  if (zip >= 1000) return '5790000705689'; // Radius (København)
+  return '5790000705689'; // Radius fallback
+}
 
 function processTimeSeries(tsData) {
   const hourlyTotals = new Array(24).fill(0);

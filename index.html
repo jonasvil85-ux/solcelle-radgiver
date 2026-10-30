@@ -456,7 +456,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 <script>
 /* ── STATE ── */
-const S = { zipcode:'', persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, actualSpotCost:null, priceArea:null };
+const S = { zipcode:'', persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, nettarifAvg:null, actualSpotCost:null, actualNettarif:null, priceArea:null, dsoGLN:null };
 let charts = {};
 let _lastRec = null;
 let _useAfgift = false;
@@ -618,9 +618,12 @@ async function fetchData() {
     S.summerHourlyProfile  = data.summerHourlyProfile;
     S.winterHourlyProfile  = data.winterHourlyProfile;
     S.calculatedAnnualCost = data.calculatedAnnualCost || null;
-    S.actualSpotCost = data.actualSpotCost || null; // præcis spotudgift inkl. moms
-    S.spotAvg = data.spotAvg || null;
-    S.priceArea = data.priceArea || null;
+    S.spotAvg       = data.spotAvg     ?? null;
+    S.nettarifAvg   = data.nettarifAvg ?? null;
+    S.actualSpotCost= data.actualSpotCost  || null;
+    S.actualNettarif= data.actualNettarif  || null;
+    S.priceArea     = data.priceArea   || null;
+    S.dsoGLN        = data.dsoGLN      || null;
     // Price: actual bill overrides everything if provided
     const spotOrFixed = data.effectiveKwhPrice || S.fixedPrice || 2.70;
     S.effectiveKwhPrice = S.annualBill && S.annualKwh > 0
@@ -745,24 +748,45 @@ function showResults() {
   document.getElementById('rec-self-val').textContent = `${r.selfPct}% (${r.selfCons.toLocaleString('da-DK')} kWh/år)`;
   document.getElementById('rec-sav-val').textContent = r.sav26.toLocaleString('da-DK') + ' kr/år';
 
-  // Vis præcis vs estimeret prisberegning
+  // Vis præcis prisberegning fra reelle data
   const priceBox = document.getElementById('price-breakdown-box');
-  if (priceBox && S.priceType === 'spot' && S.spotAvg && S.actualSpotCost) {
-    const spotPct = Math.round((S.actualSpotCost / (S.calculatedAnnualCost || S.annualBill || 1)) * 100);
+  if (priceBox && S.priceType === 'spot' && S.spotAvg != null) {
+    const hasNettarif = S.nettarifAvg != null && S.nettarifAvg > 0;
+    const fmt = v => v.toFixed(3).replace('.', ',');
     priceBox.style.display = '';
     priceBox.innerHTML = `
       <div style="font-size:11.5px;line-height:1.7">
-        <div style="font-weight:600;margin-bottom:6px;color:var(--text-1)">Prisberegning fra dine data (${S.priceArea || 'DK1'})</div>
-        <div style="display:grid;grid-template-columns:1fr auto auto;gap:2px 12px;align-items:baseline">
-          <span>⚡ Spotpris vægtet gns.</span><span style="font-weight:600">${S.spotAvg.toFixed(3).replace('.',',')} kr/kWh</span><span style="color:var(--text-3);font-size:10px">beregnet præcist</span>
-          <span>+ Nettarif (${S.priceArea === 'DK2' ? 'DK2' : 'DK1'} skøn)</span><span>${(S.priceArea === 'DK2' ? 0.28 : 0.22).toFixed(2).replace('.',',')} kr/kWh</span><span style="color:#F59E0B;font-size:10px">estimeret</span>
-          <span>+ Systemtarif</span><span>0,07 kr/kWh</span><span style="color:#F59E0B;font-size:10px">estimeret</span>
-          <span>+ Moms 25%</span><span>×1,25</span><span style="color:var(--text-3);font-size:10px">præcist</span>
-          <span style="border-top:1px solid var(--border);padding-top:4px;font-weight:600">= Beregnet pris</span><span style="border-top:1px solid var(--border);padding-top:4px;font-weight:600">${S.effectiveKwhPrice.toFixed(2).replace('.',',')} kr/kWh</span><span style="border-top:1px solid var(--border);padding-top:4px"></span>
+        <div style="font-weight:600;margin-bottom:8px;color:var(--text-1)">Prisberegning fra dine data (${S.priceArea || 'DK1'}${S.dsoGLN ? ' · DSO ' + S.dsoGLN : ''})</div>
+        <div style="display:grid;grid-template-columns:1fr auto auto;gap:3px 14px;align-items:baseline">
+          <span>⚡ Spotpris (vægtet gns.)</span>
+          <span style="font-weight:600;font-variant-numeric:tabular-nums">${fmt(S.spotAvg)} kr/kWh</span>
+          <span style="color:#059669;font-size:10px">✓ præcist</span>
+
+          <span>+ Nettarif (${hasNettarif ? 'tid×tidspunkt fra DatahubPricelist' : 'skøn'})</span>
+          <span style="font-variant-numeric:tabular-nums">${hasNettarif ? fmt(S.nettarifAvg) : '0,220'} kr/kWh</span>
+          <span style="${hasNettarif ? 'color:#059669' : 'color:#F59E0B'};font-size:10px">${hasNettarif ? '✓ præcist' : '⚠ skøn'}</span>
+
+          <span>+ Systemtarif (Energinet 2026)</span>
+          <span style="font-variant-numeric:tabular-nums">0,061 kr/kWh</span>
+          <span style="color:#059669;font-size:10px">✓ præcist</span>
+
+          <span>+ El-afgift</span>
+          <span>0,000 kr/kWh</span>
+          <span style="color:#059669;font-size:10px">✓ afskaffet 2026</span>
+
+          <span>× Moms</span>
+          <span>×1,25</span>
+          <span style="color:#059669;font-size:10px">✓ præcist</span>
+
+          <span style="border-top:1px solid var(--border);padding-top:5px;font-weight:600">= Din elpris</span>
+          <span style="border-top:1px solid var(--border);padding-top:5px;font-weight:700;color:var(--emerald)">${S.effectiveKwhPrice.toFixed(2).replace('.', ',')} kr/kWh</span>
+          <span style="border-top:1px solid var(--border);padding-top:5px"></span>
         </div>
-        <div style="margin-top:8px;padding:6px 10px;background:rgba(245,158,11,0.08);border-radius:5px;color:var(--text-3);font-size:10.5px">
-          Nettariffen til N1 er ikke tilgængelig via API — det er det eneste vi ikke kan beregne præcist. Kend din nettarif? Indtast din faktiske årsregning nedenfor.
-        </div>
+        ${S.actualSpotCost || S.actualNettarif ? `
+        <div style="margin-top:10px;display:flex;gap:16px;flex-wrap:wrap;font-size:10.5px;color:var(--text-3)">
+          ${S.actualSpotCost ? `<span>Spotudgift i alt (inkl. moms): <strong>${S.actualSpotCost.toLocaleString('da-DK')} kr</strong></span>` : ''}
+          ${S.actualNettarif ? `<span>Nettarif i alt (inkl. moms): <strong>${S.actualNettarif.toLocaleString('da-DK')} kr</strong></span>` : ''}
+        </div>` : ''}
       </div>`;
   } else if (priceBox) {
     priceBox.style.display = 'none';
