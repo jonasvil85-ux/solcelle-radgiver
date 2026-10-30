@@ -9,10 +9,14 @@ exports.handler = async function (event) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 
-  let refreshToken;
+  let refreshToken, priceType, fixedPrice, spotSurcharge, zipcode;
   try {
     const body = JSON.parse(event.body || '{}');
-    refreshToken = body.refreshToken;
+    refreshToken  = body.refreshToken;
+    priceType     = body.priceType || 'spot';
+    fixedPrice    = parseFloat(body.fixedPrice) || 2.70;
+    spotSurcharge = parseFloat(body.spotSurcharge) || 0;
+    zipcode       = body.zipcode || '';
   } catch (e) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Ugyldig forespørgsel: ' + e.message }) };
   }
@@ -30,15 +34,13 @@ exports.handler = async function (event) {
   }
 
   if (!tokenRes.ok) {
-    const txt = await tokenRes.text().catch(() => '');
+    await tokenRes.text().catch(() => '');
     return { statusCode: 401, headers, body: JSON.stringify({ error: `Ugyldigt token (${tokenRes.status}) — tjek at du kopierede det korrekt fra eloverblik.dk` }) };
   }
 
   let dataToken;
   try {
-    const tokenText = await tokenRes.text();
-    const tokenJson = JSON.parse(tokenText);
-    // result is the data token string directly
+    const tokenJson = JSON.parse(await tokenRes.text());
     dataToken = typeof tokenJson.result === 'string'
       ? tokenJson.result
       : tokenJson.result?.token ?? tokenJson.token ?? tokenJson.access_token;
@@ -65,7 +67,6 @@ exports.handler = async function (event) {
   }
 
   const allPoints = mpData.result || [];
-  // Try E17 (consumption) first, fall back to any point
   const points = allPoints.filter(p => p.typeOfMP === 'E17').length
     ? allPoints.filter(p => p.typeOfMP === 'E17')
     : allPoints;
@@ -94,12 +95,75 @@ exports.handler = async function (event) {
   }
 
   const processed = processTimeSeries(tsData);
+
+  // 4. Calculate effective electricity price
+  let effectiveKwhPrice = fixedPrice;
+  if (priceType === 'spot') {
+    // Determine price zone from zip: DK2 = 1000-4999 (Sjælland/Øer), DK1 = rest
+    const zipNum = parseInt(zipcode) || 0;
+    const priceArea = (zipNum >= 1000 && zipNum <= 4999) ? 'DK2' : 'DK1';
+
+    try {
+      const spotUrl = `https://api.energidataservice.dk/dataset/Elspotprice?start=${dateFrom}T00:00&end=${dateTo}T23:59&filter=%7B%22PriceArea%22%3A%22${priceArea}%22%7D&columns=HourUTC,SpotPriceDKK&limit=20000`;
+      const spotRes = await fetch(spotUrl, { headers: { Accept: 'application/json' } });
+      const spotJson = await spotRes.json();
+      const records = spotJson.records || [];
+
+      // Build lookup: HourUTC string (truncated to hour) -> price in kr/kWh
+      const spotMap = {};
+      for (const r of records) {
+        const key = r.HourUTC ? r.HourUTC.slice(0, 13) : null; // "2024-01-01T12"
+        if (key && r.SpotPriceDKK != null) spotMap[key] = r.SpotPriceDKK / 1000; // DKK/MWh -> kr/kWh
+      }
+
+      // Match hourly consumption with spot prices
+      let totalCost = 0, totalKwh = 0;
+      try {
+        const series = tsData.result[0].MyEnergyData_MarketDocument.TimeSeries;
+        for (const s of series) {
+          for (const period of s.Period) {
+            const periodStart = new Date(period.timeInterval.start);
+            for (const point of period.Point) {
+              const pos = parseInt(point.position) - 1;
+              const kwh = parseFloat(point['out_Quantity.quantity'] ?? point['in_Quantity.quantity'] ?? 0);
+              if (isNaN(kwh) || kwh < 0) continue;
+              const ts = new Date(periodStart.getTime() + pos * 3600000);
+              const key = ts.toISOString().slice(0, 13); // "2024-01-01T12"
+              const spotKr = spotMap[key];
+              if (spotKr != null) {
+                totalCost += kwh * spotKr;
+                totalKwh  += kwh;
+              }
+            }
+          }
+        }
+      } catch (_) {}
+
+      if (totalKwh > 0) {
+        const avgSpot = totalCost / totalKwh; // weighted avg spot kr/kWh (ex-moms)
+        // nettarif ~0.55 + systemtarif 0.04 + elafgift 0.761 (all ex-moms) × 1.25 moms
+        const overhead = 0.55 + 0.04 + 0.761;
+        effectiveKwhPrice = +((avgSpot + spotSurcharge + overhead) * 1.25).toFixed(3);
+        processed.spotAvg = +avgSpot.toFixed(4);
+        processed.priceArea = priceArea;
+      }
+    } catch (_) {
+      // Fall back to default if Energidataservice fails
+      effectiveKwhPrice = 2.70;
+    }
+  }
+
+  processed.effectiveKwhPrice = effectiveKwhPrice;
   return { statusCode: 200, headers, body: JSON.stringify({ success: true, ...processed }) };
 };
 
 function processTimeSeries(tsData) {
   const hourlyTotals = new Array(24).fill(0);
   const hourlyCounts = new Array(24).fill(0);
+  const summerTotals = new Array(24).fill(0); // Apr-Sep (months 3-8)
+  const summerCounts = new Array(24).fill(0);
+  const winterTotals = new Array(24).fill(0); // Oct-Mar (months 9-2)
+  const winterCounts = new Array(24).fill(0);
   const monthlyTotals = new Array(12).fill(0);
   let annualKwh = 0;
 
@@ -107,7 +171,8 @@ function processTimeSeries(tsData) {
     const series = tsData.result[0].MyEnergyData_MarketDocument.TimeSeries;
     for (const s of series) {
       for (const period of s.Period) {
-        const month = new Date(period.timeInterval.start).getMonth();
+        const month = new Date(period.timeInterval.start).getMonth(); // 0=Jan
+        const isSummer = month >= 3 && month <= 8;
         for (const point of period.Point) {
           const hour = (parseInt(point.position) - 1) % 24;
           const kwh = parseFloat(point['out_Quantity.quantity'] ?? point['in_Quantity.quantity'] ?? 0);
@@ -116,19 +181,23 @@ function processTimeSeries(tsData) {
             hourlyCounts[hour]++;
             monthlyTotals[month] += kwh;
             annualKwh += kwh;
+            if (isSummer) { summerTotals[hour] += kwh; summerCounts[hour]++; }
+            else           { winterTotals[hour] += kwh; winterCounts[hour]++; }
           }
         }
       }
     }
   } catch (_) { }
 
-  const hourlyProfile = hourlyTotals.map((t, h) =>
-    hourlyCounts[h] > 0 ? +((t / hourlyCounts[h]).toFixed(3)) : 0
+  const avg = (totals, counts) => totals.map((t, h) =>
+    counts[h] > 0 ? +((t / counts[h]).toFixed(3)) : 0
   );
 
   return {
     annualKwh: Math.round(annualKwh),
-    hourlyProfile,
+    hourlyProfile:       avg(hourlyTotals, hourlyCounts),
+    summerHourlyProfile: avg(summerTotals, summerCounts),
+    winterHourlyProfile: avg(winterTotals, winterCounts),
     monthlyProfile: monthlyTotals.map(Math.round),
   };
 }

@@ -244,6 +244,26 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
         Som lejer kræver solceller normalt udlejers tilladelse. Tjek din lejekontrakt eller tal med din udlejer.
       </div>
 
+      <div class="field">
+        <label>Elpristype</label>
+        <div class="toggle-group">
+          <div class="toggle-opt selected" id="opt-spot" onclick="selectPriceType('spot')">Spotpris</div>
+          <div class="toggle-opt" id="opt-fixed" onclick="selectPriceType('fixed')">Fast pris</div>
+        </div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:6px" id="price-hint">
+          Vi henter din faktiske gennemsnitlige spotpris fra Energidataservice.dk baseret på dit forbrug
+        </div>
+      </div>
+      <div class="field hidden" id="fixed-price-field">
+        <label>Din samlede faste pris inkl. afgifter (kr/kWh)</label>
+        <input type="text" id="fixedPrice" value="2.70" inputmode="decimal">
+      </div>
+      <div class="field" id="spot-surcharge-field">
+        <label>Spot-tillæg fra dit elselskab (kr/kWh, 0 hvis ingen)</label>
+        <input type="text" id="spotSurcharge" value="0" inputmode="decimal">
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Nettarif + elafgift + moms (~1,50 kr/kWh) lægges automatisk oveni spotprisen</div>
+      </div>
+
       <div class="error-box" id="err1"></div>
       <button class="btn btn-primary" onclick="goStep2()">Næste: Hent dit forbrug →</button>
     </div>
@@ -344,6 +364,10 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
           <span class="rec-row-val" id="rec-self-val">—</span>
         </div>
         <div class="rec-row neutral">
+          <span class="rec-row-label">⚡ Beregnet elpris</span>
+          <span class="rec-row-val" id="rec-price-val">—</span>
+        </div>
+        <div class="rec-row neutral">
           <span class="rec-row-label">💰 Besparelse 2026</span>
           <span class="rec-row-val" id="rec-sav-val">—</span>
         </div>
@@ -376,6 +400,34 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
       <div class="chart-wrap" style="height:200px"><canvas id="paybackChart"></canvas></div>
     </div>
 
+    <!-- SEASON CHART -->
+    <div class="chart-card">
+      <div class="chart-card-title">Sommer vs. vinterdag — dit forbrug</div>
+      <div class="chart-card-sub">Gennemsnitlig timeforbrugsprofil · Grøn = sommer (apr–sep) · Blå = vinter (okt–mar) · Orange = sol</div>
+      <div class="chart-wrap" style="height:210px"><canvas id="seasonChart"></canvas></div>
+    </div>
+
+    <!-- BATTERY CHART -->
+    <div class="chart-card">
+      <div class="chart-card-title">Batteri & sol — typisk sommerdag</div>
+      <div class="chart-card-sub">Estimeret energiflow · Grøn = solel brugt direkte · Orange = batteri oplader · Blå = batteri aflader · Grå = købt fra net</div>
+      <div class="chart-wrap" style="height:210px"><canvas id="batteryChart"></canvas></div>
+    </div>
+
+    <!-- EV HEATMAP (shown only if hasEV) -->
+    <div class="chart-card" id="evChartCard" style="display:none">
+      <div class="chart-card-title">Hvornår skal du lade din elbil?</div>
+      <div class="chart-card-sub">Anbefalet ladetidspunkt time for time · Grøn = sol tilgængeligt · Orange = billig natarif · Grå = undgå</div>
+      <div class="chart-wrap" style="height:180px"><canvas id="evChart"></canvas></div>
+    </div>
+
+    <!-- OPTIMAL SHIFT CHART -->
+    <div class="chart-card">
+      <div class="chart-card-title">Optimal udnyttelse — flyt forbrug til soltimerne</div>
+      <div class="chart-card-sub" id="optimalSub">Grå = dit nuværende mønster · Grøn = optimal solstrategi · Orange = solproduktion · <span id="optimalExtra" style="color:var(--emerald);font-weight:500"></span></div>
+      <div class="chart-wrap" style="height:210px"><canvas id="optimalChart"></canvas></div>
+    </div>
+
     <div style="text-align:center;margin-top:24px">
       <button class="btn btn-secondary" style="width:auto;padding:10px 24px" onclick="restart()">← Beregn for en anden adresse</button>
     </div>
@@ -385,7 +437,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 <script>
 /* ── STATE ── */
-const S = { zipcode:'', persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null };
+const S = { zipcode:'', persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70 };
 let charts = {};
 
 /* ── THEME ── */
@@ -426,6 +478,17 @@ function toggleCheck(key) {
   if (key === 'hp') { S.hasHP = !S.hasHP; document.getElementById('ci-hp').className = 'check-item' + (S.hasHP ? ' checked' : ''); }
 }
 
+function selectPriceType(type) {
+  S.priceType = type;
+  document.getElementById('opt-spot').className = 'toggle-opt' + (type === 'spot' ? ' selected' : '');
+  document.getElementById('opt-fixed').className = 'toggle-opt' + (type === 'fixed' ? ' selected' : '');
+  document.getElementById('fixed-price-field').className = 'field' + (type === 'fixed' ? '' : ' hidden');
+  document.getElementById('spot-surcharge-field').className = 'field' + (type === 'spot' ? '' : ' hidden');
+  document.getElementById('price-hint').textContent = type === 'spot'
+    ? 'Vi henter din faktiske gennemsnitlige spotpris fra Energidataservice.dk baseret på dit forbrug'
+    : 'Brug den pris der står på din elregning inkl. alle afgifter og nettarif';
+}
+
 function selectEvHome(val) {
   S.evChargesHome = val;
   document.getElementById('opt-evhome').className = 'toggle-opt' + (val ? ' selected' : '');
@@ -457,12 +520,20 @@ function goStep2() {
   showErr('err1','');
   S.zipcode = zip;
   S.persons = parseInt(document.getElementById('persons').value);
+  S.fixedPrice = parseFloat(document.getElementById('fixedPrice').value) || 2.70;
+  S.spotSurcharge = parseFloat(document.getElementById('spotSurcharge').value) || 0;
   hide('step1'); show('step2'); setProgress(2);
 }
 
 function restart() {
   hide('step3');
-  Object.assign(S, { zipcode:'', persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null });
+  Object.assign(S, { zipcode:'', persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70 });
+  document.getElementById('opt-spot').className = 'toggle-opt selected';
+  document.getElementById('opt-fixed').className = 'toggle-opt';
+  document.getElementById('fixed-price-field').className = 'field hidden';
+  document.getElementById('spot-surcharge-field').className = 'field';
+  document.getElementById('fixedPrice').value = '2.70';
+  document.getElementById('spotSurcharge').value = '0';
   document.getElementById('evKm').value = '15000';
   document.getElementById('ev-details').className = 'ev-details hidden';
   document.getElementById('opt-evhome').className = 'toggle-opt selected';
@@ -496,15 +567,18 @@ async function fetchData() {
     const res = await fetch('/api/eloverblik', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken: token })
+      body: JSON.stringify({ refreshToken: token, priceType: S.priceType, fixedPrice: S.fixedPrice, spotSurcharge: S.spotSurcharge, zipcode: S.zipcode })
     });
     const data = await res.json();
 
     if (!res.ok || !data.success) throw new Error(data.error || 'Ukendt fejl');
 
-    S.annualKwh    = data.annualKwh;
-    S.hourlyProfile = data.hourlyProfile;
-    S.monthlyProfile = data.monthlyProfile;
+    S.annualKwh            = data.annualKwh;
+    S.hourlyProfile        = data.hourlyProfile;
+    S.monthlyProfile       = data.monthlyProfile;
+    S.summerHourlyProfile  = data.summerHourlyProfile;
+    S.winterHourlyProfile  = data.winterHourlyProfile;
+    S.effectiveKwhPrice    = data.effectiveKwhPrice || S.fixedPrice || 2.70;
 
     hide('stepLoading');
     showResults();
@@ -556,7 +630,7 @@ function calcRec() {
   const exported   = prod - selfCons;
   const selfPct    = Math.round((selfCons / kwh) * 100);
 
-  const buyPrice   = 2.70; // kr/kWh 2026
+  const buyPrice   = S.effectiveKwhPrice || 2.70;
   const sellPrice  = 0.35;
 
   const sav26   = Math.round(selfCons * buyPrice + exported * sellPrice + (batKwh > 0 ? 350 : 0));
@@ -607,6 +681,10 @@ function showResults() {
     document.getElementById('rec-battery').className = 'rec-row neutral';
   }
   document.getElementById('rec-total-val').textContent = r.total.toLocaleString('da-DK') + ' kr';
+  const priceLabel = S.priceType === 'spot'
+    ? `${S.effectiveKwhPrice.toFixed(2).replace('.',',')} kr/kWh (vægtet spotpris + afgifter)`
+    : `${S.effectiveKwhPrice.toFixed(2).replace('.',',')} kr/kWh (fast pris)`;
+  document.getElementById('rec-price-val').textContent = priceLabel;
   document.getElementById('rec-prod-val').textContent = r.prod.toLocaleString('da-DK') + ' kWh/år';
   document.getElementById('rec-self-val').textContent = `${r.selfPct}% (${r.selfCons.toLocaleString('da-DK')} kWh/år)`;
   document.getElementById('rec-sav-val').textContent = r.sav26.toLocaleString('da-DK') + ' kr/år';
@@ -624,6 +702,11 @@ function showResults() {
   buildProfileChart(r);
   buildMonthlyChart(r);
   buildPaybackChart(r);
+  buildSeasonChart(r);
+  buildBatteryChart(r);
+  if (S.hasEV) { document.getElementById('evChartCard').style.display=''; buildEVChart(r); }
+  else document.getElementById('evChartCard').style.display='none';
+  buildOptimalChart(r);
 
   show('step3');
 }
@@ -633,7 +716,8 @@ const C = { grid: 'rgba(107,114,128,0.12)', text3: '#6B7280' };
 
 function isDark() { return document.documentElement.getAttribute('data-theme') === 'dark'; }
 
-function profileBase() { return { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { position:'bottom', labels: { boxWidth:16, boxHeight:2, padding:14, color:C.text3, font:{size:10.5} } }, tooltip: { backgroundColor: isDark()?'#1E293B':'#fff', titleColor:isDark()?'#F1F5F9':'#111', bodyColor:C.text3, borderColor:'#E5E7EB', borderWidth:1, padding:10 } }, scales: { x: { grid:{display:false}, ticks:{color:C.text3, font:{size:10.5}, callback:(_,i)=>i%4===0?i+':00':''} }, y: { grid:{color:C.grid}, ticks:{color:C.text3, font:{size:10.5}}, border:{dash:[3,3]} } } }; }
+const HOURS = Array.from({length:24},(_,i)=>String(i).padStart(2,'0')+':00');
+function profileBase() { return { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { position:'bottom', labels: { boxWidth:16, boxHeight:2, padding:14, color:C.text3, font:{size:10.5} } }, tooltip: { backgroundColor: isDark()?'#1E293B':'#fff', titleColor:isDark()?'#F1F5F9':'#111', bodyColor:C.text3, borderColor:'#E5E7EB', borderWidth:1, padding:10 } }, scales: { x: { grid:{display:false}, ticks:{color:C.text3, font:{size:10}, maxRotation:45, minRotation:0, callback:(_,i)=>i%2===0?HOURS[i]:''} }, y: { grid:{color:C.grid}, ticks:{color:C.text3, font:{size:10.5}}, border:{dash:[3,3]} } } }; }
 
 function buildProfileChart(r) {
   const prof = S.hourlyProfile;
@@ -655,7 +739,7 @@ function buildProfileChart(r) {
   charts.profile = new Chart(document.getElementById('profileChart'), {
     type:'bar',
     data: {
-      labels: Array.from({length:24},(_,i)=>i),
+      labels: HOURS,
       datasets: [
         { label:'Forbrug', data:prof, backgroundColor:'rgba(107,114,128,0.35)', borderColor:'#6B7280', borderWidth:1, borderRadius:2 },
         { label:'Solproduktion (estimeret)', data:solar, backgroundColor:'rgba(217,119,6,0.55)', borderColor:'#D97706', borderWidth:1, borderRadius:2 },
@@ -764,6 +848,162 @@ function buildPaybackChart(r) {
         y:{grid:{color:C.grid},ticks:{color:C.text3,font:{size:10.5},callback:v=>v.toLocaleString('da-DK')+' kr'},border:{dash:[3,3]}}
       }
     }
+  });
+}
+
+function buildSeasonChart(r) {
+  const summer = S.summerHourlyProfile || S.hourlyProfile;
+  const winter = S.winterHourlyProfile || S.hourlyProfile;
+  // Solar on a peak summer day (June scale)
+  const kWpScale = r.kWp / 10;
+  const juneSolar = [0,0,0,0,0,0,0,0,0.48,1.93,4.32,6.72,8.16,8.64,7.20,5.28,2.88,1.44,0.19,0,0,0,0,0].map(v=>+(v*kWpScale).toFixed(3));
+
+  const opts = profileBase();
+  opts.plugins.tooltip.callbacks = { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} kWh` };
+  opts.scales.y.title = { display:true, text:'kWh/time', color:C.text3, font:{size:10} };
+
+  charts.season = new Chart(document.getElementById('seasonChart'), {
+    type:'line',
+    data:{
+      labels: HOURS,
+      datasets:[
+        { label:'Sommer forbrug', data:summer, borderColor:'#059669', backgroundColor:'rgba(5,150,105,0.08)', borderWidth:2, pointRadius:0, fill:true, tension:0.4 },
+        { label:'Vinter forbrug', data:winter, borderColor:'#2563EB', backgroundColor:'rgba(37,99,235,0.06)', borderWidth:2, pointRadius:0, fill:true, tension:0.4, borderDash:[4,3] },
+        { label:'Sol (typisk sommerdag)', data:juneSolar, borderColor:'#D97706', backgroundColor:'rgba(217,119,6,0.12)', borderWidth:1.5, pointRadius:0, fill:true, tension:0.4 },
+      ]
+    },
+    options: opts
+  });
+}
+
+function buildBatteryChart(r) {
+  const summer = S.summerHourlyProfile || S.hourlyProfile;
+  const kWpScale = r.kWp / 10;
+  const juneSolar = [0,0,0,0,0,0,0,0,0.48,1.93,4.32,6.72,8.16,8.64,7.20,5.28,2.88,1.44,0.19,0,0,0,0,0].map(v=>v*kWpScale);
+
+  const batCap = r.batKwh || 0;
+  let batSoC = batCap * 0.2; // start 20%
+  const directSolar=[], batCharge=[], batDischarge=[], fromGrid=[];
+
+  for (let h=0; h<24; h++) {
+    const cons = summer[h];
+    const sol  = juneSolar[h];
+    let direct=0, charge=0, discharge=0, grid=0;
+
+    if (sol >= cons) {
+      direct = cons;
+      const surplus = sol - cons;
+      charge = Math.min(surplus, batCap - batSoC);
+      batSoC = Math.min(batCap, batSoC + charge);
+    } else {
+      const deficit = cons - sol;
+      direct = sol;
+      discharge = Math.min(deficit, batSoC);
+      batSoC = Math.max(0, batSoC - discharge);
+      grid = deficit - discharge;
+    }
+    directSolar.push(+direct.toFixed(3));
+    batCharge.push(+charge.toFixed(3));
+    batDischarge.push(+discharge.toFixed(3));
+    fromGrid.push(+grid.toFixed(3));
+  }
+
+  const opts = profileBase();
+  opts.scales.x.stacked = true;
+  opts.scales.y.stacked = true;
+  opts.plugins.tooltip.callbacks = { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} kWh` };
+  opts.scales.y.title = { display:true, text:'kWh/time', color:C.text3, font:{size:10} };
+
+  charts.battery = new Chart(document.getElementById('batteryChart'), {
+    type:'bar',
+    data:{
+      labels: HOURS,
+      datasets:[
+        { label:'Solel direkte', data:directSolar, backgroundColor:'rgba(5,150,105,0.55)', borderColor:'#059669', borderWidth:1, borderRadius:2, stack:'a' },
+        { label:'Batteri aflader', data:batDischarge, backgroundColor:'rgba(37,99,235,0.45)', borderColor:'#2563EB', borderWidth:1, borderRadius:2, stack:'a' },
+        { label:'Fra elnet', data:fromGrid, backgroundColor:'rgba(107,114,128,0.30)', borderColor:'#9CA3AF', borderWidth:1, borderRadius:2, stack:'a' },
+        { label:'Batteri oplader', data:batCharge, backgroundColor:'rgba(217,119,6,0.50)', borderColor:'#D97706', borderWidth:1, borderRadius:2, stack:'b' },
+      ]
+    },
+    options: opts
+  });
+}
+
+function buildOptimalChart(r) {
+  const current = S.summerHourlyProfile || S.hourlyProfile;
+  const kWpScale = r.kWp / 10;
+  const juneSolar = [0,0,0,0,0,0,0,0,0.48,1.93,4.32,6.72,8.16,8.64,7.20,5.28,2.88,1.44,0.19,0,0,0,0,0].map(v=>v*kWpScale);
+
+  // Solar hours = 09-17 (indices 9-16)
+  const SOLAR_HOURS = [9,10,11,12,13,14,15,16];
+  const SHIFTABLE_HOURS = [0,1,2,3,4,5,21,22,23]; // night loads to shift
+
+  // Total shiftable kWh: 35% of night consumption
+  const shiftableTotal = SHIFTABLE_HOURS.reduce((s,h) => s + current[h]*0.35, 0);
+  const shiftPerSolarHour = shiftableTotal / SOLAR_HOURS.length;
+
+  const optimal = current.map((v,h) => {
+    if (SHIFTABLE_HOURS.includes(h)) return +(v * 0.65).toFixed(3); // reduce night load
+    if (SOLAR_HOURS.includes(h)) return +(v + shiftPerSolarHour).toFixed(3); // add shifted load
+    return +v.toFixed(3);
+  });
+
+  // Calculate self-consumption improvement
+  const selfCurrent = current.reduce((s,v,h) => s + Math.min(v, juneSolar[h]), 0);
+  const selfOptimal  = optimal.reduce((s,v,h)  => s + Math.min(v, juneSolar[h]), 0);
+  const extraKwh = Math.round((selfOptimal - selfCurrent) * 365 / 12 * 5); // rough annual estimate
+  const extra = extraKwh > 0 ? `Ekstra selvforbrug: ~${extraKwh.toLocaleString('da-DK')} kWh/år` : '';
+  document.getElementById('optimalExtra').textContent = extra;
+
+  const opts = profileBase();
+  opts.plugins.tooltip.callbacks = { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} kWh` };
+  opts.scales.y.title = { display:true, text:'kWh/time', color:C.text3, font:{size:10} };
+
+  charts.optimal = new Chart(document.getElementById('optimalChart'), {
+    type:'line',
+    data:{
+      labels: HOURS,
+      datasets:[
+        { label:'Nuværende mønster', data:current, borderColor:'#9CA3AF', backgroundColor:'rgba(107,114,128,0.10)', borderWidth:1.5, pointRadius:0, fill:true, tension:0.4, borderDash:[4,3] },
+        { label:'Optimal (solstrategi)', data:optimal, borderColor:'#059669', backgroundColor:'rgba(5,150,105,0.12)', borderWidth:2.5, pointRadius:0, fill:true, tension:0.4 },
+        { label:'Solproduktion', data:juneSolar, borderColor:'#D97706', backgroundColor:'rgba(217,119,6,0.10)', borderWidth:1.5, pointRadius:0, fill:true, tension:0.4 },
+      ]
+    },
+    options: opts
+  });
+}
+
+function buildEVChart(r) {
+  const kWpScale = r.kWp / 10;
+  const juneSolar = [0,0,0,0,0,0,0,0,0.48,1.93,4.32,6.72,8.16,8.64,7.20,5.28,2.88,1.44,0.19,0,0,0,0,0].map(v=>v*kWpScale);
+  const summer = S.summerHourlyProfile || S.hourlyProfile;
+  // Score: high solar surplus = green, low-demand night = orange, peak = avoid
+  const scores = Array.from({length:24}, (_,h) => {
+    const surplus = juneSolar[h] - summer[h];
+    if (surplus > 0.5) return { val: +(surplus).toFixed(2), col:'rgba(5,150,105,0.65)', lbl:'Sol tilgængeligt' };
+    if (h >= 0 && h <= 5)  return { val: 0.8, col:'rgba(37,99,235,0.45)', lbl:'Billig natarif' };
+    if (h >= 22 && h <= 23) return { val:0.6, col:'rgba(37,99,235,0.35)', lbl:'Billig natarif' };
+    return { val: 0.2, col:'rgba(107,114,128,0.22)', lbl:'Undgå (dyr tid)' };
+  });
+
+  const opts = profileBase();
+  opts.scales.y.display = false;
+  opts.plugins.legend.display = false;
+  opts.plugins.tooltip.callbacks = { label: ctx => ` ${scores[ctx.dataIndex].lbl}` };
+
+  charts.ev = new Chart(document.getElementById('evChart'), {
+    type:'bar',
+    data:{
+      labels: HOURS,
+      datasets:[{
+        label:'Ladeanbefalig',
+        data: scores.map(s=>s.val),
+        backgroundColor: scores.map(s=>s.col),
+        borderColor: scores.map(s=>s.col.replace('0.', '0.9')),
+        borderWidth:1, borderRadius:3
+      }]
+    },
+    options: opts
   });
 }
 </script>
