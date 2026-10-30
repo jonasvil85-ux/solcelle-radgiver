@@ -1283,14 +1283,14 @@ function runBatterySim(solar, profile, batKwh) {
     gridArr[h] = deficitArr[h] - dis;
   }
 
-  // batCharge = sol-oplad + net-oplad (begge vises som lilla)
-  // fromGrid  = forbrug dækket af net + net-oplad af batteri
+  // batCharge = sol-oplad + net-oplad (lilla søjle)
+  // fromGrid  = KUN forbrug dækket af net (ikke net→batteri, det er i batCharge)
   return {
-    direct:       directArr.map(v    => Math.max(0, +v.toFixed(3))),
+    direct:       directArr.map(v        => Math.max(0, +v.toFixed(3))),
     batCharge:    batChargeArr.map((v,h) => Math.max(0, +(v + gridChargeArr[h]).toFixed(3))),
-    gridExport:   gridExportArr.map(v => Math.max(0, +v.toFixed(3))),
-    batDischarge: disArr.map(v        => Math.max(0, +v.toFixed(3))),
-    fromGrid:     gridArr.map((g,h)   => Math.max(0, +(g + gridChargeArr[h]).toFixed(3))),
+    gridExport:   gridExportArr.map(v    => Math.max(0, +v.toFixed(3))),
+    batDischarge: disArr.map(v           => Math.max(0, +v.toFixed(3))),
+    fromGrid:     gridArr.map(g          => Math.max(0, +g.toFixed(3))),
   };
 }
 
@@ -1344,7 +1344,7 @@ function buildFlowChart(r, season) {
 }
 
 function buildOptimalChart(r) {
-  const current = S.summerHourlyProfile || S.hourlyProfile;
+  const current = S.hourlyProfile;  // årsgennemsnit, ikke kun sommer
   const kWpScale = r.kWp / 10;
   const solar = [0,0,0,0,0,0,0,0,0.48,1.93,4.32,6.72,8.16,8.64,7.20,5.28,2.88,1.44,0.19,0,0,0,0,0]
     .map(v => Math.max(0, +(v * kWpScale).toFixed(3)));
@@ -1364,7 +1364,8 @@ function buildOptimalChart(r) {
   // Self-consumption improvement label
   const selfCurrent = current.reduce((s,v,h) => s + Math.min(v, solar[h]), 0);
   const selfOptimal  = profile.reduce((s,v,h)  => s + Math.min(v, solar[h]), 0);
-  const extraKwh = Math.round((selfOptimal - selfCurrent) * 365 / 12 * 5);
+  // Skaler op til år: gennemsnit sommer-dag × produktive dage (~180 dage Apr-Sep)
+  const extraKwh = Math.round((selfOptimal - selfCurrent) * 180);
   const extra = extraKwh > 0 ? `Ekstra selvforbrug: ~${extraKwh.toLocaleString('da-DK')} kWh/år` : '';
   document.getElementById('optimalExtra').textContent = extra;
 
