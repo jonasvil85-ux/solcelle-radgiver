@@ -1283,44 +1283,86 @@ function buildFlowChart(r, season) {
 function buildOptimalChart(r) {
   const current = S.summerHourlyProfile || S.hourlyProfile;
   const kWpScale = r.kWp / 10;
-  const juneSolar = [0,0,0,0,0,0,0,0,0.48,1.93,4.32,6.72,8.16,8.64,7.20,5.28,2.88,1.44,0.19,0,0,0,0,0].map(v=>v*kWpScale);
+  const solar = [0,0,0,0,0,0,0,0,0.48,1.93,4.32,6.72,8.16,8.64,7.20,5.28,2.88,1.44,0.19,0,0,0,0,0]
+    .map(v => Math.max(0, +(v * kWpScale).toFixed(3)));
 
-  // Solar hours = 09-17 (indices 9-16)
-  const SOLAR_HOURS = [9,10,11,12,13,14,15,16];
-  const SHIFTABLE_HOURS = [0,1,2,3,4,5,21,22,23]; // night loads to shift
-
-  // Total shiftable kWh: 35% of night consumption
-  const shiftableTotal = SHIFTABLE_HOURS.reduce((s,h) => s + current[h]*0.35, 0);
+  // Shift 35% of night load into solar hours
+  const SOLAR_HOURS    = [9,10,11,12,13,14,15,16];
+  const SHIFTABLE_HOURS = [0,1,2,3,4,5,21,22,23];
+  const shiftableTotal  = SHIFTABLE_HOURS.reduce((s,h) => s + current[h] * 0.35, 0);
   const shiftPerSolarHour = shiftableTotal / SOLAR_HOURS.length;
 
-  const optimal = current.map((v,h) => {
-    if (SHIFTABLE_HOURS.includes(h)) return +(v * 0.65).toFixed(3); // reduce night load
-    if (SOLAR_HOURS.includes(h)) return +(v + shiftPerSolarHour).toFixed(3); // add shifted load
-    return +v.toFixed(3);
+  const profile = current.map((v,h) => {
+    if (SHIFTABLE_HOURS.includes(h)) return Math.max(0, +(v * 0.65).toFixed(3));
+    if (SOLAR_HOURS.includes(h))     return Math.max(0, +(v + shiftPerSolarHour).toFixed(3));
+    return Math.max(0, +v.toFixed(3));
   });
 
-  // Calculate self-consumption improvement
-  const selfCurrent = current.reduce((s,v,h) => s + Math.min(v, juneSolar[h]), 0);
-  const selfOptimal  = optimal.reduce((s,v,h)  => s + Math.min(v, juneSolar[h]), 0);
-  const extraKwh = Math.round((selfOptimal - selfCurrent) * 365 / 12 * 5); // rough annual estimate
+  // Self-consumption improvement label
+  const selfCurrent = current.reduce((s,v,h) => s + Math.min(v, solar[h]), 0);
+  const selfOptimal  = profile.reduce((s,v,h)  => s + Math.min(v, solar[h]), 0);
+  const extraKwh = Math.round((selfOptimal - selfCurrent) * 365 / 12 * 5);
   const extra = extraKwh > 0 ? `Ekstra selvforbrug: ~${extraKwh.toLocaleString('da-DK')} kWh/år` : '';
   document.getElementById('optimalExtra').textContent = extra;
 
-  const opts = profileBase();
-  opts.plugins.tooltip.callbacks = { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} kWh` };
-  opts.scales.y.title = { display:true, text:'kWh/time', color:C.text3, font:{size:10} };
+  // Battery simulation — same logic as buildFlowChart
+  const batKwh = r.batKwh || 0;
+  let soc = batKwh * 0.5;
+  const direct = [], surplus = [], batDischarge = [], fromGrid = [];
+
+  for (let h = 0; h < 24; h++) {
+    const cons = profile[h], sol = solar[h];
+    let d, s, dis, g;
+    if (sol >= cons) {
+      d = cons;
+      const excess = sol - cons;
+      const charge = batKwh > 0 ? Math.min(excess, Math.max(0, batKwh - soc)) : 0;
+      soc = Math.min(batKwh, soc + charge);
+      s = excess; dis = 0; g = 0;
+    } else {
+      const deficit = cons - sol;
+      d = sol; s = 0;
+      dis = Math.min(deficit, soc);
+      soc = Math.max(0, soc - dis);
+      g = deficit - dis;
+    }
+    direct.push(Math.max(0, +d.toFixed(3)));
+    surplus.push(Math.max(0, +s.toFixed(3)));
+    batDischarge.push(Math.max(0, +dis.toFixed(3)));
+    fromGrid.push(Math.max(0, +g.toFixed(3)));
+  }
+
+  if (charts.optimal) { charts.optimal.destroy(); delete charts.optimal; }
+
+  const dark = isDark();
+  const txt  = dark ? '#94A3B8' : '#6B7280';
+  const grid = dark ? 'rgba(100,116,139,0.15)' : 'rgba(107,114,128,0.12)';
 
   charts.optimal = new Chart(document.getElementById('optimalChart'), {
-    type:'line',
-    data:{
+    type: 'bar',
+    data: {
       labels: HOURS,
-      datasets:[
-        { label:'Nuværende mønster', data:current, borderColor:'#9CA3AF', backgroundColor:'rgba(107,114,128,0.10)', borderWidth:1.5, pointRadius:0, fill:true, tension:0.4, borderDash:[4,3] },
-        { label:'Optimal (solstrategi)', data:optimal, borderColor:'#059669', backgroundColor:'rgba(5,150,105,0.12)', borderWidth:2.5, pointRadius:0, fill:true, tension:0.4 },
-        { label:'Solproduktion', data:juneSolar, borderColor:'#D97706', backgroundColor:'rgba(217,119,6,0.10)', borderWidth:1.5, pointRadius:0, fill:true, tension:0.4 },
+      datasets: [
+        { label:'Solel direkte',   data: direct,       backgroundColor:'rgba(5,150,105,0.75)',  stack:'s' },
+        { label:'Eksport/oplad',   data: surplus,      backgroundColor:'rgba(245,158,11,0.55)', stack:'s' },
+        { label:'Batteri aflader', data: batDischarge, backgroundColor:'rgba(8,145,178,0.70)',  stack:'s' },
+        { label:'Fra elnet',       data: fromGrid,     backgroundColor:'rgba(107,114,128,0.45)',stack:'s' },
+        { type:'line', label:'Solproduktion', data: solar,
+          borderColor:'#EA580C', backgroundColor:'transparent',
+          borderWidth:2.5, pointRadius:0, tension:0.4 },
       ]
     },
-    options: opts
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: {
+        legend: { position:'bottom', labels:{ boxWidth:16, boxHeight:8, padding:12, color:txt, font:{size:10.5} } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${Math.abs(ctx.parsed.y).toFixed(2)} kWh` } }
+      },
+      scales: {
+        x: { stacked:true, grid:{display:false}, ticks:{ color:txt, font:{size:10}, maxRotation:45, callback:(_,i)=>i%2===0?HOURS[i]:'' } },
+        y: { stacked:true, min:0, grid:{color:grid}, ticks:{color:txt, font:{size:10.5}}, title:{display:true, text:'kWh/time', color:txt, font:{size:10}} }
+      }
+    }
   });
 }
 
