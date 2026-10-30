@@ -636,11 +636,20 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
 
   async function fetchSuggestions(q) {
     try {
-      const url = `https://api.dataforsyningen.dk/adresser/autocomplete?q=${encodeURIComponent(q)}&per_side=8&fuzzy`;
+      const url = `https://api.dataforsyningen.dk/adresser/autocomplete?q=${encodeURIComponent(q)}&per_side=8`;
       const res = await fetch(url);
+      if (!res.ok) { showDropErr('Søgning fejlede (' + res.status + ')'); return; }
       const items = await res.json();
+      if (!Array.isArray(items)) { showDropErr('Uventet svar fra adresse-API'); return; }
       renderDropdown(items);
-    } catch (_) { drop.style.display = 'none'; }
+    } catch (err) {
+      showDropErr('Netværksfejl: ' + err.message);
+    }
+  }
+
+  function showDropErr(msg) {
+    drop.innerHTML = `<div class="addr-item" style="color:var(--red);font-size:11.5px">${msg}</div>`;
+    drop.style.display = 'block';
   }
 
   function renderDropdown(items) {
