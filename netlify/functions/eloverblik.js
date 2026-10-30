@@ -9,34 +9,62 @@ exports.handler = async function (event) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 
+  let refreshToken;
   try {
-    const { refreshToken } = JSON.parse(event.body || '{}');
-    if (!refreshToken) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Token mangler' }) };
+    const body = JSON.parse(event.body || '{}');
+    refreshToken = body.refreshToken;
+  } catch (e) {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Ugyldig forespørgsel: ' + e.message }) };
+  }
 
-    // 1. Exchange refresh token for short-lived data token
-    const tokenRes = await fetch('https://api.eloverblik.dk/customerapi/api/token', {
+  if (!refreshToken) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Token mangler' }) };
+
+  // 1. Exchange refresh token for short-lived data token
+  let tokenRes;
+  try {
+    tokenRes = await fetch('https://api.eloverblik.dk/customerapi/api/token', {
       headers: { Authorization: `Bearer ${refreshToken}`, Accept: 'application/json' },
     });
-    if (!tokenRes.ok) {
-      return { statusCode: 401, headers, body: JSON.stringify({ error: 'Ugyldigt token — tjek at du kopierede det korrekt fra eloverblik.dk' }) };
-    }
-    const { result: { token: dataToken } } = await tokenRes.json();
+  } catch (e) {
+    return { statusCode: 502, headers, body: JSON.stringify({ error: 'Kunne ikke forbinde til eloverblik.dk: ' + e.message }) };
+  }
 
-    // 2. Get metering points
+  if (!tokenRes.ok) {
+    const txt = await tokenRes.text().catch(() => '');
+    return { statusCode: 401, headers, body: JSON.stringify({ error: `Ugyldigt token (${tokenRes.status}) — tjek at du kopierede det korrekt fra eloverblik.dk` }) };
+  }
+
+  let dataToken;
+  try {
+    const tokenJson = await tokenRes.json();
+    dataToken = tokenJson.result.token;
+  } catch (e) {
+    return { statusCode: 502, headers, body: JSON.stringify({ error: 'Uventet svar fra eloverblik.dk ved token-udveksling: ' + e.message }) };
+  }
+
+  // 2. Get metering points
+  let mpData;
+  try {
     const mpRes = await fetch('https://api.eloverblik.dk/customerapi/api/meteringpoints/meteringpoints', {
       headers: { Authorization: `Bearer ${dataToken}`, Accept: 'application/json' },
     });
-    const mpData = await mpRes.json();
-    const points = (mpData.result || []).filter(p => p.typeOfMP === 'E17');
-    if (!points.length) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Ingen forbrugsmåler fundet på denne konto' }) };
-    const meteringPointId = points[0].meteringPointId;
+    mpData = await mpRes.json();
+  } catch (e) {
+    return { statusCode: 502, headers, body: JSON.stringify({ error: 'Kunne ikke hente målepunkter: ' + e.message }) };
+  }
 
-    // 3. Fetch last 13 months of hourly data
-    const now = new Date();
-    const from = new Date(now); from.setMonth(from.getMonth() - 13);
-    const dateFrom = from.toISOString().split('T')[0];
-    const dateTo = now.toISOString().split('T')[0];
+  const points = (mpData.result || []).filter(p => p.typeOfMP === 'E17');
+  if (!points.length) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Ingen forbrugsmåler fundet på denne konto' }) };
+  const meteringPointId = points[0].meteringPointId;
 
+  // 3. Fetch last 13 months of hourly data
+  const now = new Date();
+  const from = new Date(now); from.setMonth(from.getMonth() - 13);
+  const dateFrom = from.toISOString().split('T')[0];
+  const dateTo = now.toISOString().split('T')[0];
+
+  let tsData;
+  try {
     const tsRes = await fetch(
       `https://api.eloverblik.dk/customerapi/api/meterdata/gettimeseries/${dateFrom}/${dateTo}/Hour`,
       {
@@ -45,14 +73,13 @@ exports.handler = async function (event) {
         body: JSON.stringify({ meteringPoints: { meteringPoint: [meteringPointId] } }),
       }
     );
-    const tsData = await tsRes.json();
-
-    const processed = processTimeSeries(tsData);
-    return { statusCode: 200, headers, body: JSON.stringify({ success: true, ...processed }) };
-
-  } catch (err) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Serverfejl: ' + err.message }) };
+    tsData = await tsRes.json();
+  } catch (e) {
+    return { statusCode: 502, headers, body: JSON.stringify({ error: 'Kunne ikke hente forbrugsdata: ' + e.message }) };
   }
+
+  const processed = processTimeSeries(tsData);
+  return { statusCode: 200, headers, body: JSON.stringify({ success: true, ...processed }) };
 };
 
 function processTimeSeries(tsData) {
@@ -78,7 +105,7 @@ function processTimeSeries(tsData) {
         }
       }
     }
-  } catch (_) { /* return best-effort result */ }
+  } catch (_) { }
 
   const hourlyProfile = hourlyTotals.map((t, h) =>
     hourlyCounts[h] > 0 ? +((t / hourlyCounts[h]).toFixed(3)) : 0
