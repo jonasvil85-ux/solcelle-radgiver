@@ -387,6 +387,9 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
       <div class="rec-note" id="rec-note"></div>
     </div>
 
+    <!-- PRICE BREAKDOWN BOX -->
+    <div id="price-breakdown-box" style="display:none;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:16px"></div>
+
     <!-- CONSUMPTION PROFILE CHART -->
     <div class="chart-card">
       <div class="chart-card-title">Dit forbrugsmønster — gennemsnitsdag</div>
@@ -453,7 +456,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 <script>
 /* ── STATE ── */
-const S = { zipcode:'', persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70 };
+const S = { zipcode:'', persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, actualSpotCost:null, priceArea:null };
 let charts = {};
 let _lastRec = null;
 let _useAfgift = false;
@@ -615,6 +618,9 @@ async function fetchData() {
     S.summerHourlyProfile  = data.summerHourlyProfile;
     S.winterHourlyProfile  = data.winterHourlyProfile;
     S.calculatedAnnualCost = data.calculatedAnnualCost || null;
+    S.actualSpotCost = data.actualSpotCost || null; // præcis spotudgift inkl. moms
+    S.spotAvg = data.spotAvg || null;
+    S.priceArea = data.priceArea || null;
     // Price: actual bill overrides everything if provided
     const spotOrFixed = data.effectiveKwhPrice || S.fixedPrice || 2.70;
     S.effectiveKwhPrice = S.annualBill && S.annualKwh > 0
@@ -738,6 +744,29 @@ function showResults() {
   document.getElementById('rec-prod-val').textContent = r.prod.toLocaleString('da-DK') + ' kWh/år';
   document.getElementById('rec-self-val').textContent = `${r.selfPct}% (${r.selfCons.toLocaleString('da-DK')} kWh/år)`;
   document.getElementById('rec-sav-val').textContent = r.sav26.toLocaleString('da-DK') + ' kr/år';
+
+  // Vis præcis vs estimeret prisberegning
+  const priceBox = document.getElementById('price-breakdown-box');
+  if (priceBox && S.priceType === 'spot' && S.spotAvg && S.actualSpotCost) {
+    const spotPct = Math.round((S.actualSpotCost / (S.calculatedAnnualCost || S.annualBill || 1)) * 100);
+    priceBox.style.display = '';
+    priceBox.innerHTML = `
+      <div style="font-size:11.5px;line-height:1.7">
+        <div style="font-weight:600;margin-bottom:6px;color:var(--text-1)">Prisberegning fra dine data (${S.priceArea || 'DK1'})</div>
+        <div style="display:grid;grid-template-columns:1fr auto auto;gap:2px 12px;align-items:baseline">
+          <span>⚡ Spotpris vægtet gns.</span><span style="font-weight:600">${S.spotAvg.toFixed(3).replace('.',',')} kr/kWh</span><span style="color:var(--text-3);font-size:10px">beregnet præcist</span>
+          <span>+ Nettarif (${S.priceArea === 'DK2' ? 'DK2' : 'DK1'} skøn)</span><span>${(S.priceArea === 'DK2' ? 0.28 : 0.22).toFixed(2).replace('.',',')} kr/kWh</span><span style="color:#F59E0B;font-size:10px">estimeret</span>
+          <span>+ Systemtarif</span><span>0,07 kr/kWh</span><span style="color:#F59E0B;font-size:10px">estimeret</span>
+          <span>+ Moms 25%</span><span>×1,25</span><span style="color:var(--text-3);font-size:10px">præcist</span>
+          <span style="border-top:1px solid var(--border);padding-top:4px;font-weight:600">= Beregnet pris</span><span style="border-top:1px solid var(--border);padding-top:4px;font-weight:600">${S.effectiveKwhPrice.toFixed(2).replace('.',',')} kr/kWh</span><span style="border-top:1px solid var(--border);padding-top:4px"></span>
+        </div>
+        <div style="margin-top:8px;padding:6px 10px;background:rgba(245,158,11,0.08);border-radius:5px;color:var(--text-3);font-size:10.5px">
+          Nettariffen til N1 er ikke tilgængelig via API — det er det eneste vi ikke kan beregne præcist. Kend din nettarif? Indtast din faktiske årsregning nedenfor.
+        </div>
+      </div>`;
+  } else if (priceBox) {
+    priceBox.style.display = 'none';
+  }
 
   const notes = [];
   if (S.hasEV && S.evChargesHome) notes.push(`Elbil (${S.evKm.toLocaleString('da-DK')} km/år · ~${Math.round(S.evKm * 0.16).toLocaleString('da-DK')} kWh/år): lad i dagstimerne om sommeren fra solenergi og om natten om vinteren på billig natarif.`);

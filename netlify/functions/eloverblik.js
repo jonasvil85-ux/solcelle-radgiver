@@ -141,15 +141,20 @@ exports.handler = async function (event) {
 
       if (totalKwh > 0) {
         const avgSpot = totalCost / totalKwh; // weighted avg spot kr/kWh (ex-moms)
+        // actualSpotCost: PRÆCIS beregnet ud fra Eloverblik kWh × Energidataservice spotpris time for time
+        // inkl. moms (25%) men UDEN nettarif og systemtarif
+        const actualSpotCostInclMoms = Math.round(totalCost * 1.25);
+
+        // Estimeret total: spot + nettarif (skøn, DSO-specifik) + systemtarif + moms
         // El-afgift: 0 kr/kWh i 2026 (afskaffet — vender tilbage 2028)
-        // Nettarif: sæsonbaseret gennemsnit, DK1 (Jylland/Fyn) ~0.22, DK2 (Sjælland) ~0.28 kr/kWh ex moms
-        // Systemtarif: ~0.07 kr/kWh ex moms
+        // Nettarif: skønnet gennemsnit, DK1 (Jylland/Fyn) ~0.22, DK2 (Sjælland) ~0.28 kr/kWh ex moms
         const nettarif = priceArea === 'DK2' ? 0.28 : 0.22;
-        const overhead = nettarif + 0.07; // ingen el-afgift i 2026
+        const overhead = nettarif + 0.07; // systemtarif 0.07, ingen el-afgift i 2026
         effectiveKwhPrice = +((avgSpot + spotSurcharge + overhead) * 1.25).toFixed(3);
+
         processed.spotAvg = +avgSpot.toFixed(4);
         processed.priceArea = priceArea;
-        // Calculate estimated annual cost from actual consumption × derived price
+        processed.actualSpotCost = actualSpotCostInclMoms; // præcis spotudgift inkl. moms
         processed.calculatedAnnualCost = Math.round(processed.annualKwh * effectiveKwhPrice);
       }
     } catch (_) {
