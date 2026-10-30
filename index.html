@@ -1247,9 +1247,12 @@ function buildFlowChart(r, season) {
     toGrid.push(+(-tg).toFixed(3));
   }
 
-  // Eksport og batterioplad er implicit: solar-linje over stakkens top = eksport/oplad
-  // Alle bars er positive — stacked = "hvor strømmen kom fra"
-  const exportArr = solar.map((s, h) => +(Math.max(0, s - direct[h] - batCharge[h]).toFixed(3)));
+  // Stakkens logik fra bund til top:
+  // 1. Solel direkte (grøn)
+  // 2. Eksport/oplad (amber) — grøn+amber = solproduktionslinje
+  // 3. Batteri aflader (blå) — batteribidrag til forbrug
+  // 4. Fra elnet (grå) — netköb
+  const surplus = solar.map((s, h) => +(Math.max(0, s - direct[h]).toFixed(3)));
 
   const opts = profileBase();
   opts.scales.x.stacked = true;
@@ -1266,10 +1269,10 @@ function buildFlowChart(r, season) {
     data: {
       labels: HOURS,
       datasets: [
-        { label:'Solel direkte', data:direct, backgroundColor:'rgba(5,150,105,0.70)', borderColor:'#059669', borderWidth:1, stack:'s', order:2 },
-        { label:'Batteri aflader', data:batDischarge, backgroundColor:'rgba(8,145,178,0.65)', borderColor:'#0891B2', borderWidth:1, stack:'s', order:2 },
-        { label:'Fra elnet', data:fromGrid, backgroundColor:'rgba(107,114,128,0.40)', borderColor:'#6B7280', borderWidth:1, stack:'s', order:2 },
-        { label:'Eksport/oplad', data:exportArr, backgroundColor:'rgba(245,158,11,0.35)', borderColor:'#F59E0B', borderWidth:1, borderDash:[3,3], stack:'s', order:2 },
+        { label:'Solel direkte',   data:direct,       backgroundColor:'rgba(5,150,105,0.70)',  borderColor:'#059669', borderWidth:1, stack:'s', order:2 },
+        { label:'Eksport/oplad',   data:surplus,      backgroundColor:'rgba(245,158,11,0.45)', borderColor:'#F59E0B', borderWidth:1, stack:'s', order:2 },
+        { label:'Batteri aflader', data:batDischarge, backgroundColor:'rgba(8,145,178,0.65)',  borderColor:'#0891B2', borderWidth:1, stack:'s', order:2 },
+        { label:'Fra elnet',       data:fromGrid,     backgroundColor:'rgba(107,114,128,0.40)',borderColor:'#6B7280', borderWidth:1, stack:'s', order:2 },
         { type:'line', label:'Solproduktion', data:solar, borderColor:'#EA580C', backgroundColor:'transparent', borderWidth:2.5, pointRadius:0, tension:0.4, order:1 },
       ]
     },
