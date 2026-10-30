@@ -636,7 +636,8 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
 
   async function fetchSuggestions(q) {
     try {
-      const url = `https://api.dataforsyningen.dk/autocomplete?q=${encodeURIComponent(q)}&type=adresse&per_side=8`;
+      // /adresser er det stabile søge-endpoint (ingen autocomplete-wrapper)
+      const url = `https://api.dataforsyningen.dk/adresser?q=${encodeURIComponent(q)}&per_side=8&struktur=mini`;
       const res = await fetch(url);
       if (!res.ok) { showDropErr('Søgning fejlede (' + res.status + ')'); return; }
       const items = await res.json();
@@ -652,13 +653,21 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
     drop.style.display = 'block';
   }
 
+  function addrTekst(a) {
+    let t = (a.vejnavn || '') + ' ' + (a.husnr || '');
+    if (a.etage) t += ', ' + a.etage + '.';
+    if (a.dør)   t += ' ' + a.dør;
+    if (a.postnr) t += ', ' + a.postnr + ' ' + (a.postnrnavn || '');
+    return t.trim();
+  }
+
   function renderDropdown(items) {
     if (!items.length) { drop.style.display = 'none'; return; }
-    drop.innerHTML = items.map((it, i) => {
-      const a = it.data || {};
+    drop.innerHTML = items.map((a, i) => {
+      const tekst = addrTekst(a);
       const sub = [a.postnr, a.postnrnavn].filter(Boolean).join(' ');
       return `<div class="addr-item" data-idx="${i}">
-        ${it.tekst}${sub ? `<div class="addr-tag">${sub}</div>` : ''}
+        ${tekst}${sub ? `<div class="addr-tag">${sub}</div>` : ''}
       </div>`;
     }).join('');
     drop._data = items;
@@ -669,13 +678,15 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
   }
 
   function onAddrSelect(item) {
-    const a = item.data || {};
-    const zip = a.postnr || (item.tekst.match(/\b(\d{4})\b/) || [])[1] || '';
-    inp.value = item.tekst;
+    // item er nu direkte et adresse-objekt fra /adresser (ikke {tekst, data})
+    const a = item;
+    const zip = a.postnr || '';
+    const tekst = addrTekst(a);
+    inp.value = tekst;
     drop.style.display = 'none';
     document.getElementById('zipcode').value = zip;
     S.zipcode = zip;
-    S.address = item.tekst;
+    S.address = tekst;
     const conf = document.getElementById('addrConfirmed');
     conf.textContent = `Postnummer ${zip}${a.postnrnavn ? ' ' + a.postnrnavn : ''} registreret`;
     conf.style.display = 'block';
