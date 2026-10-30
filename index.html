@@ -646,7 +646,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
   function renderDropdown(items) {
     if (!items.length) { drop.style.display = 'none'; return; }
     drop.innerHTML = items.map((it, i) => {
-      const a = it.adresse || {};
+      const a = it.data || {};
       const sub = [a.postnr, a.postnrnavn].filter(Boolean).join(' ');
       return `<div class="addr-item" data-idx="${i}">
         ${it.tekst}${sub ? `<div class="addr-tag">${sub}</div>` : ''}
@@ -660,7 +660,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
   }
 
   function onAddrSelect(item) {
-    const a = item.adresse || {};
+    const a = item.data || {};
     const zip = a.postnr || (item.tekst.match(/\b(\d{4})\b/) || [])[1] || '';
     inp.value = item.tekst;
     drop.style.display = 'none';
