@@ -737,6 +737,7 @@ body {
         <div class="field-row">
           <div class="field" style="margin-bottom:0">
             <label>Tagretning</label>
+            <div id="compassWrap">
             <div class="compass-grid" id="compassGrid">
               <div class="cdir" data-dir="NW">NV<small>55%</small></div>
               <div class="cdir" data-dir="N">N<small>40%</small></div>
@@ -748,6 +749,7 @@ body {
               <div class="cdir" data-dir="SE">SØ<small>92%</small></div>
             </div>
             <div style="font-size:10.5px;color:var(--text-3);margin-top:5px">Klik på din tagretning mod solen. Procentsatsen viser forventet solcelleudbytte ift. et perfekt sydvendt tag (100%).</div>
+            </div><!-- /compassWrap -->
           </div>
           <div class="field" style="margin-bottom:0">
             <label>Sydvendt tagflade (m²)</label>
@@ -1661,39 +1663,41 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
         if (solarRes.ok) {
           const solar = await solarRes.json();
           if (solar.segments?.length > 0) {
+            const ORIENT_FACTOR = {S:1.00,SW:0.92,SE:0.92,W:0.78,E:0.78,NW:0.55,NE:0.55,N:0.40};
             const diffFromSouth = a => Math.abs(((a - 180 + 540) % 360) - 180);
-
-            // Find det segment der vender tættest på syd (bruges til kompasretning)
-            const bestSeg = solar.segments.reduce((b, s) =>
-              diffFromSouth(s.azimuthDegrees) < diffFromSouth(b.azimuthDegrees) ? s : b
-            );
-
-            // Sum segmenter der vender inden for 90° af syd (SE, S, SW — reel sydvendt halvdel)
-            const usableSegs = solar.segments.filter(s => diffFromSouth(s.azimuthDegrees) <= 90);
-            const segSum = usableSegs.length > 0
-              ? usableSegs.reduce((sum, s) => sum + s.areaMeters2, 0)
-              : bestSeg.areaMeters2;
-            // Cap ved Googles eget maxAreaMeters2 (maksimalt reelt panelarea inkl. skygge mv.)
-            const usableArea = solar.maxAreaMeters2
-              ? Math.min(segSum, solar.maxAreaMeters2)
-              : segSum;
-            const southAreaM2 = Math.round(usableArea);
-
-            // Sæt kompas-retning ud fra bedste segment
             const dirs = [
               {dir:'N',center:0},{dir:'NE',center:45},{dir:'E',center:90},{dir:'SE',center:135},
               {dir:'S',center:180},{dir:'SW',center:225},{dir:'W',center:270},{dir:'NW',center:315},
             ];
-            let bestDir = 'S', bestDiff = 999;
-            for (const d of dirs) {
-              const diff = Math.abs(((bestSeg.azimuthDegrees - d.center + 540) % 360) - 180);
-              if (diff < bestDiff) { bestDiff = diff; bestDir = d.dir; }
-            }
-            const grid = document.getElementById('compassGrid');
-            grid.querySelectorAll('.cdir').forEach(b => b.classList.remove('sel'));
-            const btn = grid.querySelector(`.cdir[data-dir="${bestDir}"]`);
-            if (btn) btn.classList.add('sel');
-            S.roofOrientation = bestDir;
+            const closestDir = az => {
+              let best = 'S', bd = 999;
+              for (const d of dirs) {
+                const df = Math.abs(((az - d.center + 540) % 360) - 180);
+                if (df < bd) { bd = df; best = d.dir; }
+              }
+              return best;
+            };
+
+            // Find bedste segment (tættest på syd) — bruges til hældning og sol-timer
+            const bestSeg = solar.segments.reduce((b, s) =>
+              diffFromSouth(s.azimuthDegrees) < diffFromSouth(b.azimuthDegrees) ? s : b
+            );
+
+            // Sum segmenter inden for 90° af syd
+            const usableSegs = solar.segments.filter(s => diffFromSouth(s.azimuthDegrees) <= 90);
+            const segSum = usableSegs.length > 0
+              ? usableSegs.reduce((sum, s) => sum + s.areaMeters2, 0)
+              : bestSeg.areaMeters2;
+            const usableArea = solar.maxAreaMeters2 ? Math.min(segSum, solar.maxAreaMeters2) : segSum;
+            const southAreaM2 = Math.round(usableArea);
+
+            // Beregn vægtet orientfaktor fra alle brugbare segmenter
+            const segsForFactor = usableSegs.length > 0 ? usableSegs : [bestSeg];
+            const totalArea = segsForFactor.reduce((s, seg) => s + seg.areaMeters2, 0);
+            const weightedFactor = segsForFactor.reduce((sum, seg) => {
+              return sum + (ORIENT_FACTOR[closestDir(seg.azimuthDegrees)] || 1.0) * seg.areaMeters2;
+            }, 0) / totalArea;
+            S.roofOrientFactor = +weightedFactor.toFixed(3); // bruges i calcRec i stedet for simpelt lookup
 
             if (southAreaM2 > 0 && southAreaM2 < 2000) {
               document.getElementById('roofAreaInput').value = southAreaM2;
@@ -1701,22 +1705,19 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
               document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
             }
 
-            const dirNames = {S:'Syd',SW:'SV',SE:'SØ',W:'Vest',E:'Øst',NW:'NV',NE:'NØ',N:'Nord'};
-            const dirNamesFull = {S:'Sydvendt',SW:'Sydvestvendt',SE:'Sydøstvendt',W:'Vestvendt',E:'Østvendt',NW:'Nordvestvendt',NE:'Nordøstvendt',N:'Nordvendt'};
+            // Skjul kompas-grid — vi har præcise data fra Google Solar
+            const compassWrap = document.getElementById('compassWrap');
+            if (compassWrap) compassWrap.style.display = 'none';
 
-            // Kortlæg hvert segment til en kompasretning og lav fordeling
-            const segBreakdown = usableSegs.map(s => {
-              let sd = 'S', sdiff = 999;
-              for (const d of dirs) {
-                const df = Math.abs(((s.azimuthDegrees - d.center + 540) % 360) - 180);
-                if (df < sdiff) { sdiff = df; sd = d.dir; }
-              }
-              return `${Math.round(s.areaMeters2)} m² ${dirNames[sd]||sd}`;
-            }).join(' · ');
+            // Segmentfordeling til status
+            const dirNames = {S:'Syd',SW:'SV',SE:'SØ',W:'Vest',E:'Øst',NW:'NV',NE:'NØ',N:'Nord'};
+            const segBreakdown = segsForFactor.map(s =>
+              `${Math.round(s.areaMeters2)} m² ${dirNames[closestDir(s.azimuthDegrees)]}`
+            ).join(' · ');
 
             if (statusEl) {
               statusEl.style.color = '#059669';
-              statusEl.innerHTML = `✅ Google Solar (${solar.imageryQuality}) — primær retning: <strong>${dirNamesFull[bestDir]||bestDir} (${Math.round(bestSeg.azimuthDegrees)}°)</strong> · hældning: ${Math.round(bestSeg.pitchDegrees)}°${solar.sunshineHours ? ` · ${Math.round(solar.sunshineHours)} sol-timer/år` : ''}<br><span style="color:var(--text-2)">Tagflader: ${segBreakdown} = <strong>~${southAreaM2} m²</strong> brugbart</span> <span style="color:var(--text-3);font-weight:400">(justér ved behov)</span>`;
+              statusEl.innerHTML = `✅ Google Solar (${solar.imageryQuality}) · hældning: ${Math.round(bestSeg.pitchDegrees)}°${solar.sunshineHours ? ` · ${Math.round(solar.sunshineHours)} sol-timer/år` : ''}<br><span style="color:var(--text-2)">Tagflader: ${segBreakdown} = <strong>~${southAreaM2} m²</strong> · vægtet udbytte: <strong>${Math.round(weightedFactor*100)}% af sydvendt</strong></span> <span style="color:var(--text-3)">(justér m² ved behov)</span>`;
             }
             return;
           }
@@ -1911,7 +1912,8 @@ function goStep2() {
 
 function restart() {
   hide('step3');
-  Object.assign(S, { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, _manualKwh:false });
+  Object.assign(S, { zipcode:'', address:'', roofOrientation:'S', roofOrientFactor:null, roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, _manualKwh:false });
+  const cw = document.getElementById('compassWrap'); if (cw) cw.style.display = '';
   document.getElementById('opt-spot').className = 'toggle-opt selected';
   document.getElementById('opt-fixed').className = 'toggle-opt';
   document.getElementById('fixed-price-field').className = 'field hidden';
@@ -2115,8 +2117,9 @@ function calcRec() {
   const wantsBat = kWp >= 6 && (evenKwh > 2.5 || (S.hasEV && S.evChargesHome));
   const batKwh   = S.overrideBatKwh !== null ? S.overrideBatKwh : (!wantsBat ? 0 : evenKwh > 5 ? 10 : 5);
 
-  // Roof orientation yield factor (south = 1.0)
-  const orientFactor = { S:1.00, SW:0.92, SE:0.92, W:0.78, E:0.78, NW:0.55, NE:0.55, N:0.40 }[S.roofOrientation] || 1.00;
+  // Roof orientation yield factor — use weighted factor from Google Solar if available
+  const orientFactor = S.roofOrientFactor ||
+    ({ S:1.00, SW:0.92, SE:0.92, W:0.78, E:0.78, NW:0.55, NE:0.55, N:0.40 }[S.roofOrientation] || 1.00);
 
   const prod = Math.round(kWp * irr * orientFactor);
 
@@ -2312,8 +2315,9 @@ function rebuildAll() {
     document.getElementById('rec-battery').className = 'rec-row neutral';
   }
   document.getElementById('rec-total-val').textContent = r.total.toLocaleString('da-DK') + ' kr';
-  const orientLabel = { S:'Sydvendt', SW:'Sydvestvendt', SE:'Sydøstvendt', W:'Vestvendt', E:'Østvendt', NW:'Nordvestvendt', NE:'Nordøstvendt', N:'Nordvendt' }[S.roofOrientation] || '';
-  const orientSuffix = r.orientFactor < 1 ? ` · ${orientLabel} tag (${Math.round(r.orientFactor*100)}% af max)` : '';
+  const orientSuffix = r.orientFactor < 1
+    ? ` · tagretning giver ${Math.round(r.orientFactor*100)}% af sydvendt udbytte`
+    : '';
   document.getElementById('rec-prod-val').textContent = r.prod.toLocaleString('da-DK') + ' kWh/år' + orientSuffix;
   document.getElementById('rec-self-val').textContent = `${r.selfPct}% (${r.selfCons.toLocaleString('da-DK')} kWh/år)`;
   document.getElementById('rec-sav-val').textContent = sav.toLocaleString('da-DK') + ' kr/år';
@@ -2428,8 +2432,9 @@ function showResults() {
     : (S.spotAvg && S.nettarifAvg) ? 'vægtet spot + nettarif + systemtarif (ingen el-afgift 2026)' : 'fast pris';
   document.getElementById('rec-price-val').textContent =
     `${r.buyPrice.toFixed(2).replace('.',',')} kr/kWh (${priceSource})`;
-  const orientLabel = { S:'Sydvendt', SW:'Sydvestvendt', SE:'Sydøstvendt', W:'Vestvendt', E:'Østvendt', NW:'Nordvestvendt', NE:'Nordøstvendt', N:'Nordvendt' }[S.roofOrientation] || '';
-  const orientSuffix = r.orientFactor < 1 ? ` · ${orientLabel} tag (${Math.round(r.orientFactor*100)}% af max)` : '';
+  const orientSuffix = r.orientFactor < 1
+    ? ` · tagretning giver ${Math.round(r.orientFactor*100)}% af sydvendt udbytte`
+    : '';
   document.getElementById('rec-prod-val').textContent = r.prod.toLocaleString('da-DK') + ' kWh/år' + orientSuffix;
   document.getElementById('rec-self-val').textContent = `${r.selfPct}% (${r.selfCons.toLocaleString('da-DK')} kWh/år)`;
   document.getElementById('rec-sav-val').textContent = r.sav26.toLocaleString('da-DK') + ' kr/år';
