@@ -1701,13 +1701,22 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
               document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
             }
 
-            const dirNames = {S:'Sydvendt',SW:'Sydvestvendt',SE:'Sydøstvendt',W:'Vestvendt',E:'Østvendt',NW:'Nordvestvendt',NE:'Nordøstvendt',N:'Nordvendt'};
-            const segDesc = usableSegs.length > 1
-              ? `${usableSegs.length} brugbare tagflader (sum)`
-              : '1 tagflade';
+            const dirNames = {S:'Syd',SW:'SV',SE:'SØ',W:'Vest',E:'Øst',NW:'NV',NE:'NØ',N:'Nord'};
+            const dirNamesFull = {S:'Sydvendt',SW:'Sydvestvendt',SE:'Sydøstvendt',W:'Vestvendt',E:'Østvendt',NW:'Nordvestvendt',NE:'Nordøstvendt',N:'Nordvendt'};
+
+            // Kortlæg hvert segment til en kompasretning og lav fordeling
+            const segBreakdown = usableSegs.map(s => {
+              let sd = 'S', sdiff = 999;
+              for (const d of dirs) {
+                const df = Math.abs(((s.azimuthDegrees - d.center + 540) % 360) - 180);
+                if (df < sdiff) { sdiff = df; sd = d.dir; }
+              }
+              return `${Math.round(s.areaMeters2)} m² ${dirNames[sd]||sd}`;
+            }).join(' · ');
+
             if (statusEl) {
               statusEl.style.color = '#059669';
-              statusEl.innerHTML = `✅ Google Solar (${solar.imageryQuality}) — ${segDesc} · primær retning: <strong>${dirNames[bestDir]||bestDir} (${Math.round(bestSeg.azimuthDegrees)}°)</strong> · brugbart tagareal: <strong>~${southAreaM2} m²</strong> · hældning: ${Math.round(bestSeg.pitchDegrees)}°${solar.sunshineHours ? ` · ${Math.round(solar.sunshineHours)} sol-timer/år` : ''} <span style="color:var(--text-3);font-weight:400">(justér ved behov)</span>`;
+              statusEl.innerHTML = `✅ Google Solar (${solar.imageryQuality}) — primær retning: <strong>${dirNamesFull[bestDir]||bestDir} (${Math.round(bestSeg.azimuthDegrees)}°)</strong> · hældning: ${Math.round(bestSeg.pitchDegrees)}°${solar.sunshineHours ? ` · ${Math.round(solar.sunshineHours)} sol-timer/år` : ''}<br><span style="color:var(--text-2)">Tagflader: ${segBreakdown} = <strong>~${southAreaM2} m²</strong> brugbart</span> <span style="color:var(--text-3);font-weight:400">(justér ved behov)</span>`;
             }
             return;
           }
