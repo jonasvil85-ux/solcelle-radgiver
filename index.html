@@ -872,7 +872,7 @@ body {
       <div class="field" id="spot-surcharge-field">
         <label>Spot-tillæg fra dit elselskab (kr/kWh, 0 hvis ingen)</label>
         <input type="text" id="spotSurcharge" value="0" inputmode="decimal">
-        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Nettarif varierer efter tidspunkt: ~0,20 kr/kWh om natten, ~0,35 kr/kWh på hverdage, ~0,65 kr/kWh i spidstimen 17–21. Systemtarif + moms lægges oveni. Ingen el-afgift i 2026.</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Nettariffen varierer efter tidspunkt og årstid — vinter spidslast (17–21) er 2–3× dyrere end sommer. DK1 (Jylland) er generelt billigere end DK2 (Sjælland). El-afgift ~0,01 kr/kWh + moms lægges oveni.</div>
       </div>
 
       <!-- EJERTID -->
@@ -1283,21 +1283,28 @@ body {
 </div>
 
 <script>
-/* ── TIME-OF-DAY TARIFFS ──
-   Typiske danske nettariffer (2026), vægtet for hverdag/weekend (5/7 + 2/7).
-   Lavlast 0-5 (alle dage): 0.20 kr/kWh
-   Normal 6-16 + 21-22 (hverdag) / lavlast (weekend): 0.32 kr/kWh blandet
-   Højlast 17-20 (hverdag) / lavlast (weekend): 0.52 kr/kWh blandet
-   Energinets systemtarif 0.061 kr/kWh lægges separat oveni.
-   Kilde: gennemsnit N1, Radius, Cerius, Konstant (dækker ~70% af DK).
+/* ── SÆSONBESTEMTE NETTARIFFER ──
+   Kilde: N1 2025 (DK1/Jylland) og Radius 2026 (DK2/Sjælland), officielle takstblade.
+   Alle værdier: kr/kWh EKS. MOMS, inkl. Energinets systemtarif (~0,043 kr/kWh).
+   Blandet for hverdag/weekend: hverdag × 5/7 + lavlast × 2/7.
+   Sommer = apr–sep (måneder 3–8), Vinter = okt–mar (måneder 9–11, 0–2).
+   Lavlast 00–06, Højlast 06–17+21–22 (hverdage), Spidslast 17–21 (hverdage).
 */
-const NETTARIF_H = [
-  0.20,0.20,0.20,0.20,0.20,0.20,  // 0-5: lavlast alle dage
-  0.32,0.32,0.32,0.32,0.32,0.32,  // 6-11: normal/weekend-blandet
-  0.32,0.32,0.32,0.32,0.32,0.52,  // 12-17: normal → højlast fra 17
-  0.52,0.52,0.52,0.32,0.32,0.20   // 18-23: højlast 17-20, normal 21-22, lav 23
-];
-const SYSTEM_T = 0.061; // Energinets transmissions- og balancetarif 2026
+const NETTARIF = {
+  DK1: { // N1 + Energinet. Vinter spidslast ~97 øre inkl. moms (N1 2025)
+    summer: [0.13,0.13,0.13,0.13,0.13,0.13, 0.16,0.16,0.16,0.16,0.16,0.16,
+             0.16,0.16,0.16,0.16,0.16,0.31, 0.31,0.31,0.31,0.16,0.16,0.13],
+    winter: [0.13,0.13,0.13,0.13,0.13,0.13, 0.25,0.25,0.25,0.25,0.25,0.25,
+             0.25,0.25,0.25,0.25,0.25,0.63, 0.63,0.63,0.63,0.25,0.25,0.13]
+  },
+  DK2: { // Radius + Energinet. Vinter spidslast ~119 øre eks. moms (Radius 2026)
+    summer: [0.14,0.14,0.14,0.14,0.14,0.14, 0.18,0.18,0.18,0.18,0.18,0.18,
+             0.18,0.18,0.18,0.18,0.18,0.34, 0.34,0.34,0.34,0.18,0.18,0.14],
+    winter: [0.18,0.18,0.18,0.18,0.18,0.18, 0.37,0.37,0.37,0.37,0.37,0.37,
+             0.37,0.37,0.37,0.37,0.37,0.93, 0.93,0.93,0.93,0.37,0.37,0.18]
+  }
+};
+const ELAGIFT = 0.008; // ~0,8 øre/kWh resterende el-afgift 2025/2026 (eks. moms)
 
 /* ── STATE ── */
 const S = { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, hasHO:false, hasPool:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, nettarifAvg:null, actualSpotCost:null, actualNettarif:null, priceArea:null, dsoGLN:null, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, ejertidYr:15, financing:'cash', loanRate:4.0 };
@@ -2222,35 +2229,39 @@ function calcRec() {
   const ssSum  = SS.reduce((a,b)=>a+b,0);
   const ssNorm = SS.map(v=>v/ssSum); // proportional hourly solar shape
 
-  // Flat buy price (used for display, export valuation, and as fallback)
+  // Price area: from Eloverblik or estimated from postal code (DK1=Jylland/Fyn, DK2=Sjælland)
+  const priceArea = S.priceArea || (parseInt(S.zipcode) >= 5000 ? 'DK1' : 'DK2');
+  const nt = NETTARIF[priceArea] || NETTARIF.DK1;
+  const nettarifAnnAvg = (nt.summer.reduce((a,b)=>a+b,0) + nt.winter.reduce((a,b)=>a+b,0)) / 48;
+
+  // Flat buy price (used for display, export valuation, and annualCost cap)
   const buyPrice = (S.spotAvg && S.nettarifAvg)
-    ? +((S.spotAvg + (S.spotSurcharge||0) + S.nettarifAvg + SYSTEM_T) * 1.25).toFixed(3)
+    ? +((S.spotAvg + (S.spotSurcharge||0) + S.nettarifAvg + ELAGIFT) * 1.25).toFixed(3)
     : (S.annualBill && S.annualKwh > 0)
       ? +(S.annualBill / S.annualKwh).toFixed(3)
       : (S.effectiveKwhPrice && S.effectiveKwhPrice < 2.0 ? S.effectiveKwhPrice : 1.35);
 
-  // Spot price component for hourly tariff calculation.
-  // For Eloverblik: measured spotAvg. For bill path: estimated from effective price.
+  // Spot price component for hourly calculation
   const spotEst = S.spotAvg
     ? S.spotAvg
-    : Math.max(0.40, (buyPrice / 1.25) - SYSTEM_T - (S.spotSurcharge||0) - 0.33);
+    : Math.max(0.40, (buyPrice / 1.25) - ELAGIFT - (S.spotSurcharge||0) - nettarifAnnAvg);
 
   // ── MONTH-BY-MONTH, HOUR-BY-HOUR SELF-CONSUMPTION ──
-  // For each month: compare hourly solar production with hourly consumption.
-  // Savings weighted by time-of-day nettarif (NETTARIF_H).
-  // This gives an honest estimate rather than a flat self-consumption ratio.
+  // Sommer (apr–sep) og vinter (okt–mar) bruger forskellige nettariffer.
+  // Spidslast 17–21 er 2–3× højere om vinteren end om sommeren.
   let annSelf = 0, annSavSelf = 0;
   for (let m = 0; m < 12; m++) {
-    const dayProd = monthlyProd[m] / mDays[m]; // kWh/day solar in month m
+    const isWinter = m <= 2 || m >= 9; // jan-mar + okt-dec
+    const nettarif = isWinter ? nt.winter : nt.summer;
+    const dayProd  = monthlyProd[m] / mDays[m];
     const monthCons = S.monthlyProfile ? S.monthlyProfile[m] : kwh * mDays[m] / 365;
-    const dayCons = monthCons / mDays[m]; // kWh/day consumption in month m
+    const dayCons  = monthCons / mDays[m];
     for (let h = 0; h < 24; h++) {
-      const solH  = ssNorm[h] * dayProd;   // solar kWh in hour h on typical day in month m
-      const consH = profFrac[h] * dayCons; // consumption kWh in hour h
-      const selfH = Math.min(solH, consH); // self-consumed kWh
+      const solH  = ssNorm[h] * dayProd;
+      const consH = profFrac[h] * dayCons;
+      const selfH = Math.min(solH, consH);
       annSelf += selfH * mDays[m];
-      // Price at hour h with time-of-day tariff
-      const priceH = (spotEst + (S.spotSurcharge||0) + NETTARIF_H[h] + SYSTEM_T) * 1.25;
+      const priceH = (spotEst + (S.spotSurcharge||0) + nettarif[h] + ELAGIFT) * 1.25;
       annSavSelf  += selfH * mDays[m] * priceH;
     }
   }
@@ -2557,8 +2568,8 @@ function showResults() {
           <span style="color:#059669;font-size:10px">✓ præcist</span>
 
           <span>+ El-afgift</span>
-          <span>0,000 kr/kWh</span>
-          <span style="color:#059669;font-size:10px">✓ afskaffet 2026</span>
+          <span>0,010 kr/kWh</span>
+          <span style="color:#059669;font-size:10px">~0,8 øre/kWh 2026</span>
 
           <span>× Moms</span>
           <span>×1,25</span>
