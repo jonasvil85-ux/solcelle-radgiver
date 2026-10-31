@@ -1022,8 +1022,6 @@ function toggleCheck(key) {
 
 function setAfgift(on) {
   _useAfgift = on;
-  document.getElementById('afgift-off').className     = 'toggle-opt' + (!on ? ' selected' : '');
-  document.getElementById('afgift-on').className      = 'toggle-opt' + (on  ? ' selected' : '');
   document.getElementById('kpi-afgift-off').className = 'toggle-opt' + (!on ? ' selected' : '');
   document.getElementById('kpi-afgift-on').className  = 'toggle-opt' + (on  ? ' selected' : '');
   const infoEl = document.getElementById('afgift-info');
@@ -1830,8 +1828,6 @@ function showResults() {
   const r = calcRec();
   _lastRec = r;
   _useAfgift = false;
-  document.getElementById('afgift-off').className     = 'toggle-opt selected';
-  document.getElementById('afgift-on').className      = 'toggle-opt';
   document.getElementById('kpi-afgift-off').className = 'toggle-opt selected';
   document.getElementById('kpi-afgift-on').className  = 'toggle-opt';
   const infoEl = document.getElementById('afgift-info');
