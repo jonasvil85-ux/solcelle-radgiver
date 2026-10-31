@@ -56,7 +56,7 @@ module.exports = async function (req, res) {
     const bbrResults = await Promise.all(
       candidates.slice(0, 10).map(uuid =>
         gql(BBR_GQL,
-          `{ BBR_Bygning(first:1, virkningstid:"${now}", where:{husnummer:{eq:"${uuid}"}}) { nodes { id_lokalId byg041BebyggetAreal byg054AntalEtager byg033Tagkonstruktion byg007Bygningsaar } } }`
+          `{ BBR_Bygning(first:1, virkningstid:"${now}", where:{husnummer:{eq:"${uuid}"}}) { nodes { id_lokalId byg041BebyggetAreal byg054AntalEtager byg033Tagkonstruktion } } }`
         ).then(d => d?.data?.BBR_Bygning?.nodes || []).catch(() => [])
       )
     );
@@ -75,7 +75,7 @@ module.exports = async function (req, res) {
       bebyggetAreal:   best.byg041BebyggetAreal,
       etager:          best.byg054AntalEtager ?? null,
       tagkonstruktion: best.byg033Tagkonstruktion ?? null,
-      byggeaar:        best.byg007Bygningsaar ?? null,
+      byggeaar:        null,
     });
 
   } catch (e) {
