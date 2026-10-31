@@ -1239,8 +1239,14 @@ function calcRec() {
   const orientFactor = { S:1.00, SW:0.92, SE:0.92, W:0.78, E:0.78, NW:0.55, NE:0.55, N:0.40 }[S.roofOrientation] || 1.00;
 
   // Economics
-  const prod       = Math.round(kWp * irr * orientFactor);
-  const selfCons   = Math.round(Math.min(prod * scRatio, kwh * 0.78));
+  const prod     = Math.round(kWp * irr * orientFactor);
+  const baseself = Math.round(Math.min(prod * scRatio, kwh * 0.78));
+  const baseexp  = prod - baseself;
+
+  // Batteri: skifter overskuds-sol fra eksport til egenforbrug
+  // Kapacitet × 0.45 kWh/dag i gennemsnit (sæsonvægtet), men max 60% af eksport
+  const batShift   = batKwh > 0 ? Math.round(Math.min(batKwh * 0.45 * 365, baseexp * 0.60)) : 0;
+  const selfCons   = Math.min(baseself + batShift, Math.round(kwh * 0.92));
   const exported   = prod - selfCons;
   const selfPct    = Math.round((selfCons / kwh) * 100);
 
@@ -1255,7 +1261,7 @@ function calcRec() {
   // Annual electricity cost (for cap)
   const annualCost = S.annualBill || (S.annualKwh && buyPrice ? Math.round(S.annualKwh * buyPrice) : null);
 
-  const sav26Raw = selfCons * buyPrice + exported * sellPrice + (batKwh > 0 ? 350 : 0);
+  const sav26Raw = selfCons * buyPrice + exported * sellPrice;
   const sav26    = Math.round(annualCost ? Math.min(sav26Raw, annualCost * 0.88) : sav26Raw);
   const houseShare = S.hasEV ? Math.max(0, (kwh - evKwhHome) / kwh) : 1.0;
   const afgift  = Math.round(selfCons * houseShare * 0.28);
