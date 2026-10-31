@@ -202,9 +202,10 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
       <div id="roofPanel" class="roof-panel hidden">
         <div class="roof-panel-title">🏠 Tagoplysninger</div>
+        <div id="roofDetectStatus" style="font-size:11.5px;margin:-4px 0 12px;min-height:16px;line-height:1.5"></div>
         <div class="field-row">
           <div class="field" style="margin-bottom:0">
-            <label>Tagretning (himmelsretning mod solen)</label>
+            <label>Tagretning <span style="font-weight:400;color:var(--text-3)">(justér hvis nødvendigt)</span></label>
             <div class="compass-grid" id="compassGrid">
               <div class="cdir" data-dir="NW">NV<small>55%</small></div>
               <div class="cdir" data-dir="N">N<small>40%</small></div>
@@ -215,12 +216,12 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
               <div class="cdir" data-dir="SW">SV<small>92%</small></div>
               <div class="cdir" data-dir="SE">SØ<small>92%</small></div>
             </div>
-            <div style="font-size:10.5px;color:var(--text-3);margin-top:5px">Sydvendt tag giver max udbytte. Klik på din tagretning.</div>
+            <div style="font-size:10.5px;color:var(--text-3);margin-top:5px">Sydvendt tag giver max udbytte.</div>
           </div>
           <div class="field" style="margin-bottom:0">
-            <label>Sydvendt tagflade (m²) — valgfrit</label>
-            <input type="text" id="roofAreaInput" placeholder="F.eks. 40" inputmode="numeric">
-            <div style="font-size:10.5px;color:var(--text-3);margin-top:5px">Typisk villa: 30–70 m² mod sol. Bruges til at begrænse anlæggsstørrelse.</div>
+            <label>Sydvendt tagflade (m²) <span style="font-weight:400;color:var(--text-3)">(justér hvis nødvendigt)</span></label>
+            <input type="text" id="roofAreaInput" placeholder="Henter automatisk…" inputmode="numeric">
+            <div style="font-size:10.5px;color:var(--text-3);margin-top:5px">1 kWp ≈ 6 m². Bruges til at begrænse anlæggsstørrelse.</div>
           </div>
         </div>
       </div>
@@ -740,50 +741,58 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
     if (coords) fetchBuildingOrientation(coords[1], coords[0]); // [lon,lat] → lat,lon
   }
 
+  function polygonAreaM2(nodes) {
+    let area = 0;
+    const cosLat = Math.cos(nodes[0].lat * Math.PI / 180);
+    for (let i = 0; i < nodes.length - 1; i++) {
+      const x1 = nodes[i].lon   * 111111 * cosLat, y1 = nodes[i].lat   * 111111;
+      const x2 = nodes[i+1].lon * 111111 * cosLat, y2 = nodes[i+1].lat * 111111;
+      area += x1 * y2 - x2 * y1;
+    }
+    return Math.abs(area) / 2;
+  }
+
   async function fetchBuildingOrientation(lat, lon) {
+    const statusEl = document.getElementById('roofDetectStatus');
+    if (statusEl) { statusEl.style.color = 'var(--text-3)'; statusEl.textContent = '⏳ Henter tagoplysninger fra OpenStreetMap…'; }
     try {
       const q = `[out:json];way["building"](around:50,${lat},${lon});out geom;`;
       const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`;
       const res = await fetch(url);
-      if (!res.ok) return;
+      if (!res.ok) { if (statusEl) statusEl.textContent = 'Tagdata ikke tilgængeligt — vælg manuelt herunder.'; return; }
       const data = await res.json();
       const ways = data.elements || [];
-      if (!ways.length) return;
+      if (!ways.length) { if (statusEl) statusEl.textContent = 'Bygning ikke fundet i OSM — vælg tagretning og areal manuelt.'; return; }
 
-      // Find den bygning hvis centrum er tættest på adressen
       const way = ways[0];
       const nodes = way.geometry || [];
       if (nodes.length < 3) return;
 
-      // Find den længste kant og dens bearing
+      // Beregn bygningens fodaftryk (Shoelace-formel i meter)
+      const footprintM2 = polygonAreaM2(nodes);
+      // Sydvendt halvdel × 1.15 for typisk 25° taghældning
+      const southAreaM2 = Math.round(footprintM2 / 2 * 1.15);
+
+      // Find den længste kant og dens bearing (= rygning)
       let maxLen = 0, ridgeBearing = 0;
       for (let i = 0; i < nodes.length - 1; i++) {
         const a = nodes[i], b = nodes[i + 1];
         const dlat = b.lat - a.lat;
         const dlon = (b.lon - a.lon) * Math.cos(a.lat * Math.PI / 180);
         const len = Math.sqrt(dlat * dlat + dlon * dlon);
-        if (len > maxLen) {
-          maxLen = len;
-          ridgeBearing = Math.atan2(dlon, dlat) * 180 / Math.PI;
-        }
+        if (len > maxLen) { maxLen = len; ridgeBearing = Math.atan2(dlon, dlat) * 180 / Math.PI; }
       }
 
-      // Tagflader er vinkelret på rygningen — to mulige retninger
+      // Tagflader er vinkelret på rygningen — vælg den der vender mod syd
       const slope1 = ((ridgeBearing + 90) + 360) % 360;
       const slope2 = ((ridgeBearing - 90) + 360) % 360;
-      // Vælg den retning der er tættest på syd (180°)
       const southFacing = Math.abs(slope1 - 180) < Math.abs(slope2 - 180) ? slope1 : slope2;
 
-      // Map til kompas-knap
+      // Map til kompas-retning
       const dirs = [
-        { dir: 'N',  center: 0   },
-        { dir: 'NE', center: 45  },
-        { dir: 'E',  center: 90  },
-        { dir: 'SE', center: 135 },
-        { dir: 'S',  center: 180 },
-        { dir: 'SW', center: 225 },
-        { dir: 'W',  center: 270 },
-        { dir: 'NW', center: 315 },
+        { dir:'N', center:0 }, { dir:'NE', center:45 }, { dir:'E', center:90 },
+        { dir:'SE', center:135 }, { dir:'S', center:180 }, { dir:'SW', center:225 },
+        { dir:'W', center:270 }, { dir:'NW', center:315 },
       ];
       let best = 'S', bestDiff = 999;
       for (const d of dirs) {
@@ -798,12 +807,20 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
       if (btn) btn.classList.add('sel');
       S.roofOrientation = best;
 
-      // Vis note om at det er estimeret
-      const conf = document.getElementById('addrConfirmed');
-      conf.textContent = conf.textContent.replace(' registreret', '') +
-        ` — tagretning estimeret til ${best} (${Math.round(southFacing)}°) fra bygningsomrids`;
+      // Auto-udfyld areal
+      if (southAreaM2 > 0 && southAreaM2 < 500) {
+        document.getElementById('roofAreaInput').value = southAreaM2;
+        S.roofAreaM2 = southAreaM2;
+      }
+
+      // Vis resultat
+      const dirNames = { S:'Sydvendt', SW:'Sydvestvendt', SE:'Sydøstvendt', W:'Vestvendt', E:'Østvendt', NW:'Nordvestvendt', NE:'Nordøstvendt', N:'Nordvendt' };
+      if (statusEl) {
+        statusEl.style.color = '#059669';
+        statusEl.innerHTML = `✅ Bygning fundet — tagretning: <strong>${dirNames[best] || best}</strong> · sydvendt areal: <strong>~${southAreaM2} m²</strong> · fodaftryk: ${Math.round(footprintM2)} m² <span style="color:var(--text-3);font-weight:400">(estimeret fra bygningsomrids — justér herunder ved behov)</span>`;
+      }
     } catch (_) {
-      // Fejler lydløst — brugeren kan stadig vælge manuelt
+      if (statusEl) statusEl.textContent = 'Tagdata ikke tilgængeligt — vælg manuelt herunder.';
     }
   }
 })();
@@ -860,6 +877,7 @@ function restart() {
   document.getElementById('addrConfirmed').style.display = 'none';
   document.getElementById('roofPanel').classList.add('hidden');
   document.getElementById('roofAreaInput').value = '';
+  const rds = document.getElementById('roofDetectStatus'); if (rds) rds.textContent = '';
   document.getElementById('compassGrid').querySelectorAll('.cdir').forEach(b => b.classList.remove('sel'));
   document.querySelector('.cdir[data-dir="S"]').classList.add('sel');
   document.getElementById('tokenInput').value = '';
@@ -949,7 +967,9 @@ function calcRec() {
   const scRatio = S.hasEV && S.evChargesHome ? 0.73 : 0.64;
   const rawKwp  = (kwh * 0.80) / (irr * scRatio);
   const sizes   = [5, 6, 7, 8, 9, 10, 12, 15];
-  const kWp     = S.overrideKwp !== null ? S.overrideKwp : (sizes.find(s => s >= rawKwp) || 15);
+  // Cap by available roof area: 1 kWp ≈ 6 m² (mono panels)
+  const maxKwpRoof = S.roofAreaM2 ? Math.max(3, Math.floor(S.roofAreaM2 / 6)) : Infinity;
+  const kWp     = S.overrideKwp !== null ? S.overrideKwp : Math.min(sizes.find(s => s >= rawKwp) || 15, maxKwpRoof);
 
   // Evening consumption 17-22 from hourly profile
   const prof    = S.hourlyProfile || new Array(24).fill(kwh / 24 / 365);
