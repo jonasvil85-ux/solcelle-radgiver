@@ -1154,6 +1154,9 @@ body {
           <span class="rec-row-label">💰 Årsbesparelse</span>
           <span class="rec-row-val" id="rec-sav-val">—</span>
         </div>
+        <div style="font-size:10px;color:var(--text-4);margin-top:6px;padding:0 2px">
+          Besparelse beregnet time for time med tidsvarierende nettarif (lavlast/normal/højlast) og måned for måned solproduktion. Spotprisen er vægtet årsgennemsnit.
+        </div>
       </div>
       <div class="rec-note" id="rec-note"></div>
     </div>
@@ -1280,6 +1283,22 @@ body {
 </div>
 
 <script>
+/* ── TIME-OF-DAY TARIFFS ──
+   Typiske danske nettariffer (2026), vægtet for hverdag/weekend (5/7 + 2/7).
+   Lavlast 0-5 (alle dage): 0.20 kr/kWh
+   Normal 6-16 + 21-22 (hverdag) / lavlast (weekend): 0.32 kr/kWh blandet
+   Højlast 17-20 (hverdag) / lavlast (weekend): 0.52 kr/kWh blandet
+   Energinets systemtarif 0.061 kr/kWh lægges separat oveni.
+   Kilde: gennemsnit N1, Radius, Cerius, Konstant (dækker ~70% af DK).
+*/
+const NETTARIF_H = [
+  0.20,0.20,0.20,0.20,0.20,0.20,  // 0-5: lavlast alle dage
+  0.32,0.32,0.32,0.32,0.32,0.32,  // 6-11: normal/weekend-blandet
+  0.32,0.32,0.32,0.32,0.32,0.52,  // 12-17: normal → højlast fra 17
+  0.52,0.52,0.52,0.32,0.32,0.20   // 18-23: højlast 17-20, normal 21-22, lav 23
+];
+const SYSTEM_T = 0.061; // Energinets transmissions- og balancetarif 2026
+
 /* ── STATE ── */
 const S = { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, hasHO:false, hasPool:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, nettarifAvg:null, actualSpotCost:null, actualNettarif:null, priceArea:null, dsoGLN:null, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, ejertidYr:15, financing:'cash', loanRate:4.0 };
 let charts = {};
@@ -2164,91 +2183,101 @@ function calcRec() {
   const irr = getIrradiance(S.zipcode);
   const kwh = S.annualKwh;
 
-  // EV: actual kWh based on km and charging location
   const evKwhTotal = S.hasEV ? S.evKm * 0.20 : 0;
   const evKwhHome  = S.hasEV ? evKwhTotal * (S.evChargesHome ? 0.85 : 0.12) : 0;
 
-  // Fallback self-consumption ratio (used for sizing when no profile available)
-  const scRatioFallback = S.hasEV && S.evChargesHome ? 0.73 : 0.64;
-  const rawKwp  = (kwh * 0.80) / (irr * scRatioFallback);
-  const sizes   = [5, 6, 7, 8, 9, 10, 12, 15];
-  // Cap by available roof area: 1 kWp ≈ 6 m² (mono panels)
+  // Hourly consumption fractions (normalized — works whether profile is daily or annual totals)
+  const profRaw  = S.hourlyProfile || new Array(24).fill(1);
+  const profSum  = profRaw.reduce((a,b)=>a+b,0) || 24;
+  const profFrac = profRaw.map(v => v / profSum); // sums to 1
+
+  // Evening fraction (17-21) for battery sizing, expressed as daily kWh
+  const dailyKwh = kwh / 365;
+  const evenKwh  = profFrac.slice(17, 22).reduce((a,b)=>a+b,0) * dailyKwh;
+
+  // System sizing (uses fallback scRatio only for kWp estimate, not for savings)
+  const scFallback = S.hasEV && S.evChargesHome ? 0.73 : 0.64;
+  const rawKwp     = (kwh * 0.80) / (irr * scFallback);
+  const sizes      = [5,6,7,8,9,10,12,15];
   const maxKwpRoof = S.roofAreaM2 ? Math.max(3, Math.floor(S.roofAreaM2 / 6)) : Infinity;
-  const kWp     = S.overrideKwp !== null ? S.overrideKwp : Math.min(sizes.find(s => s >= rawKwp) || 15, maxKwpRoof);
+  const kWp        = S.overrideKwp !== null ? S.overrideKwp : Math.min(sizes.find(s=>s>=rawKwp)||15, maxKwpRoof);
 
-  // Evening consumption 17-22 from hourly profile
-  const prof    = S.hourlyProfile || new Array(24).fill(kwh / 24 / 365);
-  const evenKwh = prof.slice(17, 22).reduce((a, b) => a + b, 0);
-
-  // Battery: makes more sense if big evening load OR EV charges at home (can arbitrage)
   const wantsBat = kWp >= 6 && (evenKwh > 2.5 || (S.hasEV && S.evChargesHome));
   const batKwh   = S.overrideBatKwh !== null ? S.overrideBatKwh : (!wantsBat ? 0 : evenKwh > 5 ? 10 : 5);
 
-  // Roof orientation yield factor — use weighted factor from Google Solar if available
   const orientFactor = S.roofOrientFactor ||
     ({ S:1.00, SW:0.92, SE:0.92, W:0.78, E:0.78, NW:0.55, NE:0.55, N:0.40 }[S.roofOrientation] || 1.00);
 
   const prod = Math.round(kWp * irr * orientFactor);
 
-  // Profile-based self-consumption: use hour-by-hour overlap of real consumption vs. modelled solar.
-  // This correctly penalises nighttime-heavy loads (washing, EV charging at night).
-  // scRatioFallback is only used when no Eloverblik profile is available.
-  let scRatio = scRatioFallback;
-  if (S.hourlyProfile) {
-    const mSc = [0.15,0.33,0.57,0.81,0.91,1.0,0.91,0.79,0.60,0.32,0.16,0.11];
-    const mD  = [31,28,31,30,31,30,31,31,30,31,30,31];
-    const ss  = [0,0,0,0,0,0,0,0,0.48,1.93,4.32,6.72,8.16,8.64,7.20,5.28,2.88,1.44,0.19,0,0,0,0,0];
-    const scale = kWp / 10;
-    const solarAvg = ss.map((v,h) => {
-      let w = 0;
-      for (let m=0;m<12;m++) w += ss[h]*scale*mSc[m]*mD[m];
-      return Math.max(0, w/365);
-    });
-    const dailySelf = prof.reduce((s,v,h) => s + Math.min(v, solarAvg[h]), 0);
-    const profRatio = prod > 0 ? (dailySelf * 365) / prod : scRatioFallback;
-    // Clamp: floor at 0.30 (very night-heavy) ceiling at 0.85
-    scRatio = Math.max(0.30, Math.min(profRatio, 0.85));
-  }
+  // Monthly production — needed for month-by-month self-consumption calculation
+  const mScales = [0.15,0.33,0.57,0.81,0.91,1.0,0.91,0.79,0.60,0.32,0.16,0.11];
+  const mDays   = [31,28,31,30,31,30,31,31,30,31,30,31];
+  const mNorm   = mScales.reduce((a,s,i)=>a+s*mDays[i],0); // ~202.9
+  const monthlyProd = mScales.map((s,i)=>Math.round(kWp*irr*orientFactor*s*mDays[i]/mNorm));
 
-  // Economics
-  const baseself = Math.round(Math.min(prod * scRatio, kwh * 0.78));
-  const baseexp  = prod - baseself;
+  // Normalized hourly solar shape for a typical production day
+  // (kWh/h for a 10 kWp system on a peak-summer day, normalized to sum=1)
+  const SS = [0,0,0,0,0,0,0,0,0.48,1.93,4.32,6.72,8.16,8.64,7.20,5.28,2.88,1.44,0.19,0,0,0,0,0];
+  const ssSum  = SS.reduce((a,b)=>a+b,0);
+  const ssNorm = SS.map(v=>v/ssSum); // proportional hourly solar shape
 
-  // Batteri: skifter overskuds-sol fra eksport til egenforbrug
-  // Kapacitet × 0.45 kWh/dag i gennemsnit (sæsonvægtet), men max 60% af eksport
-  const batShift   = batKwh > 0 ? Math.round(Math.min(batKwh * 0.45 * 365, baseexp * 0.60)) : 0;
-  const selfCons   = Math.min(baseself + batShift, Math.round(kwh * 0.92));
-  const exported   = prod - selfCons;
-  const selfPct    = Math.round((selfCons / kwh) * 100);
-
-  // Buy price: use real calculated price if available, else annualBill/kWh, else safe fallback
+  // Flat buy price (used for display, export valuation, and as fallback)
   const buyPrice = (S.spotAvg && S.nettarifAvg)
-    ? +((S.spotAvg + (S.spotSurcharge || 0) + S.nettarifAvg + 0.061) * 1.25).toFixed(3)
+    ? +((S.spotAvg + (S.spotSurcharge||0) + S.nettarifAvg + SYSTEM_T) * 1.25).toFixed(3)
     : (S.annualBill && S.annualKwh > 0)
       ? +(S.annualBill / S.annualKwh).toFixed(3)
       : (S.effectiveKwhPrice && S.effectiveKwhPrice < 2.0 ? S.effectiveKwhPrice : 1.35);
+
+  // Spot price component for hourly tariff calculation.
+  // For Eloverblik: measured spotAvg. For bill path: estimated from effective price.
+  const spotEst = S.spotAvg
+    ? S.spotAvg
+    : Math.max(0.40, (buyPrice / 1.25) - SYSTEM_T - (S.spotSurcharge||0) - 0.33);
+
+  // ── MONTH-BY-MONTH, HOUR-BY-HOUR SELF-CONSUMPTION ──
+  // For each month: compare hourly solar production with hourly consumption.
+  // Savings weighted by time-of-day nettarif (NETTARIF_H).
+  // This gives an honest estimate rather than a flat self-consumption ratio.
+  let annSelf = 0, annSavSelf = 0;
+  for (let m = 0; m < 12; m++) {
+    const dayProd = monthlyProd[m] / mDays[m]; // kWh/day solar in month m
+    const monthCons = S.monthlyProfile ? S.monthlyProfile[m] : kwh * mDays[m] / 365;
+    const dayCons = monthCons / mDays[m]; // kWh/day consumption in month m
+    for (let h = 0; h < 24; h++) {
+      const solH  = ssNorm[h] * dayProd;   // solar kWh in hour h on typical day in month m
+      const consH = profFrac[h] * dayCons; // consumption kWh in hour h
+      const selfH = Math.min(solH, consH); // self-consumed kWh
+      annSelf += selfH * mDays[m];
+      // Price at hour h with time-of-day tariff
+      const priceH = (spotEst + (S.spotSurcharge||0) + NETTARIF_H[h] + SYSTEM_T) * 1.25;
+      annSavSelf  += selfH * mDays[m] * priceH;
+    }
+  }
+
+  // Battery shifts surplus solar (daytime overflow) to cover evening peak — adds to self-consumption
+  const baseself = Math.min(Math.round(annSelf), Math.round(kwh * 0.92));
+  const baseexp  = prod - baseself;
+  const batShift = batKwh > 0 ? Math.round(Math.min(batKwh * 0.45 * 365, baseexp * 0.60)) : 0;
+  const selfCons = Math.min(baseself + batShift, Math.round(kwh * 0.92));
+  const exported = prod - selfCons;
+  const selfPct  = Math.round((selfCons / kwh) * 100);
+
+  // Scale tariff-weighted savings proportionally for battery boost
+  const selfConsValue = baseself > 0 ? annSavSelf * (selfCons / baseself) : selfCons * buyPrice;
+
   const sellPrice  = 0.35;
-
-  // Annual electricity cost (for cap)
   const annualCost = S.annualBill || (S.annualKwh && buyPrice ? Math.round(S.annualKwh * buyPrice) : null);
-
-  const sav26Raw = selfCons * buyPrice + exported * sellPrice;
-  const sav26    = Math.round(annualCost ? Math.min(sav26Raw, annualCost * 0.88) : sav26Raw);
+  const sav26Raw   = selfConsValue + exported * sellPrice;
+  const sav26      = Math.round(annualCost ? Math.min(sav26Raw, annualCost * 0.88) : sav26Raw);
   const houseShare = S.hasEV ? Math.max(0, (kwh - evKwhHome) / kwh) : 1.0;
-  const afgift  = Math.round(selfCons * houseShare * 0.76);
-  const sav28   = sav26 + afgift;
+  const afgift     = Math.round(selfCons * houseShare * 0.76);
+  const sav28      = sav26 + afgift;
 
-  // Costs (inkl. 25% moms)
   const sysCost = S.overrideSolarCost !== null ? S.overrideSolarCost : Math.round(kWp * 7500 * 1.25);
   const batCost = S.overrideBatCost  !== null ? S.overrideBatCost  : Math.round(batKwh * 3500 * 1.25);
   const total   = sysCost + batCost;
   const payback = +(total / sav26).toFixed(1);
-
-  // Monthly solar production (m-scaled from annual)
-  const mScales = [0.15, 0.33, 0.57, 0.81, 0.91, 1.0, 0.91, 0.79, 0.60, 0.32, 0.16, 0.11];
-  const mDays   = [31,28,31,30,31,30,31,31,30,31,30,31];
-  const mNorm = mScales.reduce((a, s, i) => a + s * mDays[i], 0); // ~202.9
-  const monthlyProd = mScales.map((s, i) => Math.round(kWp * irr * orientFactor * s * mDays[i] / mNorm));
 
   return { kWp, batKwh, prod, selfCons, exported, selfPct, sav26, sav28, afgift, sysCost, batCost, total, payback, irr, orientFactor, monthlyProd, buyPrice };
 }
@@ -2519,8 +2548,8 @@ function showResults() {
           <span style="font-weight:600;font-variant-numeric:tabular-nums">${fmt(S.spotAvg)} kr/kWh</span>
           <span style="color:#059669;font-size:10px">✓ præcist</span>
 
-          <span>+ Nettarif (${hasNettarif ? 'tid×tidspunkt fra DatahubPricelist' : 'skøn'})</span>
-          <span style="font-variant-numeric:tabular-nums">${hasNettarif ? fmt(S.nettarifAvg) : '0,220'} kr/kWh</span>
+          <span>+ Nettarif (forbrug-vægtet gns.)</span>
+          <span style="font-variant-numeric:tabular-nums">${hasNettarif ? fmt(S.nettarifAvg) : '0,320'} kr/kWh</span>
           <span style="${hasNettarif ? 'color:#059669' : 'color:#F59E0B'};font-size:10px">${hasNettarif ? '✓ præcist' : '⚠ skøn'}</span>
 
           <span>+ Systemtarif (Energinet 2026)</span>
