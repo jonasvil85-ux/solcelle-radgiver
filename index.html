@@ -342,12 +342,11 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
           <div style="min-width:26px;height:26px;border-radius:50%;background:var(--emerald);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
           <div style="padding-top:3px">
             <div style="font-size:13.5px;font-weight:600;margin-bottom:4px">Log ind på Eloverblik med MitID</div>
-            <a id="eloverblikBtn" href="https://eloverblik.dk" target="_blank" rel="noopener"
-               onclick="onEloverblikOpen()"
-               style="display:inline-flex;align-items:center;gap:6px;background:var(--emerald);color:#fff;font-size:13px;font-weight:600;padding:8px 16px;border-radius:7px;text-decoration:none;margin-top:2px">
-              Åbn Eloverblik
+            <button onclick="openEloverblikPopup()"
+               style="display:inline-flex;align-items:center;gap:6px;background:var(--emerald);color:#fff;font-size:13px;font-weight:600;padding:8px 16px;border-radius:7px;border:none;cursor:pointer;margin-top:2px">
+              Åbn Eloverblik ved siden af
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 6.5h9M7.5 3l3.5 3.5L7.5 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </a>
+            </button>
           </div>
         </div>
         <div style="display:flex;align-items:flex-start;gap:12px">
@@ -1052,8 +1051,17 @@ document.getElementById('compassGrid').addEventListener('click', function (e) {
 
 function goStep1() { hide('step2'); show('step1'); setProgress(1); }
 
-// Eloverblik-knap: registrér at brugeren er gået over og lyt på retur
+// Eloverblik: åbn i popup i højre halvdel af skærmen
 let _eloverblikOpened = false;
+function openEloverblikPopup() {
+  const sw = screen.width, sh = screen.height;
+  const pw = Math.max(Math.floor(sw / 2), 600);
+  const ph = sh;
+  const left = sw - pw;
+  window.open('https://eloverblik.dk', 'eloverblik',
+    `width=${pw},height=${ph},left=${left},top=0,resizable=yes,scrollbars=yes`);
+  _eloverblikOpened = true;
+}
 function onEloverblikOpen() {
   _eloverblikOpened = true;
 }
