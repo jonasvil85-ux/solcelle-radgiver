@@ -202,10 +202,10 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
       <div id="roofPanel" class="roof-panel hidden">
         <div class="roof-panel-title">🏠 Tagoplysninger</div>
-        <div id="roofDetectStatus" style="font-size:11.5px;margin:-4px 0 12px;min-height:16px;line-height:1.5"></div>
+        <div id="roofDetectStatus" style="font-size:11.5px;margin:-4px 0 10px;min-height:14px;line-height:1.5"></div>
         <div class="field-row">
           <div class="field" style="margin-bottom:0">
-            <label>Tagretning <span style="font-weight:400;color:var(--text-3)">(justér hvis nødvendigt)</span></label>
+            <label>Tagretning</label>
             <div class="compass-grid" id="compassGrid">
               <div class="cdir" data-dir="NW">NV<small>55%</small></div>
               <div class="cdir" data-dir="N">N<small>40%</small></div>
@@ -216,12 +216,18 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
               <div class="cdir" data-dir="SW">SV<small>92%</small></div>
               <div class="cdir" data-dir="SE">SØ<small>92%</small></div>
             </div>
-            <div style="font-size:10.5px;color:var(--text-3);margin-top:5px">Sydvendt tag giver max udbytte.</div>
+            <div style="font-size:10.5px;color:var(--text-3);margin-top:5px">Klik på din tagretning mod solen.</div>
           </div>
           <div class="field" style="margin-bottom:0">
-            <label>Sydvendt tagflade (m²) <span style="font-weight:400;color:var(--text-3)">(justér hvis nødvendigt)</span></label>
-            <input type="text" id="roofAreaInput" placeholder="Henter automatisk…" inputmode="numeric">
-            <div style="font-size:10.5px;color:var(--text-3);margin-top:5px">1 kWp ≈ 6 m². Bruges til at begrænse anlæggsstørrelse.</div>
+            <label>Sydvendt tagflade (m²)</label>
+            <div id="roofPresets" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
+              <span class="toggle-opt" onclick="setRoofArea(45)" title="Rækkehus/kæde ca. 80m² bolig">Rækkehus<small style="display:block;font-size:9px;opacity:.7">~45 m²</small></span>
+              <span class="toggle-opt" onclick="setRoofArea(65)" title="Villa ca. 120m²">Villa S<small style="display:block;font-size:9px;opacity:.7">~65 m²</small></span>
+              <span class="toggle-opt" onclick="setRoofArea(85)" title="Villa ca. 160m²">Villa M<small style="display:block;font-size:9px;opacity:.7">~85 m²</small></span>
+              <span class="toggle-opt" onclick="setRoofArea(110)" title="Villa ca. 200m²+">Villa L<small style="display:block;font-size:9px;opacity:.7">~110 m²</small></span>
+            </div>
+            <input type="text" id="roofAreaInput" placeholder="Eller indtast m² manuelt" inputmode="numeric" oninput="onRoofAreaInput(this.value)">
+            <div style="font-size:10.5px;color:var(--text-3);margin-top:5px">1 kWp ≈ 6 m² · begrænser anlæggsstørrelse</div>
           </div>
         </div>
       </div>
@@ -867,12 +873,26 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
         } catch (_) {}
       }
 
-      if (statusEl) statusEl.textContent = 'Bygning ikke fundet i OSM — vælg tagretning og areal manuelt.';
+      if (statusEl) { statusEl.style.color = 'var(--text-3)'; statusEl.textContent = 'Bygning ikke kortlagt i OSM — vælg tagretning og brug knapperne til at estimere arealet.'; }
     } catch (_) {
       if (statusEl) statusEl.textContent = 'Tagdata ikke tilgængeligt — vælg manuelt herunder.';
     }
   }
 })();
+
+/* ── ROOF AREA ── */
+function setRoofArea(m2) {
+  document.getElementById('roofAreaInput').value = m2;
+  S.roofAreaM2 = m2;
+  document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => {
+    b.classList.toggle('selected', parseInt(b.getAttribute('onclick').match(/\d+/)[0]) === m2);
+  });
+}
+function onRoofAreaInput(v) {
+  const m2 = parseInt(v) || null;
+  S.roofAreaM2 = m2;
+  document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
+}
 
 /* ── COMPASS DIRECTION ── */
 document.getElementById('compassGrid').addEventListener('click', function (e) {
