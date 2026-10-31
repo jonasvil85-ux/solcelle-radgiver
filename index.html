@@ -826,6 +826,28 @@ body {
               <span>Højt vinterforbrug — sol hjælper primært om sommeren</span>
             </div>
           </label>
+          <label class="check-item" id="ci-ho" onclick="toggleCheck('ho')">
+            <div class="check-box">
+              <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                <path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="check-label">
+              <strong>Hjemmekontor</strong>
+              <span>Mere forbrug i dagtimerne — øger selvforbrug fra solceller</span>
+            </div>
+          </label>
+          <label class="check-item" id="ci-pool" onclick="toggleCheck('pool')">
+            <div class="check-box">
+              <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                <path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="check-label">
+              <strong>Pool / varmtvandsbassin</strong>
+              <span>Højt sommerforbrug til pumpe og opvarmning — passer perfekt med sol</span>
+            </div>
+          </label>
         </div>
       </div>
 
@@ -1259,7 +1281,7 @@ body {
 
 <script>
 /* ── STATE ── */
-const S = { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, nettarifAvg:null, actualSpotCost:null, actualNettarif:null, priceArea:null, dsoGLN:null, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, ejertidYr:15, financing:'cash', loanRate:4.0 };
+const S = { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, hasHO:false, hasPool:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, nettarifAvg:null, actualSpotCost:null, actualNettarif:null, priceArea:null, dsoGLN:null, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, ejertidYr:15, financing:'cash', loanRate:4.0 };
 let charts = {};
 let _lastRec = null;
 let _origRec = null;
@@ -1374,6 +1396,12 @@ function calcVurdering(r) {
   if (S.hasHP) {
     lines.push(`Varmepumpen bruger mest strøm om vinteren, hvor solproduktionen er lavest — anlægget er primært effektivt for husforbruget i sommerhalvåret.`);
   }
+  if (S.hasHO) {
+    lines.push(`Med hjemmekontor falder dit forbrug i solens timer — det øger selvforbruget og reducerer behovet for at sælge overskudsstrøm til lav pris.`);
+  }
+  if (S.hasPool) {
+    lines.push(`Poolpumpen kører typisk i sommerhalvåret, præcis når solproduktionen er højest — en fin naturlig synergi der øger selvforbruget.`);
+  }
   if (!S.isOwner) {
     lines.push(`Husk at indhente udlejers tilladelse inden installation.`);
   }
@@ -1405,7 +1433,9 @@ function toggleCheck(key) {
     document.getElementById('ev-details').className = S.hasEV ? 'ev-details' : 'ev-details hidden';
     updateEvEst();
   }
-  if (key === 'hp') { S.hasHP = !S.hasHP; document.getElementById('ci-hp').className = 'check-item' + (S.hasHP ? ' checked' : ''); }
+  if (key === 'hp')   { S.hasHP   = !S.hasHP;   document.getElementById('ci-hp').className   = 'check-item' + (S.hasHP   ? ' checked' : ''); }
+  if (key === 'ho')   { S.hasHO   = !S.hasHO;   document.getElementById('ci-ho').className   = 'check-item' + (S.hasHO   ? ' checked' : ''); }
+  if (key === 'pool') { S.hasPool = !S.hasPool; document.getElementById('ci-pool').className = 'check-item' + (S.hasPool ? ' checked' : ''); }
 }
 
 function setAfgift(on) {
@@ -1919,7 +1949,9 @@ function goStep2() {
 
 function restart() {
   hide('step3');
-  Object.assign(S, { zipcode:'', address:'', roofOrientation:'S', roofOrientFactor:null, roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, _manualKwh:false });
+  Object.assign(S, { zipcode:'', address:'', roofOrientation:'S', roofOrientFactor:null, roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, hasHO:false, hasPool:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, _manualKwh:false });
+  document.getElementById('ci-ho').className = 'check-item';
+  document.getElementById('ci-pool').className = 'check-item';
   const cf = document.getElementById('compassField'); if (cf) cf.style.display = '';
   const rp = document.getElementById('roofPresets'); if (rp) rp.style.display = '';
   document.getElementById('opt-spot').className = 'toggle-opt selected';
@@ -2067,6 +2099,33 @@ function useManualData() {
   const hourlyProfile = normFrac.map(v=>+(v * kwh).toFixed(1));
   const summerHourlyProfile = normSum.map(v=>+(v * (kwh / 12 * 4.5)).toFixed(3)); // avg summer month
   const winterHourlyProfile = normWin.map(v=>+(v * (kwh / 12 * 1.12)).toFixed(3)); // avg winter month
+
+  // Hjemmekontor: flyt 25% af aften-forbrug (17-21) til dagtimer (9-16)
+  if (S.hasHO) {
+    const hoShift = (frac) => {
+      const f = [...frac];
+      let moved = 0;
+      for (let h = 17; h <= 21; h++) { const d = f[h] * 0.25; f[h] -= d; moved += d; }
+      const perDay = moved / 8;
+      for (let h = 9; h <= 16; h++) { f[h] += perDay; }
+      const s = f.reduce((a,b)=>a+b,0);
+      return f.map(v=>v/s);
+    };
+    const hNorm = hoShift(normFrac);
+    const hSum  = hoShift(normSum);
+    const hWin  = hoShift(normWin);
+    hourlyProfile.splice(0, 24, ...hNorm.map(v=>+(v*kwh).toFixed(1)));
+    summerHourlyProfile.splice(0, 24, ...hSum.map(v=>+(v*(kwh/12*4.5)).toFixed(3)));
+    winterHourlyProfile.splice(0, 24, ...hWin.map(v=>+(v*(kwh/12*1.12)).toFixed(3)));
+  }
+
+  // Pool: boost maj-sep (index 4-8) med 30%, reducer resten proportionalt
+  if (S.hasPool) {
+    const poolBoost = [1,1,1,1,1.30,1.30,1.30,1.30,1.30,1,1,1];
+    const boosted = typMonthFactor.map((f,i)=>f*poolBoost[i]);
+    const bwSum = boosted.reduce((a,f,i)=>a+f*mDays[i],0);
+    monthlyProfile.splice(0, 12, ...boosted.map((f,i)=>+(kwh*f*mDays[i]/bwSum).toFixed(1)));
+  }
 
   S.annualKwh           = kwh;
   S.hourlyProfile       = hourlyProfile;
@@ -2493,7 +2552,9 @@ function showResults() {
   const notes = [];
   if (S.hasEV && S.evChargesHome) notes.push(`Elbil (${S.evKm.toLocaleString('da-DK')} km/år · ~${Math.round(S.evKm * 0.16).toLocaleString('da-DK')} kWh/år): lad i dagstimerne om sommeren fra solenergi og om natten om vinteren på billig natarif.`);
   if (S.hasEV && !S.evChargesHome) notes.push(`Elbil (${S.evKm.toLocaleString('da-DK')} km/år): da du primært lader ude, bidrager elbilen minimalt til dit hjemmeforbrug — solanlægget er dimensioneret efter husforbruget.`);
-  if (S.hasHP) notes.push('Varmepumpe: stor del af forbruget er om vinteren — sol hjælper primært maj–september.');
+  if (S.hasHP)   notes.push('Varmepumpe: stor del af forbruget er om vinteren — sol hjælper primært maj–september.');
+  if (S.hasHO)   notes.push('Hjemmekontor: dagtimeforbrug øger selvforbruget markant — solanlægget udnyttes bedre end i en typisk husstand.');
+  if (S.hasPool) notes.push('Pool/bassin: sommerpumpe og opvarmning falder præcis i solens produktionstimer — god synergi.');
   if (!S.isOwner) notes.push('Husk at indhente udlejers tilladelse inden installation.');
   document.getElementById('rec-note').textContent = notes.join(' ');
 
