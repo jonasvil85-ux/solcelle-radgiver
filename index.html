@@ -816,35 +816,6 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
     const statusEl = document.getElementById('roofDetectStatus');
     if (statusEl) { statusEl.style.color = 'var(--text-3)'; statusEl.textContent = '⏳ Henter tagoplysninger…'; }
     try {
-      // Metode 0: BBR via Vercel proxy (kræver DAF_USER + DAF_PASS env vars på Vercel)
-      try {
-        const bbrRes = await timedFetch('/api/bbr', 10000, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lat, lon })
-        });
-        if (bbrRes.ok) {
-          const bbr = await bbrRes.json();
-          if (bbr.bebyggetAreal > 0) {
-            const footprintM2 = bbr.bebyggetAreal;
-            // Pitch-faktor: sadeltag (kode 2/3) ~1.15, fladt tag ~1.0
-            const pitchFactor = (bbr.tagkonstruktion === 1) ? 1.0 : 1.15;
-            const southAreaM2 = Math.round(footprintM2 / 2 * pitchFactor);
-            if (southAreaM2 > 0 && southAreaM2 < 2000) {
-              document.getElementById('roofAreaInput').value = southAreaM2;
-              S.roofAreaM2 = southAreaM2;
-              document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
-              if (statusEl) {
-                statusEl.style.color = '#059669';
-                statusEl.innerHTML = `✅ BBR-data fundet — bygningens fodaftryk: <strong>${footprintM2} m²</strong> · sydvendt halvdel: <strong>~${southAreaM2} m²</strong>${bbr.byggeaar ? ` · opført ${bbr.byggeaar}` : ''} <span style="color:var(--text-3);font-weight:400">(justér herunder ved behov)</span>`;
-              }
-              return;
-            }
-          }
-        }
-        // 503 = BBR ikke konfigureret — fortsæt stille til OSM
-      } catch (_) {}
-
       const OSM = 'https://api.openstreetmap.org/api/0.6';
 
       async function fetchWayFull(wayId) {
@@ -858,18 +829,57 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
         return way.nodes.map(id => nodeMap[id]).filter(Boolean);
       }
 
-      // Metode 1a: Nominatim → way direkte
-      const nomRes = await timedFetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=18&addressdetails=0`,
-        8000
-      );
-      if (nomRes.ok) {
-        const nom = await nomRes.json();
-        if (nom.osm_type === 'way' && nom.osm_id) {
-          const nodes = await fetchWayFull(nom.osm_id);
-          if (nodes && nodes.length >= 3 && applyBuildingNodes(nodes, statusEl)) return;
-        }
-        // Metode 1b: Nominatim giver node → slå parent-ways op (typisk for DK adresser)
+      // Metode 0: BBR via Datafordeler GraphQL (DAR → BBR)
+      // Hent adressekomponenter fra Nominatim med addressdetails=1
+      let nom = null;
+      try {
+        const nomRes = await timedFetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=18&addressdetails=1`,
+          8000
+        );
+        if (nomRes.ok) nom = await nomRes.json();
+      } catch (_) {}
+
+      if (nom?.address?.road && nom?.address?.postcode) {
+        try {
+          const bbrRes = await timedFetch('/api/bbr', 20000, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              road: nom.address.road,
+              houseNumber: nom.address.house_number || '',
+              postalCode: nom.address.postcode,
+              lat, lon
+            })
+          });
+          if (bbrRes.ok) {
+            const bbr = await bbrRes.json();
+            if (bbr.bebyggetAreal > 0) {
+              const footprintM2 = bbr.bebyggetAreal;
+              const pitchFactor = (bbr.tagkonstruktion === 1) ? 1.0 : 1.15;
+              const southAreaM2 = Math.round(footprintM2 / 2 * pitchFactor);
+              if (southAreaM2 > 0 && southAreaM2 < 2000) {
+                document.getElementById('roofAreaInput').value = southAreaM2;
+                S.roofAreaM2 = southAreaM2;
+                document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
+                if (statusEl) {
+                  statusEl.style.color = '#059669';
+                  statusEl.innerHTML = `✅ BBR-data fundet — bygningens fodaftryk: <strong>${footprintM2} m²</strong> · sydvendt halvdel: <strong>~${southAreaM2} m²</strong>${bbr.byggeaar ? ` · opført ${bbr.byggeaar}` : ''} <span style="color:var(--text-3);font-weight:400">(justér herunder ved behov)</span>`;
+                }
+                return;
+              }
+            }
+          }
+        } catch (_) {}
+      }
+
+      // Metode 1a: Nominatim → OSM way direkte
+      if (nom?.osm_type === 'way' && nom?.osm_id) {
+        const nodes = await fetchWayFull(nom.osm_id);
+        if (nodes && nodes.length >= 3 && applyBuildingNodes(nodes, statusEl)) return;
+      }
+      // Metode 1b: node → parent ways (typisk for DK adresser)
+      if (nom) {
         if (nom.osm_type === 'node' && nom.osm_id) {
           const waysRes = await timedFetch(`${OSM}/node/${nom.osm_id}/ways.json`, 6000);
           if (waysRes.ok) {
