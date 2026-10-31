@@ -1103,15 +1103,13 @@ body {
     <!-- PRICE BREAKDOWN BOX -->
     <div id="price-breakdown-box" style="display:none;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:16px"></div>
 
-    <!-- SECTION IMAGE BANNER -->
-    <div style="position:relative;height:160px;margin:8px 0 16px;border-radius:18px;overflow:hidden">
-      <div style="position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1558449028-b53a39d100fc?w=1200&q=80&auto=format') center/cover no-repeat;filter:brightness(0.75)"></div>
-      <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,0.55) 0%,rgba(0,0,0,0.10) 100%);display:flex;align-items:center;padding:0 28px">
-        <div>
-          <div style="font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#F59E0B;margin-bottom:6px">Detaljeret analyse</div>
-          <div style="font-size:18px;font-weight:800;color:#FFFFFF;letter-spacing:-0.03em;line-height:1.1">Dit forbrug time for time</div>
-          <div style="font-size:12px;color:rgba(255,255,255,0.70);margin-top:4px">Baseret på dine Eloverblik-data</div>
-        </div>
+    <!-- SECTION IMAGE: FORBRUG -->
+    <div style="position:relative;height:210px;margin:20px -16px 20px;overflow:hidden">
+      <img src="https://images.unsplash.com/photo-1558449028-b53a39d100fc?w=1400&q=90&auto=format" loading="lazy" alt="Solceller på tag" style="width:100%;height:100%;object-fit:cover;object-position:center 40%;display:block;filter:saturate(1.15) brightness(1.05)">
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,var(--bg) 100%)"></div>
+      <div style="position:absolute;top:14px;right:16px;background:rgba(0,0,0,0.40);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.18);border-radius:12px;padding:10px 16px;text-align:right">
+        <div style="font-size:22px;font-weight:800;color:#F59E0B;line-height:1">1.100</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.80);margin-top:2px;letter-spacing:0.04em">solskinstimer/år i DK</div>
       </div>
     </div>
 
@@ -1122,15 +1120,13 @@ body {
       <div class="chart-wrap" style="height:200px"><canvas id="profileChart"></canvas></div>
     </div>
 
-    <!-- SECTION: ÅRSPRODUKTION -->
-    <div style="position:relative;height:140px;margin:4px 0 16px;border-radius:18px;overflow:hidden">
-      <div style="position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1545208116-0d8d65c23e59?w=1200&q=80&auto=format') center 60%/cover no-repeat;filter:brightness(0.60)"></div>
-      <div style="position:absolute;inset:0;background:linear-gradient(100deg,rgba(0,0,0,0.72) 0%,rgba(0,0,0,0.12) 100%);display:flex;align-items:center;padding:0 28px">
-        <div>
-          <div style="font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#F59E0B;margin-bottom:6px">Årsproduktion</div>
-          <div style="font-size:20px;font-weight:800;color:#FFFFFF;letter-spacing:-0.03em;line-height:1.1">Produktion måned for måned</div>
-          <div style="font-size:12px;color:rgba(255,255,255,0.65);margin-top:5px">Hvornår skinner solen mest — og hvornår betaler det sig mest?</div>
-        </div>
+    <!-- SECTION IMAGE: ÅRSPRODUKTION -->
+    <div style="position:relative;height:210px;margin:20px -16px 20px;overflow:hidden">
+      <img src="https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=1400&q=90&auto=format" loading="lazy" alt="Solcellemarker" style="width:100%;height:100%;object-fit:cover;object-position:center 60%;display:block;filter:saturate(1.2) brightness(1.05)">
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,var(--bg) 100%)"></div>
+      <div style="position:absolute;top:14px;right:16px;background:rgba(0,0,0,0.40);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.18);border-radius:12px;padding:10px 16px;text-align:right">
+        <div style="font-size:22px;font-weight:800;color:#10B981;line-height:1">80%</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.80);margin-top:2px;letter-spacing:0.04em">af produktion: apr–sep</div>
       </div>
     </div>
 
@@ -1141,15 +1137,13 @@ body {
       <div class="chart-wrap" style="height:200px"><canvas id="monthlyChart"></canvas></div>
     </div>
 
-    <!-- SECTION: ØKONOMI -->
-    <div style="position:relative;height:140px;margin:4px 0 16px;border-radius:18px;overflow:hidden">
-      <div style="position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1559302504-64aae6ca6890?w=1200&q=80&auto=format') center/cover no-repeat;filter:brightness(0.55)"></div>
-      <div style="position:absolute;inset:0;background:linear-gradient(100deg,rgba(0,0,0,0.72) 0%,rgba(0,0,0,0.12) 100%);display:flex;align-items:center;padding:0 28px">
-        <div>
-          <div style="font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#10B981;margin-bottom:6px">Tilbagebetalingstid</div>
-          <div style="font-size:20px;font-weight:800;color:#FFFFFF;letter-spacing:-0.03em;line-height:1.1">Hvornår er investeringen tjent hjem?</div>
-          <div style="font-size:12px;color:rgba(255,255,255,0.65);margin-top:5px">Kumulativ økonomi over 15 år baseret på dit forbrug</div>
-        </div>
+    <!-- SECTION IMAGE: ØKONOMI -->
+    <div style="position:relative;height:210px;margin:20px -16px 20px;overflow:hidden">
+      <img src="https://images.unsplash.com/photo-1560520653-9e0e4c89eb11?w=1400&q=90&auto=format" loading="lazy" alt="Moderne hus med solceller" style="width:100%;height:100%;object-fit:cover;object-position:center 50%;display:block;filter:saturate(1.1) brightness(1.0)">
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,var(--bg) 100%)"></div>
+      <div style="position:absolute;top:14px;right:16px;background:rgba(0,0,0,0.40);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.18);border-radius:12px;padding:10px 16px;text-align:right">
+        <div style="font-size:22px;font-weight:800;color:#3B82F6;line-height:1">8–12 år</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.80);margin-top:2px;letter-spacing:0.04em">typisk tilbagebetaling</div>
       </div>
     </div>
 
@@ -1183,6 +1177,16 @@ body {
       <div class="chart-card-title">Vinterdag — Energiflow</div>
       <div class="chart-card-sub">Typisk vinterdag · <span style="color:#059669">■</span> Sol direkte · <span style="color:#7C3AED">■</span> Bat. oplader · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#0891B2">■</span> Bat. aflader · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion</div>
       <div class="chart-wrap" style="height:220px"><canvas id="winterFlowChart"></canvas></div>
+    </div>
+
+    <!-- SECTION IMAGE: ELBIL -->
+    <div id="evImageBanner" style="display:none;position:relative;height:210px;margin:20px -16px 20px;overflow:hidden">
+      <img src="https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=1400&q=90&auto=format" loading="lazy" alt="Elbil lader" style="width:100%;height:100%;object-fit:cover;object-position:center 40%;display:block;filter:saturate(1.15) brightness(1.05)">
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,var(--bg) 100%)"></div>
+      <div style="position:absolute;top:14px;right:16px;background:rgba(0,0,0,0.40);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.18);border-radius:12px;padding:10px 16px;text-align:right">
+        <div style="font-size:22px;font-weight:800;color:#F59E0B;line-height:1">Gratis</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.80);margin-top:2px;letter-spacing:0.04em">ladning fra sol (mar–sep)</div>
+      </div>
     </div>
 
     <!-- CHART 5: EV HEATMAP (shown only if hasEV) -->
@@ -2331,8 +2335,14 @@ function showResults() {
   buildFlowChart(r, 'winter');
   buildMonthlyChart(r);
   buildPaybackChart(r, false);
-  if (S.hasEV) { document.getElementById('evChartCard').style.display=''; buildEVHeatmap(r); }
-  else document.getElementById('evChartCard').style.display='none';
+  if (S.hasEV) {
+    document.getElementById('evChartCard').style.display='';
+    document.getElementById('evImageBanner').style.display='';
+    buildEVHeatmap(r);
+  } else {
+    document.getElementById('evChartCard').style.display='none';
+    document.getElementById('evImageBanner').style.display='none';
+  }
   renderVurdering(r);
 
   show('step3');
