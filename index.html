@@ -2566,7 +2566,7 @@ function buildEVHeatmap(r) {
   for (let h = 0; h < 24; h++) {
     const lbl = document.createElement('div');
     lbl.style.cssText = 'text-align:center;color:#9CA3AF;height:16px;line-height:16px;overflow:hidden';
-    lbl.textContent = h % 4 === 0 ? String(h).padStart(2,'0') : '';
+    lbl.textContent = h % 2 === 0 ? String(h).padStart(2,'0') : '';
     grid.appendChild(lbl);
   }
 
