@@ -847,7 +847,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
           if (solar.segments?.length > 0) {
             // Find det segment der vender tættest på syd (180°)
             const southSeg = solar.segments.reduce((best, s) => {
-              const diff  = a => Math.abs(((a - 180 + 360) % 360) - 180);
+              const diff  = a => Math.abs(((a - 180 + 540) % 360) - 180);
               return diff(s.azimuthDegrees) < diff(best.azimuthDegrees) ? s : best;
             });
 
