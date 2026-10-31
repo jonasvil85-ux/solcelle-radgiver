@@ -752,88 +752,103 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
     return Math.abs(area) / 2;
   }
 
-  const OVERPASS_ENDPOINTS = [
-    'https://overpass-api.de/api/interpreter',
-    'https://overpass.kumi.systems/api/interpreter',
-    'https://overpass.openstreetmap.fr/api/interpreter',
-  ];
-  async function overpassQuery(query) {
-    for (const ep of OVERPASS_ENDPOINTS) {
-      try {
-        const ctl = new AbortController();
-        const t = setTimeout(() => ctl.abort(), 10000);
-        const res = await fetch(ep + '?data=' + encodeURIComponent(query), { signal: ctl.signal });
-        clearTimeout(t);
-        if (res.ok) return res.json();
-      } catch (_) {}
+  async function timedFetch(url, ms) {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), ms);
+    try { const r = await fetch(url, { signal: ctl.signal }); clearTimeout(t); return r; }
+    catch (e) { clearTimeout(t); throw e; }
+  }
+
+  function applyBuildingNodes(nodes, statusEl) {
+    const footprintM2 = polygonAreaM2(nodes);
+    const southAreaM2 = Math.round(footprintM2 / 2 * 1.15);
+
+    let maxLen = 0, ridgeBearing = 0;
+    for (let i = 0; i < nodes.length - 1; i++) {
+      const a = nodes[i], b = nodes[i + 1];
+      const dlat = b.lat - a.lat;
+      const dlon = (b.lon - a.lon) * Math.cos(a.lat * Math.PI / 180);
+      const len = Math.sqrt(dlat * dlat + dlon * dlon);
+      if (len > maxLen) { maxLen = len; ridgeBearing = Math.atan2(dlon, dlat) * 180 / Math.PI; }
     }
-    throw new Error('Alle Overpass-servere fejlede');
+    const slope1 = ((ridgeBearing + 90) + 360) % 360;
+    const slope2 = ((ridgeBearing - 90) + 360) % 360;
+    const southFacing = Math.abs(slope1 - 180) < Math.abs(slope2 - 180) ? slope1 : slope2;
+
+    const dirs = [
+      {dir:'N',center:0},{dir:'NE',center:45},{dir:'E',center:90},{dir:'SE',center:135},
+      {dir:'S',center:180},{dir:'SW',center:225},{dir:'W',center:270},{dir:'NW',center:315},
+    ];
+    let best = 'S', bestDiff = 999;
+    for (const d of dirs) {
+      const diff = Math.abs(((southFacing - d.center + 540) % 360) - 180);
+      if (diff < bestDiff) { bestDiff = diff; best = d.dir; }
+    }
+
+    const grid = document.getElementById('compassGrid');
+    grid.querySelectorAll('.cdir').forEach(b => b.classList.remove('sel'));
+    const btn = grid.querySelector(`.cdir[data-dir="${best}"]`);
+    if (btn) btn.classList.add('sel');
+    S.roofOrientation = best;
+
+    if (southAreaM2 > 0 && southAreaM2 < 500) {
+      document.getElementById('roofAreaInput').value = southAreaM2;
+      S.roofAreaM2 = southAreaM2;
+    }
+
+    const dirNames = {S:'Sydvendt',SW:'Sydvestvendt',SE:'Sydøstvendt',W:'Vestvendt',E:'Østvendt',NW:'Nordvestvendt',NE:'Nordøstvendt',N:'Nordvendt'};
+    if (statusEl) {
+      statusEl.style.color = '#059669';
+      statusEl.innerHTML = `✅ Bygning fundet — tagretning: <strong>${dirNames[best]||best}</strong> · sydvendt areal: <strong>~${southAreaM2} m²</strong> · fodaftryk: ${Math.round(footprintM2)} m² <span style="color:var(--text-3);font-weight:400">(estimeret — justér herunder ved behov)</span>`;
+    }
+    return true;
   }
 
   async function fetchBuildingOrientation(lat, lon) {
     const statusEl = document.getElementById('roofDetectStatus');
-    if (statusEl) { statusEl.style.color = 'var(--text-3)'; statusEl.textContent = '⏳ Henter tagoplysninger fra OpenStreetMap…'; }
+    if (statusEl) { statusEl.style.color = 'var(--text-3)'; statusEl.textContent = '⏳ Henter tagoplysninger…'; }
     try {
-      const q = `[out:json];way["building"](around:80,${lat},${lon});out geom;`;
-      const data = await overpassQuery(q);
-      const ways = data.elements || [];
-      if (!ways.length) { if (statusEl) statusEl.textContent = 'Bygning ikke fundet i OSM — vælg tagretning og areal manuelt.'; return; }
-
-      const way = ways[0];
-      const nodes = way.geometry || [];
-      if (nodes.length < 3) return;
-
-      // Beregn bygningens fodaftryk (Shoelace-formel i meter)
-      const footprintM2 = polygonAreaM2(nodes);
-      // Sydvendt halvdel × 1.15 for typisk 25° taghældning
-      const southAreaM2 = Math.round(footprintM2 / 2 * 1.15);
-
-      // Find den længste kant og dens bearing (= rygning)
-      let maxLen = 0, ridgeBearing = 0;
-      for (let i = 0; i < nodes.length - 1; i++) {
-        const a = nodes[i], b = nodes[i + 1];
-        const dlat = b.lat - a.lat;
-        const dlon = (b.lon - a.lon) * Math.cos(a.lat * Math.PI / 180);
-        const len = Math.sqrt(dlat * dlat + dlon * dlon);
-        if (len > maxLen) { maxLen = len; ridgeBearing = Math.atan2(dlon, dlat) * 180 / Math.PI; }
+      // Metode 1: Nominatim reverse → OSM API /way/full (ingen Overpass-afhængighed)
+      const nomRes = await timedFetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=17&addressdetails=0`,
+        8000
+      );
+      if (nomRes.ok) {
+        const nom = await nomRes.json();
+        if (nom.osm_type === 'way' && nom.osm_id) {
+          const wayRes = await timedFetch(
+            `https://api.openstreetmap.org/api/0.6/way/${nom.osm_id}/full.json`,
+            8000
+          );
+          if (wayRes.ok) {
+            const wd = await wayRes.json();
+            const nodeMap = {};
+            for (const el of wd.elements) if (el.type === 'node') nodeMap[el.id] = {lat:el.lat,lon:el.lon};
+            const way = wd.elements.find(el => el.type === 'way');
+            if (way && way.nodes) {
+              const nodes = way.nodes.map(id => nodeMap[id]).filter(Boolean);
+              if (nodes.length >= 3 && applyBuildingNodes(nodes, statusEl)) return;
+            }
+          }
+        }
       }
 
-      // Tagflader er vinkelret på rygningen — vælg den der vender mod syd
-      const slope1 = ((ridgeBearing + 90) + 360) % 360;
-      const slope2 = ((ridgeBearing - 90) + 360) % 360;
-      const southFacing = Math.abs(slope1 - 180) < Math.abs(slope2 - 180) ? slope1 : slope2;
-
-      // Map til kompas-retning
-      const dirs = [
-        { dir:'N', center:0 }, { dir:'NE', center:45 }, { dir:'E', center:90 },
-        { dir:'SE', center:135 }, { dir:'S', center:180 }, { dir:'SW', center:225 },
-        { dir:'W', center:270 }, { dir:'NW', center:315 },
-      ];
-      let best = 'S', bestDiff = 999;
-      for (const d of dirs) {
-        const diff = Math.abs(((southFacing - d.center + 540) % 360) - 180);
-        if (diff < bestDiff) { bestDiff = diff; best = d.dir; }
+      // Metode 2: Overpass fallback
+      const OVERPASS = ['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
+      const q = `[out:json][timeout:10];way["building"](around:80,${lat},${lon});out geom;`;
+      for (const ep of OVERPASS) {
+        try {
+          const r = await timedFetch(ep + '?data=' + encodeURIComponent(q), 12000);
+          if (!r.ok) continue;
+          const data = await r.json();
+          const ways = data.elements || [];
+          if (!ways.length) continue;
+          const nodes = ways[0].geometry || [];
+          if (nodes.length >= 3 && applyBuildingNodes(nodes, statusEl)) return;
+        } catch (_) {}
       }
 
-      // Opdatér kompasrose og state
-      const grid = document.getElementById('compassGrid');
-      grid.querySelectorAll('.cdir').forEach(b => b.classList.remove('sel'));
-      const btn = grid.querySelector(`.cdir[data-dir="${best}"]`);
-      if (btn) btn.classList.add('sel');
-      S.roofOrientation = best;
-
-      // Auto-udfyld areal
-      if (southAreaM2 > 0 && southAreaM2 < 500) {
-        document.getElementById('roofAreaInput').value = southAreaM2;
-        S.roofAreaM2 = southAreaM2;
-      }
-
-      // Vis resultat
-      const dirNames = { S:'Sydvendt', SW:'Sydvestvendt', SE:'Sydøstvendt', W:'Vestvendt', E:'Østvendt', NW:'Nordvestvendt', NE:'Nordøstvendt', N:'Nordvendt' };
-      if (statusEl) {
-        statusEl.style.color = '#059669';
-        statusEl.innerHTML = `✅ Bygning fundet — tagretning: <strong>${dirNames[best] || best}</strong> · sydvendt areal: <strong>~${southAreaM2} m²</strong> · fodaftryk: ${Math.round(footprintM2)} m² <span style="color:var(--text-3);font-weight:400">(estimeret fra bygningsomrids — justér herunder ved behov)</span>`;
-      }
+      if (statusEl) statusEl.textContent = 'Bygning ikke fundet i OSM — vælg tagretning og areal manuelt.';
     } catch (_) {
       if (statusEl) statusEl.textContent = 'Tagdata ikke tilgængeligt — vælg manuelt herunder.';
     }
