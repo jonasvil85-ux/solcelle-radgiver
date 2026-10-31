@@ -1611,9 +1611,9 @@ function calcRec() {
   const evKwhTotal = S.hasEV ? S.evKm * 0.16 : 0;
   const evKwhHome  = S.hasEV ? evKwhTotal * (S.evChargesHome ? 0.85 : 0.12) : 0;
 
-  // Self-consumption ratio: higher if EV charges at home (more flexibility to use solar)
-  const scRatio = S.hasEV && S.evChargesHome ? 0.73 : 0.64;
-  const rawKwp  = (kwh * 0.80) / (irr * scRatio);
+  // Fallback self-consumption ratio (used for sizing when no profile available)
+  const scRatioFallback = S.hasEV && S.evChargesHome ? 0.73 : 0.64;
+  const rawKwp  = (kwh * 0.80) / (irr * scRatioFallback);
   const sizes   = [5, 6, 7, 8, 9, 10, 12, 15];
   // Cap by available roof area: 1 kWp ≈ 6 m² (mono panels)
   const maxKwpRoof = S.roofAreaM2 ? Math.max(3, Math.floor(S.roofAreaM2 / 6)) : Infinity;
@@ -1630,8 +1630,29 @@ function calcRec() {
   // Roof orientation yield factor (south = 1.0)
   const orientFactor = { S:1.00, SW:0.92, SE:0.92, W:0.78, E:0.78, NW:0.55, NE:0.55, N:0.40 }[S.roofOrientation] || 1.00;
 
+  const prod = Math.round(kWp * irr * orientFactor);
+
+  // Profile-based self-consumption: use hour-by-hour overlap of real consumption vs. modelled solar.
+  // This correctly penalises nighttime-heavy loads (washing, EV charging at night).
+  // scRatioFallback is only used when no Eloverblik profile is available.
+  let scRatio = scRatioFallback;
+  if (S.hourlyProfile) {
+    const mSc = [0.15,0.33,0.57,0.81,0.91,1.0,0.91,0.79,0.60,0.32,0.16,0.11];
+    const mD  = [31,28,31,30,31,30,31,31,30,31,30,31];
+    const ss  = [0,0,0,0,0,0,0,0,0.48,1.93,4.32,6.72,8.16,8.64,7.20,5.28,2.88,1.44,0.19,0,0,0,0,0];
+    const scale = kWp / 10;
+    const solarAvg = ss.map((v,h) => {
+      let w = 0;
+      for (let m=0;m<12;m++) w += ss[h]*scale*mSc[m]*mD[m];
+      return Math.max(0, w/365);
+    });
+    const dailySelf = prof.reduce((s,v,h) => s + Math.min(v, solarAvg[h]), 0);
+    const profRatio = prod > 0 ? (dailySelf * 365) / prod : scRatioFallback;
+    // Clamp: floor at 0.30 (very night-heavy) ceiling at 0.85
+    scRatio = Math.max(0.30, Math.min(profRatio, 0.85));
+  }
+
   // Economics
-  const prod     = Math.round(kWp * irr * orientFactor);
   const baseself = Math.round(Math.min(prod * scRatio, kwh * 0.78));
   const baseexp  = prod - baseself;
 
