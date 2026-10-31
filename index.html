@@ -708,6 +708,33 @@ body::before {
         <div style="font-size:11px;color:var(--text-3);margin-top:4px">Nettarif + systemtarif + moms (~0,36–0,44 kr/kWh) lægges oveni. Ingen el-afgift i 2026.</div>
       </div>
 
+      <!-- EJERTID -->
+      <div class="field">
+        <label>Hvor mange år planlægger du at blive boende?</label>
+        <div class="toggle-group">
+          <div class="toggle-opt" id="ej-5"  onclick="selectEjertid(5)">Under 5 år</div>
+          <div class="toggle-opt" id="ej-10" onclick="selectEjertid(10)">5–10 år</div>
+          <div class="toggle-opt selected" id="ej-15" onclick="selectEjertid(15)">10–15 år</div>
+          <div class="toggle-opt" id="ej-25" onclick="selectEjertid(25)">15+ år</div>
+        </div>
+      </div>
+
+      <!-- FINANSIERING -->
+      <div class="field">
+        <label>Finansiering af anlæg</label>
+        <div class="toggle-group">
+          <div class="toggle-opt selected" id="fin-cash" onclick="selectFinancing('cash')">Kontant</div>
+          <div class="toggle-opt" id="fin-loan" onclick="selectFinancing('loan')">Boliglån</div>
+        </div>
+        <div id="loan-rate-field" style="display:none;margin-top:12px">
+          <div class="field" style="margin-bottom:0">
+            <label>Lånerente inkl. bidragssats (% p.a.)</label>
+            <input type="text" id="loanRate" value="4.0" inputmode="decimal">
+            <div style="font-size:11px;color:var(--text-3);margin-top:4px">Typisk 3–5% for boliglån i 2026</div>
+          </div>
+        </div>
+      </div>
+
       <div class="error-box" id="err1"></div>
       <button class="btn btn-primary" onclick="goStep2()">Næste: Hent dit forbrug →</button>
     </div>
@@ -907,6 +934,23 @@ body::before {
       <div class="rec-note" id="rec-note"></div>
     </div>
 
+    <!-- VURDERING CARD -->
+    <div class="rec-card" id="vurdering-card" style="display:none;border-left:4px solid var(--emerald)">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <div id="vurdering-icon" style="font-size:28px;line-height:1"></div>
+        <div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:2px">Kan det svare sig?</div>
+          <div id="vurdering-verdict" style="font-size:18px;font-weight:800;letter-spacing:-0.02em"></div>
+        </div>
+        <div style="margin-left:auto;text-align:right">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-3)">Estimeret nettoresultat</div>
+          <div id="vurdering-net" style="font-size:20px;font-weight:800;letter-spacing:-0.03em"></div>
+          <div id="vurdering-net-sub" style="font-size:10.5px;color:var(--text-3)"></div>
+        </div>
+      </div>
+      <div id="vurdering-prose" style="font-size:13px;color:var(--text-2);line-height:1.7;padding:14px 16px;background:var(--surface-2);border-radius:10px"></div>
+      <div style="margin-top:12px;font-size:10.5px;color:var(--text-4);font-style:italic" id="vurdering-assumptions"></div>
+    </div>
 
     <!-- PRICE BREAKDOWN BOX -->
     <div id="price-breakdown-box" style="display:none;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:16px"></div>
@@ -978,7 +1022,7 @@ body::before {
 
 <script>
 /* ── STATE ── */
-const S = { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, nettarifAvg:null, actualSpotCost:null, actualNettarif:null, priceArea:null, dsoGLN:null, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null };
+const S = { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, nettarifAvg:null, actualSpotCost:null, actualNettarif:null, priceArea:null, dsoGLN:null, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, ejertidYr:15, financing:'cash', loanRate:4.0 };
 let charts = {};
 let _lastRec = null;
 let _useAfgift = false;
@@ -1009,6 +1053,96 @@ function selectOwnership(type) {
   document.getElementById('opt-owner').className = 'toggle-opt' + (S.isOwner ? ' selected' : '');
   document.getElementById('opt-renter').className = 'toggle-opt' + (!S.isOwner ? ' selected' : '');
   document.getElementById('renter-warn').className = S.isOwner ? 'hidden' : '';
+}
+
+function selectEjertid(yr) {
+  S.ejertidYr = yr;
+  [5,10,15,25].forEach(v => {
+    document.getElementById('ej-'+v).className = 'toggle-opt' + (v===yr ? ' selected' : '');
+  });
+}
+
+function selectFinancing(type) {
+  S.financing = type;
+  document.getElementById('fin-cash').className = 'toggle-opt' + (type==='cash' ? ' selected' : '');
+  document.getElementById('fin-loan').className = 'toggle-opt' + (type==='loan' ? ' selected' : '');
+  document.getElementById('loan-rate-field').style.display = type==='loan' ? 'block' : 'none';
+}
+
+function calcVurdering(r) {
+  const ejertid  = S.ejertidYr || 15;
+  const total    = r.total;
+  const sav26    = r.sav26;
+
+  // Cumulative savings with 4%/år electricity price growth
+  const elVaekst = 0.04;
+  let cumSav = 0, annSav = sav26;
+  for (let y = 1; y <= ejertid; y++) { cumSav += annSav; annSav *= (1 + elVaekst); }
+  cumSav = Math.round(cumSav);
+
+  // House price increase: ~60% of investment (Danish market estimate)
+  const husPris = Math.round(total * 0.60);
+
+  // Loan cost (simplified: avg outstanding = 60% of loan over term)
+  let loanCost = 0;
+  if (S.financing === 'loan') {
+    const rate = (parseFloat(document.getElementById('loanRate')?.value) || S.loanRate || 4.0) / 100;
+    loanCost = Math.round(total * 0.60 * rate * ejertid);
+  }
+
+  const netResult = cumSav + husPris - total - loanCost;
+  const payback   = r.payback;
+
+  // Verdict
+  let icon, verdictText, borderColor;
+  if (netResult > 25000 && ejertid >= payback) {
+    icon = '✅'; verdictText = 'Ja — solceller kan sandsynligvis betale sig'; borderColor = '#10B981';
+  } else if (netResult > 0 || (ejertid >= payback * 0.80)) {
+    icon = '⚠️'; verdictText = 'Sandsynligvis ja — med forbehold'; borderColor = '#F59E0B';
+  } else {
+    icon = '🔴'; verdictText = 'Overvej nøje — usikker økonomi'; borderColor = '#EF4444';
+  }
+
+  // Prose
+  const fmt = n => Math.round(n).toLocaleString('da-DK');
+  const lines = [];
+
+  if (ejertid >= payback) {
+    lines.push(`Med en planlagt ejertid på ${ejertid} år når du tilbagebetalingstiden på ~${payback} år, inden du sælger — anlægget har betalt sig selv hjem, mens du bor der.`);
+  } else {
+    lines.push(`Din planlagte ejertid på ${ejertid} år er kortere end tilbagebetalingstiden på ~${payback} år. Solceller øger dog typisk boligens salgsværdi med ca. ${fmt(husPris)} kr (60% af anlægsprisen), hvilket delvist opvejer dette.`);
+  }
+
+  lines.push(`Over ${ejertid} år estimeres en samlet elbesparelse på ca. ${fmt(cumSav)} kr — baseret på din nuværende årsbesparelse på ${fmt(sav26)} kr og en forventet elprisstigning på 4%/år. Kombineret med boligværdistigningen giver det et estimeret nettoresultat på ${netResult >= 0 ? '+' : ''}${fmt(netResult)} kr efter fradrag af selve investeringen${S.financing==='loan' ? ` og låneomkostninger på ca. ${fmt(loanCost)} kr` : ''}.`);
+
+  if (S.hasEV) {
+    lines.push(`Din elbil styrker investeringen: selvom afgiftsrefusionen reducerer afgiftsbesparelsen en smule, lader du billigst om sommeren direkte fra solen og sparer på ladning fra nettet.`);
+  }
+  if (S.hasHP) {
+    lines.push(`Varmepumpen bruger mest strøm om vinteren, hvor solproduktionen er lavest — anlægget er primært effektivt for husforbruget i sommerhalvåret.`);
+  }
+  if (!S.isOwner) {
+    lines.push(`Husk at indhente udlejers tilladelse inden installation.`);
+  }
+
+  return { netResult, cumSav, husPris, loanCost, icon, verdictText, borderColor, ejertid, prose: lines.join(' ') };
+}
+
+function renderVurdering(r) {
+  const v = calcVurdering(r);
+  const card = document.getElementById('vurdering-card');
+  if (!card) return;
+  card.style.display = '';
+  card.style.borderLeftColor = v.borderColor;
+  document.getElementById('vurdering-icon').textContent    = v.icon;
+  document.getElementById('vurdering-verdict').textContent = v.verdictText;
+  const netEl = document.getElementById('vurdering-net');
+  netEl.textContent = (v.netResult >= 0 ? '+' : '') + Math.round(v.netResult).toLocaleString('da-DK') + ' kr';
+  netEl.style.color = v.netResult >= 0 ? 'var(--emerald)' : 'var(--red)';
+  document.getElementById('vurdering-net-sub').textContent = `estimeret nettoresultat over ${v.ejertid} år`;
+  document.getElementById('vurdering-prose').textContent   = v.prose;
+  document.getElementById('vurdering-assumptions').textContent =
+    `Antagelser: Elprisstigning 4%/år · Boligværdistigning 60% af anlægspris · Vedligehold ikke inkluderet`;
 }
 
 function toggleCheck(key) {
@@ -1530,6 +1664,19 @@ function restart() {
   document.getElementById('compassGrid').querySelectorAll('.cdir').forEach(b => b.classList.remove('sel'));
   document.querySelector('.cdir[data-dir="S"]').classList.add('sel');
   document.getElementById('tokenInput').value = '';
+  // Reset ejertid to 15 years default
+  document.querySelectorAll('[id^="ej-"]').forEach(el => el.classList.remove('selected'));
+  const ej15 = document.getElementById('ej-15'); if (ej15) ej15.classList.add('selected');
+  S.ejertidYr = 15;
+  // Reset financing to cash
+  const finCash = document.getElementById('fin-cash'); if (finCash) finCash.classList.add('selected');
+  const finLoan = document.getElementById('fin-loan'); if (finLoan) finLoan.classList.remove('selected');
+  S.financing = 'cash';
+  S.loanRate = 4.0;
+  const lrf = document.getElementById('loan-rate-field'); if (lrf) lrf.style.display = 'none';
+  const lri = document.getElementById('loanRate'); if (lri) lri.value = '4.0';
+  // Hide vurdering card
+  const vc = document.getElementById('vurdering-card'); if (vc) vc.style.display = 'none';
   destroyCharts();
   show('step1'); setProgress(1);
 }
@@ -1823,6 +1970,7 @@ function rebuildAll() {
   buildMonthlyChart(r);
   buildPaybackChart(r, _useAfgift);
   if (S.hasEV) buildEVHeatmap(r);
+  renderVurdering(r);
 }
 
 /* ── FORBRUGBASERET TAGESTIMERING ── */
@@ -1958,6 +2106,7 @@ function showResults() {
   buildPaybackChart(r, false);
   if (S.hasEV) { document.getElementById('evChartCard').style.display=''; buildEVHeatmap(r); }
   else document.getElementById('evChartCard').style.display='none';
+  renderVurdering(r);
 
   show('step3');
 }
