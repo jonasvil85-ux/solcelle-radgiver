@@ -1705,9 +1705,11 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
               document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
             }
 
-            // Skjul kompas-grid — vi har præcise data fra Google Solar
+            // Skjul kompas-grid og hustype-presets — vi har præcise data fra Google Solar
             const compassWrap = document.getElementById('compassWrap');
             if (compassWrap) compassWrap.style.display = 'none';
+            const roofPresets = document.getElementById('roofPresets');
+            if (roofPresets) roofPresets.style.display = 'none';
 
             // Segmentfordeling til status
             const dirNames = {S:'Syd',SW:'SV',SE:'SØ',W:'Vest',E:'Øst',NW:'NV',NE:'NØ',N:'Nord'};
@@ -1914,6 +1916,7 @@ function restart() {
   hide('step3');
   Object.assign(S, { zipcode:'', address:'', roofOrientation:'S', roofOrientFactor:null, roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, _manualKwh:false });
   const cw = document.getElementById('compassWrap'); if (cw) cw.style.display = '';
+  const rp = document.getElementById('roofPresets'); if (rp) rp.style.display = '';
   document.getElementById('opt-spot').className = 'toggle-opt selected';
   document.getElementById('opt-fixed').className = 'toggle-opt';
   document.getElementById('fixed-price-field').className = 'field hidden';
