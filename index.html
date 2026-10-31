@@ -927,6 +927,57 @@ body {
 
       <div class="error-box" id="err2"></div>
       <button class="btn btn-primary" onclick="fetchData()">Hent mine data →</button>
+
+      <!-- Manuel fallback -->
+      <div style="margin:28px 0 4px;display:flex;align-items:center;gap:12px">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <span style="font-size:11.5px;color:var(--text-3);white-space:nowrap;padding:0 4px">Eller</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+
+      <button id="manualToggleBtn" onclick="toggleManualSection()"
+        style="width:100%;margin-top:14px;padding:11px 16px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--text-2);font-size:13px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between">
+        <span>Intet adgang til Eloverblik? Indsæt dit forbrug manuelt</span>
+        <span id="manualToggleArrow" style="font-size:16px;transition:transform 0.2s">▾</span>
+      </button>
+
+      <div id="manualSection" style="display:none;margin-top:16px;padding:18px;background:var(--surface-2);border-radius:12px;border:1px solid var(--border)">
+        <p style="font-size:12.5px;color:var(--text-3);margin:0 0 14px">
+          Du finder dit årslige elforbrug på din elregning, i din netvirksomheds app, eller på <strong>minenergi.dk</strong>. Vi bruger typiske danske forbrugskurver som erstatning for dine timedata.
+        </p>
+
+        <!-- Reference hints -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px">
+          <div onclick="document.getElementById('manualKwh').value=2500" style="padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:11.5px;color:var(--text-2)">
+            <div style="font-weight:700;color:var(--text-1)">~2.500 kWh</div>
+            Lejlighed / 1-2 pers.
+          </div>
+          <div onclick="document.getElementById('manualKwh').value=4000" style="padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:11.5px;color:var(--text-2)">
+            <div style="font-weight:700;color:var(--text-1)">~4.000 kWh</div>
+            Villa, 3-4 pers.
+          </div>
+          <div onclick="document.getElementById('manualKwh').value=6500" style="padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:11.5px;color:var(--text-2)">
+            <div style="font-weight:700;color:var(--text-1)">~6.500 kWh</div>
+            Villa m. varmepumpe
+          </div>
+          <div onclick="document.getElementById('manualKwh').value=9000" style="padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:11.5px;color:var(--text-2)">
+            <div style="font-weight:700;color:var(--text-1)">~9.000 kWh</div>
+            Pumpe + elbil
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom:14px">
+          <label>Dit årslige elforbrug (kWh)</label>
+          <input type="number" id="manualKwh" placeholder="fx 4500" min="500" max="30000" step="100" style="font-size:16px">
+        </div>
+        <div class="field" style="margin-bottom:16px">
+          <label>Din årlige elregning i kr. <span style="font-weight:400;color:var(--text-3)">(valgfri — bruges til at beregne din elpris)</span></label>
+          <input type="number" id="manualBill" placeholder="fx 12000" min="0" max="100000" step="500">
+        </div>
+
+        <div class="error-box" id="errManual"></div>
+        <button class="btn btn-primary" onclick="useManualData()">Brug mit forbrug →</button>
+      </div>
     </div>
   </div>
 
@@ -1839,7 +1890,7 @@ function goStep2() {
 
 function restart() {
   hide('step3');
-  Object.assign(S, { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null });
+  Object.assign(S, { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, _manualKwh:false });
   document.getElementById('opt-spot').className = 'toggle-opt selected';
   document.getElementById('opt-fixed').className = 'toggle-opt';
   document.getElementById('fixed-price-field').className = 'field hidden';
@@ -1940,6 +1991,72 @@ async function fetchData() {
     setProgress(2);
     showErr('err2', err.message || 'Kunne ikke hente data — prøv igen');
   }
+}
+
+/* ── MANUEL FORBRUG FALLBACK ── */
+function toggleManualSection() {
+  const sec = document.getElementById('manualSection');
+  const arrow = document.getElementById('manualToggleArrow');
+  const open = sec.style.display !== 'none';
+  sec.style.display = open ? 'none' : 'block';
+  arrow.style.transform = open ? '' : 'rotate(180deg)';
+}
+
+function useManualData() {
+  const kwh = parseInt(document.getElementById('manualKwh').value, 10);
+  const bill = parseFloat(document.getElementById('manualBill').value) || 0;
+  if (!kwh || kwh < 500 || kwh > 30000) {
+    showErr('errManual', 'Indtast et forbrug mellem 500 og 30.000 kWh');
+    return;
+  }
+  showErr('errManual', '');
+
+  // Typical Danish household hourly fractions (morning + evening peaks)
+  const typFrac = [0.022,0.018,0.015,0.013,0.013,0.018,0.035,0.055,0.060,0.052,0.045,0.042,0.040,0.038,0.040,0.045,0.052,0.062,0.070,0.068,0.058,0.048,0.038,0.028];
+  const fracSum = typFrac.reduce((a,b)=>a+b,0);
+  const normFrac = typFrac.map(v=>v/fracSum);
+
+  // Summer: slightly more midday (dishwasher/laundry during day)
+  const sumFrac = [0.014,0.011,0.009,0.009,0.010,0.015,0.028,0.046,0.058,0.056,0.052,0.050,0.050,0.048,0.050,0.052,0.056,0.062,0.070,0.068,0.055,0.042,0.030,0.020];
+  const sumSum = sumFrac.reduce((a,b)=>a+b,0);
+  const normSum = sumFrac.map(v=>v/sumSum);
+
+  // Winter: more evening heavy
+  const winFrac = [0.025,0.020,0.016,0.014,0.014,0.019,0.038,0.058,0.062,0.050,0.042,0.038,0.036,0.035,0.038,0.042,0.050,0.068,0.078,0.075,0.062,0.050,0.040,0.030];
+  const winSum = winFrac.reduce((a,b)=>a+b,0);
+  const normWin = winFrac.map(v=>v/winSum);
+
+  // Monthly: higher in winter (seasonal DK pattern), weighted by days
+  const mDays = [31,28,31,30,31,30,31,31,30,31,30,31];
+  const typMonthFactor = [1.18,1.08,1.00,0.90,0.85,0.78,0.76,0.80,0.88,0.96,1.10,1.24];
+  const weightedSum = typMonthFactor.reduce((a,f,i)=>a+f*mDays[i],0);
+  const monthlyProfile = typMonthFactor.map((f,i)=>+(kwh * f * mDays[i] / weightedSum).toFixed(1));
+
+  // Annual hourly totals (used in charts)
+  const hourlyProfile = normFrac.map(v=>+(v * kwh).toFixed(1));
+  const summerHourlyProfile = normSum.map(v=>+(v * (kwh / 12 * 4.5)).toFixed(3)); // avg summer month
+  const winterHourlyProfile = normWin.map(v=>+(v * (kwh / 12 * 1.12)).toFixed(3)); // avg winter month
+
+  S.annualKwh           = kwh;
+  S.hourlyProfile       = hourlyProfile;
+  S.monthlyProfile      = monthlyProfile;
+  S.summerHourlyProfile = summerHourlyProfile;
+  S.winterHourlyProfile = winterHourlyProfile;
+  S.calculatedAnnualCost = bill || null;
+  S.effectiveKwhPrice   = bill && kwh > 0 ? +(bill / kwh).toFixed(3) : S.fixedPrice || 2.70;
+  if (bill) S.annualBill = bill;
+  S._manualKwh = true; // flag for result subtitle
+
+  hide('step2');
+  show('stepLoading');
+  setProgress(3);
+  document.getElementById('loadingLabel').textContent = 'Beregner din solcelleanbefaling…';
+
+  // Small delay so spinner shows, then calculate
+  setTimeout(() => {
+    hide('stepLoading');
+    showResults();
+  }, 600);
 }
 
 /* ── IRRADIANCE BY ZIP ── */
@@ -2231,6 +2348,14 @@ function showResults() {
   const r = calcRec();
   _lastRec = r;
   _origRec = r; // anchor — never changes after first load
+
+  // Update subtitle to indicate manual/estimated data
+  const subEl = document.getElementById('resultSub');
+  if (subEl) {
+    subEl.textContent = S._manualKwh
+      ? 'Baseret på estimeret forbrug og typiske danske forbrugskurver'
+      : 'Baseret på dit faktiske forbrug og din boligsituation';
+  }
   _useAfgift = false;
   document.getElementById('kpi-afgift-off').className = 'toggle-opt selected';
   document.getElementById('kpi-afgift-on').className  = 'toggle-opt';
