@@ -2358,7 +2358,7 @@ function rebuildAll() {
     const last  = mSc.length - 1 - [...mSc].reverse().findIndex(v => v >= threshold);
     const solPct = Math.round((r.selfCons / S.annualKwh) * 100);
     badgeNum.textContent = solPct + '%';
-    badgeSub.textContent = 'af dit forbrug dækkes af sol';
+    badgeSub.textContent = 'af dit elforbrug dækkes af egne solceller';
   }
 }
 
