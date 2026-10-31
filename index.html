@@ -336,16 +336,37 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
       <div class="card-title">Hent dit faktiske forbrug</div>
       <div class="card-sub">Vi bruger dit rigtige forbrug til at give en præcis anbefaling</div>
 
-      <ol class="steps-ol">
-        <li>Gå til <a href="https://eloverblik.dk" target="_blank" rel="noopener">eloverblik.dk</a> og klik <strong>"Log på som privat"</strong> → log ind med MitID</li>
-        <li>Tryk på de <strong>tre vandrette streger</strong> (☰) øverst og vælg <strong>"API adgang"</strong></li>
-        <li>Klik <strong>"Opret token"</strong>, giv det et navn (fx "Solcelle"), acceptér vilkårene og kopiér den lange tekststreng</li>
-        <li>Indsæt token herunder</li>
-      </ol>
+      <!-- Trin-guide -->
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <div style="min-width:26px;height:26px;border-radius:50%;background:var(--emerald);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+          <div style="padding-top:3px">
+            <div style="font-size:13.5px;font-weight:600;margin-bottom:4px">Log ind på Eloverblik med MitID</div>
+            <a id="eloverblikBtn" href="https://eloverblik.dk/authorization" target="_blank" rel="noopener"
+               onclick="onEloverblikOpen()"
+               style="display:inline-flex;align-items:center;gap:6px;background:var(--emerald);color:#fff;font-size:13px;font-weight:600;padding:8px 16px;border-radius:7px;text-decoration:none;margin-top:2px">
+              Åbn Eloverblik
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 6.5h9M7.5 3l3.5 3.5L7.5 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <div style="min-width:26px;height:26px;border-radius:50%;background:var(--emerald);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+          <div style="padding-top:3px;font-size:13.5px">Klik <strong>"Opret token"</strong>, giv det et navn (fx <em>Solcelle</em>), acceptér vilkårene</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <div style="min-width:26px;height:26px;border-radius:50%;background:var(--emerald);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+          <div style="padding-top:3px;font-size:13.5px">Kopiér den lange tekststreng og indsæt herunder</div>
+        </div>
+      </div>
+
+      <div id="tokenReturnHint" style="display:none;background:rgba(5,150,105,.07);border:1px solid rgba(5,150,105,.25);border-radius:8px;padding:10px 13px;font-size:12.5px;color:var(--emerald);margin-bottom:14px">
+        ✅ Du er tilbage — indsæt nu dit token herunder og klik "Hent mine data"
+      </div>
 
       <div class="field">
         <label>Dit Eloverblik-token</label>
-        <input type="password" id="tokenInput" placeholder="Indsæt token her…" autocomplete="off">
+        <input type="password" id="tokenInput" placeholder="eyJ… (lang tekststreng fra Eloverblik)" autocomplete="off">
         <div class="token-note">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="margin-top:1px;flex-shrink:0"><circle cx="6" cy="6" r="5.5" stroke="#9CA3AF"/><rect x="5.5" y="5" width="1" height="4" rx=".5" fill="#9CA3AF"/><rect x="5.5" y="3" width="1" height="1.5" rx=".5" fill="#9CA3AF"/></svg>
           Tokenet sendes krypteret og gemmes ikke. Det bruges kun til at hente dine forbrugsdata én gang.
@@ -1030,6 +1051,20 @@ document.getElementById('compassGrid').addEventListener('click', function (e) {
 });
 
 function goStep1() { hide('step2'); show('step1'); setProgress(1); }
+
+// Eloverblik-knap: registrér at brugeren er gået over og lyt på retur
+let _eloverblikOpened = false;
+function onEloverblikOpen() {
+  _eloverblikOpened = true;
+}
+window.addEventListener('focus', function onReturn() {
+  if (!_eloverblikOpened) return;
+  _eloverblikOpened = false;
+  const hint = document.getElementById('tokenReturnHint');
+  const inp  = document.getElementById('tokenInput');
+  if (hint) hint.style.display = 'block';
+  if (inp)  setTimeout(() => inp.focus(), 200);
+});
 
 function goStep2() {
   // Accept address selection (zip hidden) OR fallback: 4-digit zip typed directly in the address field
