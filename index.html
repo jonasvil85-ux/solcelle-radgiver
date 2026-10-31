@@ -851,6 +851,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
 
       // Hent BBR-data (areal og tagtype) — gem til brug i applyBuildingNodes
       let bbrData = null;
+      let bbrError = null;
       if (nom?.address?.road && nom?.address?.postcode) {
         try {
           const bbrRes = await timedFetch('/api/bbr', 20000, {
@@ -863,11 +864,15 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
               lat, lon
             })
           });
-          if (bbrRes.ok) {
-            const bbr = await bbrRes.json();
-            if (bbr.bebyggetAreal > 0) bbrData = bbr;
+          const bbrJson = await bbrRes.json().catch(() => null);
+          if (bbrRes.ok && bbrJson?.bebyggetAreal > 0) {
+            bbrData = bbrJson;
+          } else {
+            bbrError = bbrJson?.error || `HTTP ${bbrRes.status}`;
           }
-        } catch (_) {}
+        } catch (e) { bbrError = e.message; }
+      } else {
+        bbrError = nom ? `Mangler husnummer (Nominatim: ${JSON.stringify(nom?.address)?.slice(0,80)})` : 'Nominatim-opslag fejlede';
       }
       // Fortsæt altid til OSM-metoder for at finde bygningens faktiske retning
 
@@ -927,7 +932,12 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
         }
       }
 
-      if (statusEl) { statusEl.style.color = 'var(--text-3)'; statusEl.textContent = 'Bygning ikke kortlagt i OSM — vælg tagretning og brug knapperne til at estimere arealet.'; }
+      if (statusEl) {
+        statusEl.style.color = 'var(--text-3)';
+        statusEl.textContent = bbrError
+          ? `Bygning ikke fundet (BBR: ${bbrError}) — vælg tagretning og areal manuelt.`
+          : 'Bygning ikke kortlagt i OSM — vælg tagretning og brug knapperne til at estimere arealet.';
+      }
     } catch (_) {
       if (statusEl) statusEl.textContent = 'Tagdata ikke tilgængeligt — vælg manuelt herunder.';
     }
