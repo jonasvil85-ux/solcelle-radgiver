@@ -2351,13 +2351,12 @@ function rebuildAll() {
   const badgeNum = document.getElementById('monthlyBadgeNum');
   const badgeSub = document.getElementById('monthlyBadgeSub');
   if (badgeNum && S.annualKwh > 0) {
-    const solPct = Math.round((r.selfC / S.annualKwh) * 100);
-    // Find first and last month where solar > 10% of monthly consumption
     const mSc = [0.15,0.33,0.57,0.81,0.91,1.0,0.91,0.79,0.60,0.32,0.16,0.11];
     const mNames = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
     const threshold = 0.10;
     const first = mSc.findIndex(v => v >= threshold);
     const last  = mSc.length - 1 - [...mSc].reverse().findIndex(v => v >= threshold);
+    const solPct = Math.round((r.selfCons / S.annualKwh) * 100);
     badgeNum.textContent = solPct + '%';
     badgeSub.textContent = `af forbrug dækket af sol (${mNames[first]}–${mNames[last]})`;
   }
@@ -2518,7 +2517,7 @@ function showResults() {
   const _bn = document.getElementById('monthlyBadgeNum');
   const _bs = document.getElementById('monthlyBadgeSub');
   if (_bn && S.annualKwh > 0) {
-    const _pct = Math.round((r.selfC / S.annualKwh) * 100);
+    const _pct = Math.round((r.selfCons / S.annualKwh) * 100);
     const _mSc = [0.15,0.33,0.57,0.81,0.91,1.0,0.91,0.79,0.60,0.32,0.16,0.11];
     const _mn  = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
     const _f   = _mSc.findIndex(v => v >= 0.10);
