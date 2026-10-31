@@ -767,10 +767,14 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
     catch (e) { clearTimeout(t); throw e; }
   }
 
-  function applyBuildingNodes(nodes, statusEl) {
-    const footprintM2 = polygonAreaM2(nodes);
-    const southAreaM2 = Math.round(footprintM2 / 2 * 1.15);
+  function applyBuildingNodes(nodes, statusEl, bbrData) {
+    const osmFootprintM2 = polygonAreaM2(nodes);
+    // Brug BBR-areal hvis tilgængeligt (mere præcist end beregnet OSM-areal)
+    const footprintM2 = (bbrData?.bebyggetAreal > 0) ? bbrData.bebyggetAreal : osmFootprintM2;
+    const pitchFactor = (bbrData?.tagkonstruktion === 1) ? 1.0 : 1.15;
+    const southAreaM2 = Math.round(footprintM2 / 2 * pitchFactor);
 
+    // Beregn tagretning fra bygningspolygonens længste kant (ridgelinje)
     let maxLen = 0, ridgeBearing = 0;
     for (let i = 0; i < nodes.length - 1; i++) {
       const a = nodes[i], b = nodes[i + 1];
@@ -802,12 +806,17 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
     if (southAreaM2 > 0 && southAreaM2 < 2000) {
       document.getElementById('roofAreaInput').value = southAreaM2;
       S.roofAreaM2 = southAreaM2;
+      document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
     }
 
     const dirNames = {S:'Sydvendt',SW:'Sydvestvendt',SE:'Sydøstvendt',W:'Vestvendt',E:'Østvendt',NW:'Nordvestvendt',NE:'Nordøstvendt',N:'Nordvendt'};
     if (statusEl) {
       statusEl.style.color = '#059669';
-      statusEl.innerHTML = `✅ Bygning fundet — tagretning: <strong>${dirNames[best]||best}</strong> · sydvendt areal: <strong>~${southAreaM2} m²</strong> · fodaftryk: ${Math.round(footprintM2)} m² <span style="color:var(--text-3);font-weight:400">(estimeret — justér herunder ved behov)</span>`;
+      if (bbrData?.bebyggetAreal > 0) {
+        statusEl.innerHTML = `✅ BBR + OSM — tagretning: <strong>${dirNames[best]||best}</strong> · sydvendt tagflade: <strong>~${southAreaM2} m²</strong> · BBR-fodaftryk: ${footprintM2} m²${bbrData.byggeaar ? ` · opført ${bbrData.byggeaar}` : ''} <span style="color:var(--text-3);font-weight:400">(justér herunder ved behov)</span>`;
+      } else {
+        statusEl.innerHTML = `✅ OSM-bygning fundet — tagretning: <strong>${dirNames[best]||best}</strong> · sydvendt areal: <strong>~${southAreaM2} m²</strong> · beregnet fodaftryk: ${Math.round(osmFootprintM2)} m² <span style="color:var(--text-3);font-weight:400">(estimeret — justér herunder ved behov)</span>`;
+      }
     }
     return true;
   }
@@ -840,6 +849,8 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
         if (nomRes.ok) nom = await nomRes.json();
       } catch (_) {}
 
+      // Hent BBR-data (areal og tagtype) — gem til brug i applyBuildingNodes
+      let bbrData = null;
       if (nom?.address?.road && nom?.address?.postcode) {
         try {
           const bbrRes = await timedFetch('/api/bbr', 20000, {
@@ -854,29 +865,16 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
           });
           if (bbrRes.ok) {
             const bbr = await bbrRes.json();
-            if (bbr.bebyggetAreal > 0) {
-              const footprintM2 = bbr.bebyggetAreal;
-              const pitchFactor = (bbr.tagkonstruktion === 1) ? 1.0 : 1.15;
-              const southAreaM2 = Math.round(footprintM2 / 2 * pitchFactor);
-              if (southAreaM2 > 0 && southAreaM2 < 2000) {
-                document.getElementById('roofAreaInput').value = southAreaM2;
-                S.roofAreaM2 = southAreaM2;
-                document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
-                if (statusEl) {
-                  statusEl.style.color = '#059669';
-                  statusEl.innerHTML = `✅ BBR-data fundet — bygningens fodaftryk: <strong>${footprintM2} m²</strong> · sydvendt halvdel: <strong>~${southAreaM2} m²</strong>${bbr.byggeaar ? ` · opført ${bbr.byggeaar}` : ''} <span style="color:var(--text-3);font-weight:400">(justér herunder ved behov)</span>`;
-                }
-                return;
-              }
-            }
+            if (bbr.bebyggetAreal > 0) bbrData = bbr;
           }
         } catch (_) {}
       }
+      // Fortsæt altid til OSM-metoder for at finde bygningens faktiske retning
 
       // Metode 1a: Nominatim → OSM way direkte
       if (nom?.osm_type === 'way' && nom?.osm_id) {
         const nodes = await fetchWayFull(nom.osm_id);
-        if (nodes && nodes.length >= 3 && applyBuildingNodes(nodes, statusEl)) return;
+        if (nodes && nodes.length >= 3 && applyBuildingNodes(nodes, statusEl, bbrData)) return;
       }
       // Metode 1b: node → parent ways (typisk for DK adresser)
       if (nom) {
@@ -887,7 +885,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
             const buildingWay = (wd.elements || []).find(w => w.tags && w.tags.building);
             if (buildingWay) {
               const nodes = await fetchWayFull(buildingWay.id);
-              if (nodes && nodes.length >= 3 && applyBuildingNodes(nodes, statusEl)) return;
+              if (nodes && nodes.length >= 3 && applyBuildingNodes(nodes, statusEl, bbrData)) return;
             }
           }
         }
@@ -908,8 +906,25 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
           const ways = data.elements || [];
           if (!ways.length) continue;
           const nodes = ways[0].geometry || [];
-          if (nodes.length >= 3 && applyBuildingNodes(nodes, statusEl)) return;
+          if (nodes.length >= 3 && applyBuildingNodes(nodes, statusEl, bbrData)) return;
         } catch (_) {}
+      }
+
+      // OSM ikke fundet — vis BBR-areal alene hvis tilgængeligt
+      if (bbrData?.bebyggetAreal > 0) {
+        const footprintM2 = bbrData.bebyggetAreal;
+        const pitchFactor = (bbrData.tagkonstruktion === 1) ? 1.0 : 1.15;
+        const southAreaM2 = Math.round(footprintM2 / 2 * pitchFactor);
+        if (southAreaM2 > 0 && southAreaM2 < 2000) {
+          document.getElementById('roofAreaInput').value = southAreaM2;
+          S.roofAreaM2 = southAreaM2;
+          document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
+          if (statusEl) {
+            statusEl.style.color = '#059669';
+            statusEl.innerHTML = `✅ BBR-data fundet — fodaftryk: <strong>${footprintM2} m²</strong> · estimeret sydvendt areal: <strong>~${southAreaM2} m²</strong>${bbrData.byggeaar ? ` · opført ${bbrData.byggeaar}` : ''} <span style="color:var(--text-3);font-weight:400">Vælg tagretning herunder</span>`;
+          }
+          return;
+        }
       }
 
       if (statusEl) { statusEl.style.color = 'var(--text-3)'; statusEl.textContent = 'Bygning ikke kortlagt i OSM — vælg tagretning og brug knapperne til at estimere arealet.'; }
