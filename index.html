@@ -465,12 +465,23 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
         <div class="kpi-label">Årsbesparelse</div>
         <div class="kpi-value emerald" id="kpi-savings">—</div>
         <div class="kpi-sub">kr/år</div>
+        <div style="display:flex;gap:4px;margin-top:7px;justify-content:center">
+          <span class="toggle-opt selected" id="kpi-afgift-off" onclick="setAfgift(false)" style="padding:2px 7px;font-size:10px;line-height:1.6">Uden afgift</span>
+          <span class="toggle-opt" id="kpi-afgift-on" onclick="setAfgift(true)" style="padding:2px 7px;font-size:10px;line-height:1.6">Med afgift 2028</span>
+        </div>
       </div>
       <div class="kpi-tile">
         <div class="kpi-label">Break-even</div>
         <div class="kpi-value" id="kpi-payback">—</div>
         <div class="kpi-sub">år</div>
       </div>
+    </div>
+
+    <!-- EL-AFGIFT INFO BOX -->
+    <div id="afgift-info" style="display:none;font-size:12px;color:var(--text-2);background:rgba(5,150,105,0.06);border:1px solid rgba(5,150,105,0.22);border-radius:9px;padding:11px 15px;margin-bottom:14px;line-height:1.6">
+      <strong style="color:var(--text-1);font-size:12.5px">ℹ️ Om el-afgift fra 2028</strong><br>
+      El-afgiften forventes genindført i 2028 med ca. <strong>0,28 kr/kWh</strong>. Det betyder, at din solcellestrøm, som du bruger direkte i huset, giver en ekstra afgiftsbesparelse oveni den normale elprisbesparelse.<br>
+      <span style="color:var(--text-3);margin-top:4px;display:block">Bemærk: Strøm til <strong>elbil</strong> er undtaget — her gælder en særlig refusionsordning, så elbilens ladning regnes ikke med i afgiftsbesparelsen.</span>
     </div>
 
     <!-- RECOMMENDATION CARD -->
@@ -632,8 +643,12 @@ function toggleCheck(key) {
 
 function setAfgift(on) {
   _useAfgift = on;
-  document.getElementById('afgift-off').className = 'toggle-opt' + (!on ? ' selected' : '');
-  document.getElementById('afgift-on').className  = 'toggle-opt' + (on  ? ' selected' : '');
+  document.getElementById('afgift-off').className     = 'toggle-opt' + (!on ? ' selected' : '');
+  document.getElementById('afgift-on').className      = 'toggle-opt' + (on  ? ' selected' : '');
+  document.getElementById('kpi-afgift-off').className = 'toggle-opt' + (!on ? ' selected' : '');
+  document.getElementById('kpi-afgift-on').className  = 'toggle-opt' + (on  ? ' selected' : '');
+  const infoEl = document.getElementById('afgift-info');
+  if (infoEl) infoEl.style.display = on ? 'block' : 'none';
   if (!_lastRec) return;
   const r = _lastRec;
   const sav = on ? r.sav28 : r.sav26;
@@ -1436,8 +1451,12 @@ function showResults() {
   const r = calcRec();
   _lastRec = r;
   _useAfgift = false;
-  document.getElementById('afgift-off').className = 'toggle-opt selected';
-  document.getElementById('afgift-on').className  = 'toggle-opt';
+  document.getElementById('afgift-off').className     = 'toggle-opt selected';
+  document.getElementById('afgift-on').className      = 'toggle-opt';
+  document.getElementById('kpi-afgift-off').className = 'toggle-opt selected';
+  document.getElementById('kpi-afgift-on').className  = 'toggle-opt';
+  const infoEl = document.getElementById('afgift-info');
+  if (infoEl) infoEl.style.display = 'none';
 
   // KPI strip
   document.getElementById('kpi-kwp').textContent = r.kWp + ' kWp';
