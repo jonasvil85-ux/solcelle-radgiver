@@ -915,11 +915,17 @@ body {
         <div class="kpi-label">Anbefalet anlæg</div>
         <div class="kpi-value emerald" id="kpi-kwp">— kWp</div>
         <div class="kpi-sub" id="kpi-kwp-sub">solceller</div>
+        <div id="kpi-kwp-override" style="display:none;margin-top:8px;padding-top:7px;border-top:1px solid var(--border-light);font-size:10px;color:var(--text-3)">
+          Valgt: <span id="kpi-kwp-override-val" style="font-weight:600;color:var(--text-2)"></span>
+        </div>
       </div>
       <div class="kpi-tile">
         <div class="kpi-label">Batteri</div>
         <div class="kpi-value" id="kpi-bat">—</div>
         <div class="kpi-sub" id="kpi-bat-sub"></div>
+        <div id="kpi-bat-override" style="display:none;margin-top:8px;padding-top:7px;border-top:1px solid var(--border-light);font-size:10px;color:var(--text-3)">
+          Valgt: <span id="kpi-bat-override-val" style="font-weight:600;color:var(--text-2)"></span>
+        </div>
       </div>
       <div class="kpi-tile">
         <div class="kpi-label">Årsbesparelse</div>
@@ -1069,6 +1075,7 @@ body {
 const S = { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, nettarifAvg:null, actualSpotCost:null, actualNettarif:null, priceArea:null, dsoGLN:null, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, ejertidYr:15, financing:'cash', loanRate:4.0 };
 let charts = {};
 let _lastRec = null;
+let _origRec = null;
 let _useAfgift = false;
 
 /* ── THEME ── */
@@ -1723,6 +1730,7 @@ function restart() {
   const lri = document.getElementById('loanRate'); if (lri) lri.value = '4.0';
   // Hide vurdering card
   const vc = document.getElementById('vurdering-card'); if (vc) vc.style.display = 'none';
+  _origRec = null;
   destroyCharts();
   show('step1'); setProgress(1);
 }
@@ -1976,16 +1984,32 @@ function rebuildAll() {
   const r = calcRec();
   _lastRec = r;
 
-  document.getElementById('kpi-kwp').textContent = r.kWp + ' kWp';
-  document.getElementById('kpi-kwp-sub').textContent = `~${r.prod.toLocaleString('da-DK')} kWh/år`;
-  if (r.batKwh > 0) {
-    document.getElementById('kpi-bat').textContent = r.batKwh + ' kWh';
+  // KPI tiles: always show original recommendation as anchor
+  const orig = _origRec || r;
+  document.getElementById('kpi-kwp').textContent = orig.kWp + ' kWp';
+  document.getElementById('kpi-kwp-sub').textContent = `~${orig.prod.toLocaleString('da-DK')} kWh/år`;
+  if (orig.batKwh > 0) {
+    document.getElementById('kpi-bat').textContent = orig.batKwh + ' kWh';
     document.getElementById('kpi-bat').className = 'kpi-value emerald';
     document.getElementById('kpi-bat-sub').textContent = 'batteri anbefales';
   } else {
     document.getElementById('kpi-bat').textContent = 'Ikke nødvendigt';
     document.getElementById('kpi-bat').className = 'kpi-value';
     document.getElementById('kpi-bat-sub').textContent = 'baseret på dit mønster';
+  }
+
+  // Override indicators: show when user has deviated from recommendation
+  const kwpDiff = r.kWp !== orig.kWp;
+  const batDiff = r.batKwh !== orig.batKwh;
+  const kwpOvr = document.getElementById('kpi-kwp-override');
+  const batOvr = document.getElementById('kpi-bat-override');
+  if (kwpOvr) {
+    kwpOvr.style.display = kwpDiff ? 'block' : 'none';
+    if (kwpDiff) document.getElementById('kpi-kwp-override-val').textContent = r.kWp + ' kWp · ' + r.prod.toLocaleString('da-DK') + ' kWh/år';
+  }
+  if (batOvr) {
+    batOvr.style.display = batDiff ? 'block' : 'none';
+    if (batDiff) document.getElementById('kpi-bat-override-val').textContent = r.batKwh > 0 ? r.batKwh + ' kWh' : 'Ingen batteri';
   }
   // Apply current afgift toggle state to savings and payback
   const sav = _useAfgift ? r.sav28 : r.sav26;
@@ -2046,6 +2070,7 @@ function showResults() {
   estimateRoofFromConsumption();
   const r = calcRec();
   _lastRec = r;
+  _origRec = r; // anchor — never changes after first load
   _useAfgift = false;
   document.getElementById('kpi-afgift-off').className = 'toggle-opt selected';
   document.getElementById('kpi-afgift-on').className  = 'toggle-opt';
