@@ -393,6 +393,50 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
       <p id="resultSub">Baseret på dit faktiske forbrug og din boligsituation</p>
     </div>
 
+    <!-- TILBUD-PANEL -->
+    <div class="rec-card" id="sliderPanel" style="display:none;margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div class="rec-title" style="margin-bottom:0">Tilpas med dit eget tilbud</div>
+        <button onclick="resetSliders()" style="padding:4px 12px;font-size:11.5px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-2);cursor:pointer">↩ Nulstil</button>
+      </div>
+      <div id="sliderRecLabel" style="font-size:11.5px;color:var(--text-3);margin-bottom:14px"></div>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <!-- Solceller -->
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="font-size:13px;font-weight:600;min-width:130px">☀️ Solcelleanlæg</div>
+          <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:160px">
+            <input type="range" id="sliderKwp" min="3" max="20" step="1" style="flex:1;accent-color:#059669;cursor:pointer" oninput="onSliderKwp(this.value)">
+            <span id="sliderKwpVal" style="font-size:13px;font-weight:700;color:var(--emerald);min-width:52px;text-align:right">—</span>
+          </div>
+        </div>
+
+        <!-- Batteri -->
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="font-size:13px;font-weight:600;min-width:130px">🔋 Batteri</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="toggle-opt" id="bat0"  onclick="onSliderBat(0)">Ingen</span>
+            <span class="toggle-opt" id="bat5"  onclick="onSliderBat(5)">5 kWh</span>
+            <span class="toggle-opt" id="bat10" onclick="onSliderBat(10)">10 kWh</span>
+            <span class="toggle-opt" id="bat15" onclick="onSliderBat(15)">15 kWh</span>
+            <span class="toggle-opt" id="bat20" onclick="onSliderBat(20)">20 kWh</span>
+          </div>
+        </div>
+
+        <!-- Tilbudspris -->
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="font-size:13px;font-weight:600;min-width:130px">💰 Dit tilbud</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="number" id="sliderPrice" min="10000" max="500000" step="1000"
+              style="width:140px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-1);font-size:13px"
+              oninput="onSliderPrice(this.value)">
+            <span style="font-size:12px;color:var(--text-3)">kr inkl. moms</span>
+          </div>
+          <span id="sliderPriceHint" style="font-size:11px;color:var(--text-3)"></span>
+        </div>
+      </div>
+    </div>
+
     <!-- KPI STRIP -->
     <div class="kpi-grid">
       <div class="kpi-tile">
@@ -461,44 +505,6 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
       <div class="rec-note" id="rec-note"></div>
     </div>
 
-    <!-- CAPACITY & PRICE SLIDERS -->
-    <div class="rec-card" id="sliderPanel" style="display:none;margin-bottom:16px">
-      <div class="rec-title" style="margin-bottom:14px">Justér kapacitet og pris</div>
-      <div style="display:flex;flex-direction:column;gap:18px">
-        <div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-            <label style="font-size:13px;color:var(--text-2);font-weight:500">☀️ Solcellekapacitet</label>
-            <span id="sliderKwpVal" style="font-size:13px;font-weight:700;color:var(--emerald)">—</span>
-          </div>
-          <input type="range" id="sliderKwp" min="3" max="20" step="1" style="width:100%;accent-color:#059669;cursor:pointer" oninput="onSliderKwp(this.value)">
-          <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-3);margin-top:2px"><span>3 kWp</span><span>20 kWp</span></div>
-        </div>
-        <div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-            <label style="font-size:13px;color:var(--text-2);font-weight:500">🔋 Batterikapacitet</label>
-            <span id="sliderBatVal" style="font-size:13px;font-weight:700;color:var(--emerald)">—</span>
-          </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <span class="toggle-opt" id="bat0"  onclick="onSliderBat(0)">Ingen</span>
-            <span class="toggle-opt" id="bat5"  onclick="onSliderBat(5)">5 kWh</span>
-            <span class="toggle-opt" id="bat10" onclick="onSliderBat(10)">10 kWh</span>
-            <span class="toggle-opt" id="bat15" onclick="onSliderBat(15)">15 kWh</span>
-            <span class="toggle-opt" id="bat20" onclick="onSliderBat(20)">20 kWh</span>
-          </div>
-        </div>
-        <div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-            <label style="font-size:13px;color:var(--text-2);font-weight:500">💰 Tilbudspris (inkl. moms)</label>
-            <span id="sliderPriceHint" style="font-size:11.5px;color:var(--text-3)">Lad stå tomt for automatisk</span>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input type="number" id="sliderPrice" min="10000" max="500000" step="1000" placeholder="Automatisk" style="width:150px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-1);font-size:13px" oninput="onSliderPrice(this.value)">
-            <span style="font-size:12px;color:var(--text-3)">kr</span>
-            <button onclick="resetSliders()" style="margin-left:auto;padding:5px 14px;font-size:11.5px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-2);cursor:pointer">↩ Nulstil til anbefalet</button>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- PRICE BREAKDOWN BOX -->
     <div id="price-breakdown-box" style="display:none;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:16px"></div>
@@ -1261,16 +1267,33 @@ function calcRec() {
 /* ── SLIDER PANEL ── */
 function initSliders(r) {
   document.getElementById('sliderPanel').style.display = '';
+
+  // Slider kWp
   const kwpEl = document.getElementById('sliderKwp');
   kwpEl.value = r.kWp;
   document.getElementById('sliderKwpVal').textContent = r.kWp + ' kWp';
-  const batOptions = [0, 5, 10, 15, 20];
-  batOptions.forEach(v => {
+
+  // Batteri-knapper
+  [0,5,10,15,20].forEach(v => {
     const el = document.getElementById('bat' + v);
     if (el) el.className = 'toggle-opt' + (v === r.batKwh ? ' selected' : '');
   });
-  document.getElementById('sliderBatVal').textContent = r.batKwh === 0 ? 'Ingen' : r.batKwh + ' kWh';
-  document.getElementById('sliderPrice').value = '';
+
+  // Anbefalet pris som reference-label
+  const estSolar = Math.round(r.kWp * 7500 * 1.25 / 100) * 100;
+  const estBat   = r.batKwh > 0 ? Math.round(r.batKwh * 3500 * 1.25 / 100) * 100 : 0;
+  const estTotal = estSolar + estBat;
+  const batTxt   = r.batKwh > 0 ? ` + ${r.batKwh} kWh batteri` : '';
+  const recLabel = document.getElementById('sliderRecLabel');
+  if (recLabel) recLabel.innerHTML =
+    `Anbefalet: <strong>${r.kWp} kWp${batTxt}</strong> · estimeret pris: <strong>~${estTotal.toLocaleString('da-DK')} kr</strong> inkl. moms · Har du fået et tilbud? Angiv det herunder.`;
+
+  // Pris-placeholder med estimat
+  const priceEl = document.getElementById('sliderPrice');
+  if (priceEl && !S.overrideSysCost) {
+    priceEl.placeholder = `~${estTotal.toLocaleString('da-DK')} (estimat)`;
+    priceEl.value = '';
+  }
 }
 
 function onSliderKwp(v) {
@@ -1285,7 +1308,6 @@ function onSliderBat(v) {
     const el = document.getElementById('bat' + b);
     if (el) el.className = 'toggle-opt' + (b === v ? ' selected' : '');
   });
-  document.getElementById('sliderBatVal').textContent = v === 0 ? 'Ingen' : v + ' kWh';
   rebuildAll();
 }
 
