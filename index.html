@@ -816,6 +816,35 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
     const statusEl = document.getElementById('roofDetectStatus');
     if (statusEl) { statusEl.style.color = 'var(--text-3)'; statusEl.textContent = '⏳ Henter tagoplysninger…'; }
     try {
+      // Metode 0: BBR via Vercel proxy (kræver DAF_USER + DAF_PASS env vars på Vercel)
+      try {
+        const bbrRes = await timedFetch('/api/bbr', 10000, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lat, lon })
+        });
+        if (bbrRes.ok) {
+          const bbr = await bbrRes.json();
+          if (bbr.bebyggetAreal > 0) {
+            const footprintM2 = bbr.bebyggetAreal;
+            // Pitch-faktor: sadeltag (kode 2/3) ~1.15, fladt tag ~1.0
+            const pitchFactor = (bbr.tagkonstruktion === 1) ? 1.0 : 1.15;
+            const southAreaM2 = Math.round(footprintM2 / 2 * pitchFactor);
+            if (southAreaM2 > 0 && southAreaM2 < 2000) {
+              document.getElementById('roofAreaInput').value = southAreaM2;
+              S.roofAreaM2 = southAreaM2;
+              document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
+              if (statusEl) {
+                statusEl.style.color = '#059669';
+                statusEl.innerHTML = `✅ BBR-data fundet — bygningens fodaftryk: <strong>${footprintM2} m²</strong> · sydvendt halvdel: <strong>~${southAreaM2} m²</strong>${bbr.byggeaar ? ` · opført ${bbr.byggeaar}` : ''} <span style="color:var(--text-3);font-weight:400">(justér herunder ved behov)</span>`;
+              }
+              return;
+            }
+          }
+        }
+        // 503 = BBR ikke konfigureret — fortsæt stille til OSM
+      } catch (_) {}
+
       const OSM = 'https://api.openstreetmap.org/api/0.6';
 
       async function fetchWayFull(wayId) {
@@ -1179,8 +1208,31 @@ function rebuildAll() {
   if (S.hasEV) buildEVHeatmap(r);
 }
 
+/* ── FORBRUGBASERET TAGESTIMERING ── */
+function estimateRoofFromConsumption() {
+  if (S.roofAreaM2) return; // allerede sat (BBR eller manuel)
+  const kwh = S.annualKwh;
+  if (!kwh) return;
+  // Fratræk EV og varmepumpe-estimat
+  const evKwh  = S.hasEV  ? S.evKm * 0.16 * (S.evChargesHome ? 0.85 : 0.12) : 0;
+  const hpKwh  = S.hasHP  ? Math.min(kwh * 0.55, 12000) : 0;
+  const netKwh = Math.max(1500, kwh - evKwh - hpKwh);
+  // ~30 kWh/m² for husholdningsapparater + lys i dansk villa
+  const floorM2 = Math.round(netKwh / 30);
+  const southM2 = Math.max(35, Math.min(180, Math.round(floorM2 / 2 * 1.15)));
+  S.roofAreaM2 = southM2;
+  document.getElementById('roofAreaInput').value = southM2;
+  document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
+  const ds = document.getElementById('roofDetectStatus');
+  if (ds && !ds.textContent.includes('✅')) {
+    ds.style.color = '#0891B2';
+    ds.textContent = `📊 Tagestimering fra forbrug: ~${southM2} m² (${Math.round(floorM2)} m² boligareal · ${Math.round(netKwh)} kWh netto) — justér herunder`;
+  }
+}
+
 /* ── SHOW RESULTS ── */
 function showResults() {
+  estimateRoofFromConsumption();
   const r = calcRec();
   _lastRec = r;
   _useAfgift = false;
