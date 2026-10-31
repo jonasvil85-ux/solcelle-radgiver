@@ -467,8 +467,9 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
         <div class="kpi-sub">kr/år</div>
         <div style="display:flex;gap:4px;margin-top:7px;justify-content:center">
           <span class="toggle-opt selected" id="kpi-afgift-off" onclick="setAfgift(false)" style="padding:2px 7px;font-size:10px;line-height:1.6">Uden afgift</span>
-          <span class="toggle-opt" id="kpi-afgift-on" onclick="setAfgift(true)" style="padding:2px 7px;font-size:10px;line-height:1.6">Med afgift 2028</span>
+          <span class="toggle-opt" id="kpi-afgift-on" onclick="setAfgift(true)" style="padding:2px 7px;font-size:10px;line-height:1.6">Med afgift</span>
         </div>
+        <div style="font-size:9.5px;color:var(--text-3);margin-top:3px;text-align:center">El-afgift forventes genindført 2028</div>
       </div>
       <div class="kpi-tile">
         <div class="kpi-label">Break-even</div>
@@ -480,7 +481,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
     <!-- EL-AFGIFT INFO BOX -->
     <div id="afgift-info" style="display:none;font-size:12px;color:var(--text-2);background:rgba(5,150,105,0.06);border:1px solid rgba(5,150,105,0.22);border-radius:9px;padding:11px 15px;margin-bottom:14px;line-height:1.6">
       <strong style="color:var(--text-1);font-size:12.5px">ℹ️ Om el-afgift fra 2028</strong><br>
-      El-afgiften forventes genindført i 2028 med ca. <strong>0,28 kr/kWh</strong>. Det betyder, at din solcellestrøm, som du bruger direkte i huset, giver en ekstra afgiftsbesparelse oveni den normale elprisbesparelse.<br>
+      El-afgiften forventes genindført i 2028. Den samlede el-afgift for private forbrugere udgør ca. <strong>0,70 kr/kWh ekskl. moms</strong> (≈ 0,76 kr/kWh inkl. moms) — svarende til niveauet før de midlertidige lempelser. Beregningen viser den ekstra besparelse, du opnår ved at bruge din solcellestrøm direkte fremfor at købe den fra nettet.<br>
       <span style="color:var(--text-3);margin-top:4px;display:block">Bemærk: Strøm til <strong>elbil</strong> er undtaget — her gælder en særlig refusionsordning, så elbilens ladning regnes ikke med i afgiftsbesparelsen.</span>
     </div>
 
@@ -520,7 +521,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
             <span class="rec-row-val" id="rec-sav-val">—</span>
             <span style="display:flex;gap:4px">
               <span class="toggle-opt selected" id="afgift-off" onclick="setAfgift(false)" style="padding:3px 8px;font-size:11px">Uden afgift</span>
-              <span class="toggle-opt" id="afgift-on" onclick="setAfgift(true)" style="padding:3px 8px;font-size:11px">Med afgift 2028</span>
+              <span class="toggle-opt" id="afgift-on" onclick="setAfgift(true)" style="padding:3px 8px;font-size:11px">Med afgift</span>
             </span>
           </span>
         </div>
@@ -1279,7 +1280,7 @@ function calcRec() {
   const sav26Raw = selfCons * buyPrice + exported * sellPrice;
   const sav26    = Math.round(annualCost ? Math.min(sav26Raw, annualCost * 0.88) : sav26Raw);
   const houseShare = S.hasEV ? Math.max(0, (kwh - evKwhHome) / kwh) : 1.0;
-  const afgift  = Math.round(selfCons * houseShare * 0.28);
+  const afgift  = Math.round(selfCons * houseShare * 0.76);
   const sav28   = sav26 + afgift;
 
   // Costs (inkl. 25% moms)
