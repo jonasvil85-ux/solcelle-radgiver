@@ -200,6 +200,11 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
         <input type="hidden" id="zipcode">
       </div>
 
+      <div id="housePicWrap" style="display:none;margin-bottom:14px;border-radius:10px;overflow:hidden;position:relative;height:180px;background:var(--bg-2)">
+        <img id="housePic" style="width:100%;height:100%;object-fit:cover;display:block" alt="Gadefoto">
+        <div id="housePicLabel" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.55));color:#fff;font-size:10.5px;padding:18px 10px 6px;"></div>
+      </div>
+
       <div id="roofPanel" class="roof-panel hidden">
         <div class="roof-panel-title">🏠 Tagoplysninger</div>
         <div id="roofDetectStatus" style="font-size:11.5px;margin:-4px 0 10px;min-height:14px;line-height:1.5"></div>
@@ -742,9 +747,19 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
     conf.style.display = 'block';
     document.getElementById('roofPanel').classList.remove('hidden');
 
-    // Hent bygningsomrids fra OSM og beregn tagorientering
+    // Gadefoto
     const coords = feature.geometry && feature.geometry.coordinates;
-    if (coords) fetchBuildingOrientation(coords[1], coords[0]); // [lon,lat] → lat,lon
+    if (coords) {
+      const lat = coords[1], lon = coords[0];
+      const wrap = document.getElementById('housePicWrap');
+      const img  = document.getElementById('housePic');
+      const lbl  = document.getElementById('housePicLabel');
+      img.src = `/api/streetview?lat=${lat}&lon=${lon}`;
+      img.onerror = () => { wrap.style.display = 'none'; };
+      img.onload  = () => { wrap.style.display = 'block'; };
+      lbl.textContent = tekst;
+      fetchBuildingOrientation(lat, lon);
+    }
   }
 
   function polygonAreaM2(nodes) {
@@ -825,6 +840,59 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
     const statusEl = document.getElementById('roofDetectStatus');
     if (statusEl) { statusEl.style.color = 'var(--text-3)'; statusEl.textContent = '⏳ Henter tagoplysninger…'; }
     try {
+
+      // Metode 0: Google Solar API — mest præcis (luftbillede-analyse)
+      try {
+        const solarRes = await timedFetch('/api/solar', 15000, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lat, lon })
+        });
+        if (solarRes.ok) {
+          const solar = await solarRes.json();
+          if (solar.segments?.length > 0) {
+            // Find det segment der vender tættest på syd (180°)
+            const southSeg = solar.segments.reduce((best, s) => {
+              const diff  = a => Math.abs(((a - 180 + 360) % 360) - 180);
+              return diff(s.azimuthDegrees) < diff(best.azimuthDegrees) ? s : best;
+            });
+
+            // Sæt kompas-retning
+            const dirs = [
+              {dir:'N',center:0},{dir:'NE',center:45},{dir:'E',center:90},{dir:'SE',center:135},
+              {dir:'S',center:180},{dir:'SW',center:225},{dir:'W',center:270},{dir:'NW',center:315},
+            ];
+            let bestDir = 'S', bestDiff = 999;
+            for (const d of dirs) {
+              const diff = Math.abs(((southSeg.azimuthDegrees - d.center + 540) % 360) - 180);
+              if (diff < bestDiff) { bestDiff = diff; bestDir = d.dir; }
+            }
+            const grid = document.getElementById('compassGrid');
+            grid.querySelectorAll('.cdir').forEach(b => b.classList.remove('sel'));
+            const btn = grid.querySelector(`.cdir[data-dir="${bestDir}"]`);
+            if (btn) btn.classList.add('sel');
+            S.roofOrientation = bestDir;
+
+            const southAreaM2 = Math.round(southSeg.areaMeters2);
+            if (southAreaM2 > 0 && southAreaM2 < 2000) {
+              document.getElementById('roofAreaInput').value = southAreaM2;
+              S.roofAreaM2 = southAreaM2;
+              document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
+            }
+
+            const dirNames = {S:'Sydvendt',SW:'Sydvestvendt',SE:'Sydøstvendt',W:'Vestvendt',E:'Østvendt',NW:'Nordvestvendt',NE:'Nordøstvendt',N:'Nordvendt'};
+            const segInfo = solar.segments.length > 1
+              ? `${solar.segments.length} tagflader fundet`
+              : '1 tagflade fundet';
+            if (statusEl) {
+              statusEl.style.color = '#059669';
+              statusEl.innerHTML = `✅ Google Solar (${solar.imageryQuality}) — ${segInfo} · bedste retning: <strong>${dirNames[bestDir]||bestDir} (${Math.round(southSeg.azimuthDegrees)}°)</strong> · sydvendt areal: <strong>~${southAreaM2} m²</strong> · hældning: ${Math.round(southSeg.pitchDegrees)}°${solar.sunshineHours ? ` · ${Math.round(solar.sunshineHours)} sol-timer/år` : ''} <span style="color:var(--text-3);font-weight:400">(justér ved behov)</span>`;
+            }
+            return;
+          }
+        }
+      } catch (_) {}
+
       const OSM = 'https://api.openstreetmap.org/api/0.6';
 
       async function fetchWayFull(wayId) {
