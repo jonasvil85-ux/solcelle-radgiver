@@ -742,11 +742,13 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
   }
 
   function polygonAreaM2(nodes) {
+    // Normaliser mod første knude for at undgå float64-afkortning på store koordinater
+    const lat0 = nodes[0].lat, lon0 = nodes[0].lon;
+    const cosLat = Math.cos(lat0 * Math.PI / 180);
     let area = 0;
-    const cosLat = Math.cos(nodes[0].lat * Math.PI / 180);
     for (let i = 0; i < nodes.length - 1; i++) {
-      const x1 = nodes[i].lon   * 111111 * cosLat, y1 = nodes[i].lat   * 111111;
-      const x2 = nodes[i+1].lon * 111111 * cosLat, y2 = nodes[i+1].lat * 111111;
+      const x1 = (nodes[i].lon   - lon0) * 111111 * cosLat, y1 = (nodes[i].lat   - lat0) * 111111;
+      const x2 = (nodes[i+1].lon - lon0) * 111111 * cosLat, y2 = (nodes[i+1].lat - lat0) * 111111;
       area += x1 * y2 - x2 * y1;
     }
     return Math.abs(area) / 2;
@@ -791,7 +793,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
     if (btn) btn.classList.add('sel');
     S.roofOrientation = best;
 
-    if (southAreaM2 > 0 && southAreaM2 < 500) {
+    if (southAreaM2 > 0 && southAreaM2 < 2000) {
       document.getElementById('roofAreaInput').value = southAreaM2;
       S.roofAreaM2 = southAreaM2;
     }
@@ -810,7 +812,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
     try {
       // Metode 1: Nominatim reverse → OSM API /way/full (ingen Overpass-afhængighed)
       const nomRes = await timedFetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=17&addressdetails=0`,
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=18&addressdetails=0`,
         8000
       );
       if (nomRes.ok) {
@@ -824,7 +826,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
             const wd = await wayRes.json();
             const nodeMap = {};
             for (const el of wd.elements) if (el.type === 'node') nodeMap[el.id] = {lat:el.lat,lon:el.lon};
-            const way = wd.elements.find(el => el.type === 'way');
+            const way = wd.elements.find(el => el.type === 'way' && el.tags && el.tags.building);
             if (way && way.nodes) {
               const nodes = way.nodes.map(id => nodeMap[id]).filter(Boolean);
               if (nodes.length >= 3 && applyBuildingNodes(nodes, statusEl)) return;
