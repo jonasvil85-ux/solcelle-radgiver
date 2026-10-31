@@ -31,25 +31,30 @@ module.exports = async function (req, res) {
   }
 
   try {
-    // Trin 1: Find postnummer UUID
-    const pData = await gql(DAR_GQL,
-      `{ DAR_Postnummer(first:1, virkningstid:"${now}", where:{postnr:{eq:"${postalCode}"}}) { nodes { id_lokalId } } }`
-    );
+    // Trin 1: Parallelt — find postnummer UUID + vejnavn UUID
+    const [pData, vData] = await Promise.all([
+      gql(DAR_GQL, `{ DAR_Postnummer(first:1, virkningstid:"${now}", where:{postnr:{eq:"${postalCode}"}}) { nodes { id_lokalId } } }`),
+      gql(DAR_GQL, `{ DAR_NavngivenVej(first:1, virkningstid:"${now}", where:{vejnavn:{eq:"${road.replace(/"/g, '')}"}}) { nodes { id_lokalId } } }`),
+    ]);
     const postnrUUID = pData?.data?.DAR_Postnummer?.nodes?.[0]?.id_lokalId;
+    const vejUUID    = vData?.data?.DAR_NavngivenVej?.nodes?.[0]?.id_lokalId;
     if (!postnrUUID) return res.status(404).json({ error: `Postnummer ${postalCode} ikke fundet i DAR` });
 
-    // Trin 2: Find husnummer UUIDs (husnr + postnr → evt. flere kandidater)
+    // Trin 2: Find husnummer UUIDs (husnr + postnr) + filtrer på vejnavn via navngivenVej-felt
     const hNum = houseNumber.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
     const hData = await gql(DAR_GQL,
-      `{ DAR_Husnummer(first:25, virkningstid:"${now}", where:{husnummertekst:{eq:"${hNum}"}, postnummer:{eq:"${postnrUUID}"}}) { nodes { id_lokalId } } }`
+      `{ DAR_Husnummer(first:25, virkningstid:"${now}", where:{husnummertekst:{eq:"${hNum}"}, postnummer:{eq:"${postnrUUID}"}}) { nodes { id_lokalId navngivenVej } } }`
     );
     const husNodes = hData?.data?.DAR_Husnummer?.nodes || [];
-    const husUUIDs = [...new Set(husNodes.map(n => n.id_lokalId))];
-    if (!husUUIDs.length) return res.status(404).json({ error: `Husnummer ${hNum} ikke fundet i ${postalCode}` });
+
+    // Prioritér husnumre på den rigtige vej (navngivenVej match), ellers alle kandidater
+    const roadMatch = vejUUID ? husNodes.filter(n => n.navngivenVej === vejUUID) : [];
+    const candidates = [...new Set((roadMatch.length ? roadMatch : husNodes).map(n => n.id_lokalId))];
+    if (!candidates.length) return res.status(404).json({ error: `Husnummer ${hNum} ikke fundet i ${postalCode}` });
 
     // Trin 3: Query BBR for alle kandidater parallelt
     const bbrResults = await Promise.all(
-      husUUIDs.slice(0, 10).map(uuid =>
+      candidates.slice(0, 10).map(uuid =>
         gql(BBR_GQL,
           `{ BBR_Bygning(first:1, virkningstid:"${now}", where:{husnummer:{eq:"${uuid}"}}) { nodes { id_lokalId byg041BebyggetAreal byg054AntalEtager } } }`
         ).then(d => d?.data?.BBR_Bygning?.nodes || []).catch(() => [])
