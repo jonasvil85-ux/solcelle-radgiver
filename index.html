@@ -1004,12 +1004,7 @@ body::before {
     <!-- CHART 5: EV HEATMAP (shown only if hasEV) -->
     <div class="chart-card" id="evChartCard" style="display:none">
       <div class="chart-card-title">Hvornår skal du lade din elbil? — månedsoversigt</div>
-      <div class="chart-card-sub">
-        <span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px"><span style="display:inline-block;width:12px;height:12px;background:#059669;border-radius:2px"></span>Lad fra sol</span>
-        <span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px"><span style="display:inline-block;width:12px;height:12px;background:#1D4ED8;border-radius:2px"></span>Billig nat</span>
-        <span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px"><span style="display:inline-block;width:12px;height:12px;background:#D1D5DB;border-radius:2px"></span>Neutral</span>
-        <span style="display:inline-flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;background:#FCA5A5;border-radius:2px"></span>Undgå (peak)</span>
-      </div>
+      <div class="chart-card-sub">Mar–Sep: lad fra solen i dagtimerne · Okt–Feb: billig natarif foretrækkes</div>
       <div id="evHeatmapWrap" style="overflow-x:auto;margin-top:10px"></div>
     </div>
 
@@ -2464,11 +2459,11 @@ function buildEVHeatmap(r) {
   const wrap = document.getElementById('evHeatmapWrap');
   wrap.innerHTML = '';
 
-  // Solar potential by month (normalized: Jun=1.0)
   const mSolar = [0.10,0.18,0.35,0.55,0.75,1.00,0.95,0.80,0.55,0.30,0.14,0.08];
-  // Solar production shape by hour (normalized: 13:00=1.0)
   const hSolar = [0,0,0,0,0,0,0.02,0.10,0.30,0.55,0.78,0.92,1.00,0.92,0.78,0.55,0.30,0.10,0.02,0,0,0,0,0];
   const MONTHS = ['Jan','Feb','Mar','Apr','Maj','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+  // Mar–Sep: solar productive enough that daytime charging beats cheap night rate
+  const isSolarSeason = m => mSolar[m] >= 0.35;
 
   const grid = document.createElement('div');
   grid.style.cssText = 'display:grid;grid-template-columns:34px repeat(24,1fr);gap:1px;font-size:9px;min-width:420px';
@@ -2495,15 +2490,26 @@ function buildEVHeatmap(r) {
       const cell = document.createElement('div');
       cell.style.cssText = 'height:14px;border-radius:2px;cursor:default';
       const score = mSolar[m] * hSolar[h];
+      const isNight = h < 6 || h >= 22;
+      const isPeak  = (h >= 7 && h <= 9) || (h >= 16 && h <= 20);
       let bg, tip;
+
       if (score > 0.30) {
+        // Good solar window → charge from sun
         const alpha = (0.30 + Math.min(score, 1.0) * 0.60).toFixed(2);
         bg = `rgba(5,150,105,${alpha})`;
         tip = 'Lad fra solenergi';
-      } else if (h < 6 || h >= 22) {
-        bg = 'rgba(37,99,235,0.45)';
-        tip = 'Billig natarif';
-      } else if ((h >= 7 && h <= 9) || (h >= 16 && h <= 20)) {
+      } else if (isNight) {
+        if (isSolarSeason(m)) {
+          // Summer night: solen er bedre — vis som "undgå om sommeren"
+          bg = 'rgba(245,158,11,0.18)';
+          tip = 'Lad hellere fra sol om dagen (mar–sep)';
+        } else {
+          // Winter night: cheap grid rate
+          bg = 'rgba(37,99,235,0.50)';
+          tip = 'Billig natarif (okt–feb)';
+        }
+      } else if (isPeak) {
         bg = 'rgba(239,68,68,0.28)';
         tip = 'Undgå – dyr spidsbelastning';
       } else {
@@ -2520,10 +2526,10 @@ function buildEVHeatmap(r) {
   const legend = document.createElement('div');
   legend.style.cssText = 'display:flex;gap:14px;margin-top:10px;font-size:10px;color:#6B7280;flex-wrap:wrap';
   [
-    ['rgba(5,150,105,0.65)', 'Lad fra solenergi'],
-    ['rgba(37,99,235,0.45)', 'Billig natarif (22-06)'],
-    ['rgba(239,68,68,0.28)', 'Undgå (spidsbelastning)'],
-    ['rgba(107,114,128,0.14)', 'Neutral'],
+    ['rgba(5,150,105,0.65)',  'Lad fra solenergi'],
+    ['rgba(37,99,235,0.50)',  'Billig natarif (okt–feb)'],
+    ['rgba(245,158,11,0.35)', 'Lad hellere om dagen (mar–sep)'],
+    ['rgba(239,68,68,0.28)',  'Undgå (spidsbelastning)'],
   ].forEach(([bg, label]) => {
     const item = document.createElement('div');
     item.style.cssText = 'display:flex;align-items:center;gap:5px';
