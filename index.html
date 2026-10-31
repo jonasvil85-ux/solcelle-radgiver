@@ -735,7 +735,7 @@ body {
         <div class="roof-panel-title">🏠 Tagoplysninger</div>
         <div id="roofDetectStatus" style="font-size:11.5px;margin:-4px 0 10px;min-height:14px;line-height:1.5"></div>
         <div class="field-row">
-          <div class="field" style="margin-bottom:0">
+          <div class="field" id="compassField" style="margin-bottom:0">
             <label>Tagretning</label>
             <div id="compassWrap">
             <div class="compass-grid" id="compassGrid">
@@ -1705,17 +1705,22 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
               document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
             }
 
-            // Skjul kompas-grid og hustype-presets — vi har præcise data fra Google Solar
-            const compassWrap = document.getElementById('compassWrap');
-            if (compassWrap) compassWrap.style.display = 'none';
+            // Skjul kompas-felt og hustype-presets — vi har præcise data fra Google Solar
+            const compassField = document.getElementById('compassField');
+            if (compassField) compassField.style.display = 'none';
             const roofPresets = document.getElementById('roofPresets');
             if (roofPresets) roofPresets.style.display = 'none';
 
-            // Segmentfordeling til status
+            // Segmentfordeling: gruppér segmenter med samme retning
             const dirNames = {S:'Syd',SW:'SV',SE:'SØ',W:'Vest',E:'Øst',NW:'NV',NE:'NØ',N:'Nord'};
-            const segBreakdown = segsForFactor.map(s =>
-              `${Math.round(s.areaMeters2)} m² ${dirNames[closestDir(s.azimuthDegrees)]}`
-            ).join(' · ');
+            const grouped = {};
+            for (const s of segsForFactor) {
+              const d = closestDir(s.azimuthDegrees);
+              grouped[d] = (grouped[d] || 0) + s.areaMeters2;
+            }
+            const segBreakdown = Object.entries(grouped)
+              .map(([d, a]) => `${Math.round(a)} m² ${dirNames[d]||d}`)
+              .join(' · ');
 
             if (statusEl) {
               statusEl.style.color = '#059669';
@@ -1915,7 +1920,7 @@ function goStep2() {
 function restart() {
   hide('step3');
   Object.assign(S, { zipcode:'', address:'', roofOrientation:'S', roofOrientFactor:null, roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, _manualKwh:false });
-  const cw = document.getElementById('compassWrap'); if (cw) cw.style.display = '';
+  const cf = document.getElementById('compassField'); if (cf) cf.style.display = '';
   const rp = document.getElementById('roofPresets'); if (rp) rp.style.display = '';
   document.getElementById('opt-spot').className = 'toggle-opt selected';
   document.getElementById('opt-fixed').className = 'toggle-opt';
