@@ -2196,7 +2196,9 @@ function showResults() {
 }
 
 /* ── CHARTS ── */
-const C = { grid: 'rgba(255,255,255,0.06)', text3: '#5C5C5C' };
+function cTxt() { return isDark() ? '#B8C5D0' : '#6B7280'; }
+function cGrid() { return isDark() ? 'rgba(148,163,184,0.12)' : 'rgba(107,114,128,0.10)'; }
+const C = { get text3() { return cTxt(); }, get grid() { return cGrid(); } };
 
 function isDark() { return document.documentElement.getAttribute('data-theme') !== 'light'; }
 
@@ -2317,8 +2319,8 @@ function buildPaybackChart(r, withAfgift) {
       ctx.save();
       const y0 = y.getPixelForValue(0);
       ctx.font='10px Inter,sans-serif'; ctx.textBaseline='top'; ctx.textAlign='left';
-      ctx.fillStyle='rgba(220,38,38,0.4)'; ctx.fillText('Investering udestående',left+6,y0+5);
-      ctx.textBaseline='bottom'; ctx.fillStyle='rgba(5,150,105,0.5)'; ctx.fillText('Fortjeneste',left+6,y0-5);
+      ctx.fillStyle=isDark()?'rgba(252,165,165,0.90)':'rgba(220,38,38,0.75)'; ctx.fillText('Investering udestående',left+6,y0+5);
+      ctx.textBaseline='bottom'; ctx.fillStyle=isDark()?'rgba(110,231,183,0.90)':'rgba(5,150,105,0.80)'; ctx.fillText('Fortjeneste',left+6,y0-5);
 
       if (be1) {
         const xb = x.getPixelForValue(+be1);
@@ -2341,7 +2343,7 @@ function buildPaybackChart(r, withAfgift) {
     data:{
       labels:Array.from({length:N},(_,i)=>i),
       datasets:[
-        { label: withAfgift ? 'Med el-afgift 2028' : 'Uden el-afgift', data:d1, borderColor:'#059669', borderWidth:2.5, pointRadius:2, pointBackgroundColor:'#059669', fill:{target:'origin',above:'rgba(5,150,105,0.10)',below:'rgba(220,38,38,0.08)'}, tension:0.15 },
+        { label: withAfgift ? 'Med el-afgift 2028' : 'Uden el-afgift', data:d1, borderColor:'#059669', borderWidth:2.5, pointRadius:2, pointBackgroundColor:'#059669', fill:{target:'origin',above:'rgba(16,185,129,0.15)',below:'rgba(239,68,68,0.18)'}, tension:0.15 },
       ]
     },
     options:{
