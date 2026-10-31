@@ -1661,20 +1661,28 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
         if (solarRes.ok) {
           const solar = await solarRes.json();
           if (solar.segments?.length > 0) {
-            // Find det segment der vender tættest på syd (180°)
-            const southSeg = solar.segments.reduce((best, s) => {
-              const diff  = a => Math.abs(((a - 180 + 540) % 360) - 180);
-              return diff(s.azimuthDegrees) < diff(best.azimuthDegrees) ? s : best;
-            });
+            const diffFromSouth = a => Math.abs(((a - 180 + 540) % 360) - 180);
 
-            // Sæt kompas-retning
+            // Find det segment der vender tættest på syd (bruges til kompasretning)
+            const bestSeg = solar.segments.reduce((b, s) =>
+              diffFromSouth(s.azimuthDegrees) < diffFromSouth(b.azimuthDegrees) ? s : b
+            );
+
+            // Sum alle segmenter der vender inden for 120° af syd (SE, S, SW, E, W — alt brugbart)
+            const usableSegs = solar.segments.filter(s => diffFromSouth(s.azimuthDegrees) <= 120);
+            const usableArea = usableSegs.length > 0
+              ? usableSegs.reduce((sum, s) => sum + s.areaMeters2, 0)
+              : bestSeg.areaMeters2;
+            const southAreaM2 = Math.round(usableArea);
+
+            // Sæt kompas-retning ud fra bedste segment
             const dirs = [
               {dir:'N',center:0},{dir:'NE',center:45},{dir:'E',center:90},{dir:'SE',center:135},
               {dir:'S',center:180},{dir:'SW',center:225},{dir:'W',center:270},{dir:'NW',center:315},
             ];
             let bestDir = 'S', bestDiff = 999;
             for (const d of dirs) {
-              const diff = Math.abs(((southSeg.azimuthDegrees - d.center + 540) % 360) - 180);
+              const diff = Math.abs(((bestSeg.azimuthDegrees - d.center + 540) % 360) - 180);
               if (diff < bestDiff) { bestDiff = diff; bestDir = d.dir; }
             }
             const grid = document.getElementById('compassGrid');
@@ -1683,7 +1691,6 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
             if (btn) btn.classList.add('sel');
             S.roofOrientation = bestDir;
 
-            const southAreaM2 = Math.round(southSeg.areaMeters2);
             if (southAreaM2 > 0 && southAreaM2 < 2000) {
               document.getElementById('roofAreaInput').value = southAreaM2;
               S.roofAreaM2 = southAreaM2;
@@ -1691,12 +1698,12 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
             }
 
             const dirNames = {S:'Sydvendt',SW:'Sydvestvendt',SE:'Sydøstvendt',W:'Vestvendt',E:'Østvendt',NW:'Nordvestvendt',NE:'Nordøstvendt',N:'Nordvendt'};
-            const segInfo = solar.segments.length > 1
-              ? `${solar.segments.length} tagflader fundet`
-              : '1 tagflade fundet';
+            const segDesc = usableSegs.length > 1
+              ? `${usableSegs.length} brugbare tagflader (sum)`
+              : '1 tagflade';
             if (statusEl) {
               statusEl.style.color = '#059669';
-              statusEl.innerHTML = `✅ Google Solar (${solar.imageryQuality}) — ${segInfo} · bedste retning: <strong>${dirNames[bestDir]||bestDir} (${Math.round(southSeg.azimuthDegrees)}°)</strong> · sydvendt areal: <strong>~${southAreaM2} m²</strong> · hældning: ${Math.round(southSeg.pitchDegrees)}°${solar.sunshineHours ? ` · ${Math.round(solar.sunshineHours)} sol-timer/år` : ''} <span style="color:var(--text-3);font-weight:400">(justér ved behov)</span>`;
+              statusEl.innerHTML = `✅ Google Solar (${solar.imageryQuality}) — ${segDesc} · primær retning: <strong>${dirNames[bestDir]||bestDir} (${Math.round(bestSeg.azimuthDegrees)}°)</strong> · brugbart tagareal: <strong>~${southAreaM2} m²</strong> · hældning: ${Math.round(bestSeg.pitchDegrees)}°${solar.sunshineHours ? ` · ${Math.round(solar.sunshineHours)} sol-timer/år` : ''} <span style="color:var(--text-3);font-weight:400">(justér ved behov)</span>`;
             }
             return;
           }
