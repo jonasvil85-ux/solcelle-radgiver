@@ -1668,11 +1668,15 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
               diffFromSouth(s.azimuthDegrees) < diffFromSouth(b.azimuthDegrees) ? s : b
             );
 
-            // Sum alle segmenter der vender inden for 120° af syd (SE, S, SW, E, W — alt brugbart)
-            const usableSegs = solar.segments.filter(s => diffFromSouth(s.azimuthDegrees) <= 120);
-            const usableArea = usableSegs.length > 0
+            // Sum segmenter der vender inden for 90° af syd (SE, S, SW — reel sydvendt halvdel)
+            const usableSegs = solar.segments.filter(s => diffFromSouth(s.azimuthDegrees) <= 90);
+            const segSum = usableSegs.length > 0
               ? usableSegs.reduce((sum, s) => sum + s.areaMeters2, 0)
               : bestSeg.areaMeters2;
+            // Cap ved Googles eget maxAreaMeters2 (maksimalt reelt panelarea inkl. skygge mv.)
+            const usableArea = solar.maxAreaMeters2
+              ? Math.min(segSum, solar.maxAreaMeters2)
+              : segSum;
             const southAreaM2 = Math.round(usableArea);
 
             // Sæt kompas-retning ud fra bedste segment
