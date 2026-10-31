@@ -423,16 +423,28 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
           </div>
         </div>
 
-        <!-- Tilbudspris -->
+        <!-- Solcelle tilbudspris -->
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <div style="font-size:13px;font-weight:600;min-width:130px">💰 Dit tilbud</div>
+          <div style="font-size:13px;font-weight:600;min-width:130px">💰 Pris solceller</div>
           <div style="display:flex;align-items:center;gap:6px">
-            <input type="number" id="sliderPrice" min="10000" max="500000" step="1000"
+            <input type="number" id="sliderSolarPrice" min="10000" max="400000" step="1000"
               style="width:140px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-1);font-size:13px"
-              oninput="onSliderPrice(this.value)">
+              oninput="onSolarPrice(this.value)">
             <span style="font-size:12px;color:var(--text-3)">kr inkl. moms</span>
           </div>
-          <span id="sliderPriceHint" style="font-size:11px;color:var(--text-3)"></span>
+          <span id="sliderSolarPriceHint" style="font-size:11px;color:var(--text-3)"></span>
+        </div>
+
+        <!-- Batteri tilbudspris -->
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="font-size:13px;font-weight:600;min-width:130px">💰 Pris batteri</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="number" id="sliderBatPrice" min="0" max="200000" step="1000"
+              style="width:140px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-1);font-size:13px"
+              oninput="onBatPrice(this.value)">
+            <span style="font-size:12px;color:var(--text-3)">kr inkl. moms</span>
+          </div>
+          <span id="sliderBatPriceHint" style="font-size:11px;color:var(--text-3)"></span>
         </div>
       </div>
     </div>
@@ -575,7 +587,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 
 <script>
 /* ── STATE ── */
-const S = { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, nettarifAvg:null, actualSpotCost:null, actualNettarif:null, priceArea:null, dsoGLN:null, overrideKwp:null, overrideBatKwh:null, overrideSysCost:null };
+const S = { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, nettarifAvg:null, actualSpotCost:null, actualNettarif:null, priceArea:null, dsoGLN:null, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null };
 let charts = {};
 let _lastRec = null;
 let _useAfgift = false;
@@ -1101,7 +1113,7 @@ function goStep2() {
 
 function restart() {
   hide('step3');
-  Object.assign(S, { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70, overrideKwp:null, overrideBatKwh:null, overrideSysCost:null });
+  Object.assign(S, { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null });
   document.getElementById('opt-spot').className = 'toggle-opt selected';
   document.getElementById('opt-fixed').className = 'toggle-opt';
   document.getElementById('fixed-price-field').className = 'field hidden';
@@ -1250,8 +1262,8 @@ function calcRec() {
   const sav28   = sav26 + afgift;
 
   // Costs (inkl. 25% moms)
-  const sysCost = S.overrideSysCost !== null ? S.overrideSysCost : Math.round(kWp * 7500 * 1.25);
-  const batCost = Math.round(batKwh * 3500 * 1.25);
+  const sysCost = S.overrideSolarCost !== null ? S.overrideSolarCost : Math.round(kWp * 7500 * 1.25);
+  const batCost = S.overrideBatCost  !== null ? S.overrideBatCost  : Math.round(batKwh * 3500 * 1.25);
   const total   = sysCost + batCost;
   const payback = +(total / sav26).toFixed(1);
 
@@ -1279,21 +1291,31 @@ function initSliders(r) {
     if (el) el.className = 'toggle-opt' + (v === r.batKwh ? ' selected' : '');
   });
 
-  // Anbefalet pris som reference-label
-  const estSolar = Math.round(r.kWp * 7500 * 1.25 / 100) * 100;
-  const estBat   = r.batKwh > 0 ? Math.round(r.batKwh * 3500 * 1.25 / 100) * 100 : 0;
+  // Estimerede priser som placeholders
+  const estSolar = Math.round(r.kWp * 7500 * 1.25 / 1000) * 1000;
+  const estBat   = r.batKwh > 0 ? Math.round(r.batKwh * 3500 * 1.25 / 1000) * 1000 : 0;
   const estTotal = estSolar + estBat;
   const batTxt   = r.batKwh > 0 ? ` + ${r.batKwh} kWh batteri` : '';
   const recLabel = document.getElementById('sliderRecLabel');
   if (recLabel) recLabel.innerHTML =
-    `Anbefalet: <strong>${r.kWp} kWp${batTxt}</strong> · estimeret pris: <strong>~${estTotal.toLocaleString('da-DK')} kr</strong> inkl. moms · Har du fået et tilbud? Angiv det herunder.`;
+    `Anbefalet: <strong>${r.kWp} kWp${batTxt}</strong> · estimeret pris: <strong>~${estTotal.toLocaleString('da-DK')} kr</strong> inkl. moms · Har du fået et tilbud? Angiv priserne herunder.`;
 
-  // Pris-placeholder med estimat
-  const priceEl = document.getElementById('sliderPrice');
-  if (priceEl && !S.overrideSysCost) {
-    priceEl.placeholder = `~${estTotal.toLocaleString('da-DK')} (estimat)`;
-    priceEl.value = '';
+  const solarEl = document.getElementById('sliderSolarPrice');
+  if (solarEl && !S.overrideSolarCost) {
+    solarEl.placeholder = `~${estSolar.toLocaleString('da-DK')} (estimat)`;
+    solarEl.value = '';
   }
+  const solarHint = document.getElementById('sliderSolarPriceHint');
+  if (solarHint) solarHint.textContent = `Estimat: ~${estSolar.toLocaleString('da-DK')} kr`;
+
+  const batEl = document.getElementById('sliderBatPrice');
+  if (batEl && !S.overrideBatCost) {
+    batEl.placeholder = r.batKwh > 0 ? `~${estBat.toLocaleString('da-DK')} (estimat)` : 'Ingen batteri';
+    batEl.value = '';
+    batEl.disabled = r.batKwh === 0;
+  }
+  const batHint = document.getElementById('sliderBatPriceHint');
+  if (batHint) batHint.textContent = r.batKwh > 0 ? `Estimat: ~${estBat.toLocaleString('da-DK')} kr` : '';
 }
 
 function onSliderKwp(v) {
@@ -1311,17 +1333,27 @@ function onSliderBat(v) {
   rebuildAll();
 }
 
-function onSliderPrice(v) {
+function onSolarPrice(v) {
   const price = parseInt(v);
-  S.overrideSysCost = (price > 0) ? price : null;
+  S.overrideSolarCost = (price > 0) ? price : null;
+  rebuildAll();
+}
+
+function onBatPrice(v) {
+  const price = parseInt(v);
+  S.overrideBatCost = (price > 0) ? price : null;
   rebuildAll();
 }
 
 function resetSliders() {
   S.overrideKwp = null;
   S.overrideBatKwh = null;
-  S.overrideSysCost = null;
-  document.getElementById('sliderPrice').value = '';
+  S.overrideSolarCost = null;
+  S.overrideBatCost = null;
+  const solarEl = document.getElementById('sliderSolarPrice');
+  const batEl   = document.getElementById('sliderBatPrice');
+  if (solarEl) solarEl.value = '';
+  if (batEl)   batEl.value   = '';
   const r = calcRec();
   initSliders(r);
   rebuildAll();
