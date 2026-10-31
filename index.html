@@ -324,12 +324,6 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
         <div style="font-size:11px;color:var(--text-3);margin-top:4px">Nettarif + systemtarif + moms (~0,36–0,44 kr/kWh) lægges oveni. Ingen el-afgift i 2026.</div>
       </div>
 
-      <div class="field">
-        <label>Din samlede elregning per år i kr (valgfrit — mest præcist)</label>
-        <input type="text" id="annualBill" value="" placeholder="F.eks. 12000" inputmode="numeric">
-        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Hvis du udfylder dette bruges din faktiske betalte pris i stedet for spotprisberegningen</div>
-      </div>
-
       <div class="error-box" id="err1"></div>
       <button class="btn btn-primary" onclick="goStep2()">Næste: Hent dit forbrug →</button>
     </div>
@@ -1052,7 +1046,7 @@ function goStep2() {
   S.persons = parseInt(document.getElementById('persons').value);
   S.fixedPrice = parseFloat(document.getElementById('fixedPrice').value) || 2.70;
   S.spotSurcharge = parseFloat(document.getElementById('spotSurcharge').value) || 0;
-  S.annualBill = parseFloat(document.getElementById('annualBill').value) || null;
+
   hide('step1'); show('step2'); setProgress(2);
 }
 
