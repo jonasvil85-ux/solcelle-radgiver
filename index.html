@@ -1794,8 +1794,11 @@ function rebuildAll() {
     document.getElementById('kpi-bat').className = 'kpi-value';
     document.getElementById('kpi-bat-sub').textContent = 'baseret på dit mønster';
   }
-  document.getElementById('kpi-savings').textContent = r.sav26.toLocaleString('da-DK');
-  document.getElementById('kpi-payback').textContent = '~' + r.payback;
+  // Apply current afgift toggle state to savings and payback
+  const sav = _useAfgift ? r.sav28 : r.sav26;
+  const pb  = _useAfgift ? +(r.total / r.sav28).toFixed(1) : r.payback;
+  document.getElementById('kpi-savings').textContent = sav.toLocaleString('da-DK');
+  document.getElementById('kpi-payback').textContent = '~' + pb;
 
   document.getElementById('rec-solar-val').textContent = `${r.kWp} kWp · ${r.sysCost.toLocaleString('da-DK')} kr`;
   if (r.batKwh > 0) {
@@ -1810,7 +1813,7 @@ function rebuildAll() {
   const orientSuffix = r.orientFactor < 1 ? ` · ${orientLabel} tag (${Math.round(r.orientFactor*100)}% af max)` : '';
   document.getElementById('rec-prod-val').textContent = r.prod.toLocaleString('da-DK') + ' kWh/år' + orientSuffix;
   document.getElementById('rec-self-val').textContent = `${r.selfPct}% (${r.selfCons.toLocaleString('da-DK')} kWh/år)`;
-  document.getElementById('rec-sav-val').textContent = r.sav26.toLocaleString('da-DK') + ' kr/år';
+  document.getElementById('rec-sav-val').textContent = sav.toLocaleString('da-DK') + ' kr/år';
 
   destroyCharts();
   buildProfileChart(r);
