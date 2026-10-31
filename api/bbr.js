@@ -62,10 +62,7 @@ module.exports = async function (req, res) {
     );
 
     const buildings = bbrResults.flat().filter(b => b.byg041BebyggetAreal > 0);
-    if (!buildings.length) return res.status(404).json({
-      error: 'Ingen BBR-bygning fundet for adressen',
-      debug: { candidates, bbrResults }
-    });
+    if (!buildings.length) return res.status(404).json({ error: 'Ingen BBR-bygning fundet for adressen' });
 
     // Vælg bedste match: foretruk areal 50-500 m² (parcelhus), ellers første
     const residential = buildings.filter(b => b.byg041BebyggetAreal >= 50 && b.byg041BebyggetAreal <= 500);
