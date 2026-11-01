@@ -884,48 +884,6 @@ body {
       <div class="error-box" id="err2"></div>
       <button class="btn btn-primary" onclick="fetchData()">Hent mine data →</button>
 
-      <!-- Adresse + tag — vises efter succesfuldt token-fetch -->
-      <div id="eloAdresseSection" style="display:none;margin-top:20px">
-        <div id="housePicWrap" style="display:none;margin-bottom:14px;border-radius:10px;overflow:hidden;position:relative;height:180px;background:var(--bg-2)">
-          <img id="housePic" style="width:100%;height:100%;object-fit:cover;display:block" alt="Gadefoto">
-          <div id="housePicLabel" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.55));color:#fff;font-size:10.5px;padding:18px 10px 6px;"></div>
-        </div>
-        <div id="roofPanel2" class="roof-panel" style="display:none">
-          <div class="roof-panel-title">🏠 Tagoplysninger</div>
-          <div id="roofDetectStatus" style="font-size:11.5px;margin:-4px 0 10px;min-height:14px;line-height:1.5"></div>
-          <div class="field-row">
-            <div class="field" id="compassField" style="margin-bottom:0">
-              <label>Tagretning</label>
-              <div id="compassWrap">
-              <div class="compass-grid" id="compassGrid">
-                <div class="cdir" data-dir="NW">NV<small>55%</small></div>
-                <div class="cdir" data-dir="N">N<small>40%</small></div>
-                <div class="cdir" data-dir="NE">NØ<small>55%</small></div>
-                <div class="cdir" data-dir="W">V<small>78%</small></div>
-                <div class="cdir sel" data-dir="S">S<small>100%</small></div>
-                <div class="cdir" data-dir="E">Ø<small>78%</small></div>
-                <div class="cdir" data-dir="SW">SV<small>92%</small></div>
-                <div class="cdir" data-dir="SE">SØ<small>92%</small></div>
-              </div>
-              <div style="font-size:10.5px;color:var(--text-3);margin-top:5px">Klik på din tagretning mod solen. Procentsatsen viser forventet solcelleudbytte ift. et perfekt sydvendt tag (100%).</div>
-              </div>
-            </div>
-            <div class="field" style="margin-bottom:0">
-              <label>Brugbart tagareal (m²)</label>
-              <div id="roofPresets" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
-                <span class="toggle-opt" onclick="setRoofArea(45)" title="Rækkehus/kæde ca. 80m² bolig">Rækkehus<small style="display:block;font-size:9px;opacity:.7">~45 m²</small></span>
-                <span class="toggle-opt" onclick="setRoofArea(65)" title="Villa ca. 120m²">Villa S<small style="display:block;font-size:9px;opacity:.7">~65 m²</small></span>
-                <span class="toggle-opt" onclick="setRoofArea(85)" title="Villa ca. 160m²">Villa M<small style="display:block;font-size:9px;opacity:.7">~85 m²</small></span>
-                <span class="toggle-opt" onclick="setRoofArea(110)" title="Villa ca. 200m²+">Villa L<small style="display:block;font-size:9px;opacity:.7">~110 m²</small></span>
-              </div>
-              <input type="text" id="roofAreaInput" placeholder="Eller indtast m² manuelt" inputmode="numeric" oninput="onRoofAreaInput(this.value)">
-              <div style="font-size:10.5px;color:var(--text-3);margin-top:5px">1 kWp ≈ 6 m² · begrænser anlæggsstørrelse</div>
-            </div>
-          </div>
-        </div>
-        <button class="btn btn-primary" style="margin-top:16px;width:100%" onclick="confirmAndCalculate()">Beregn mit anlæg →</button>
-      </div>
-
       <!-- Manuel fallback -->
       <div style="margin:28px 0 4px;display:flex;align-items:center;gap:12px">
         <div style="flex:1;height:1px;background:var(--border)"></div>
@@ -998,6 +956,12 @@ body {
 
   <!-- ── STEP 3: RESULTS ── -->
   <div id="step3" class="hidden">
+
+    <!-- Husfoto fra Eloverblik-adresse (vises kun hvis geocoding lykkedes) -->
+    <div id="housePicWrap" style="display:none;margin-bottom:0;border-radius:0;overflow:hidden;position:relative;height:200px;background:var(--bg-2)">
+      <img id="housePic" style="width:100%;height:100%;object-fit:cover;display:block" alt="Gadefoto">
+      <div id="housePicLabel" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.55));color:#fff;font-size:10.5px;padding:18px 10px 6px;"></div>
+    </div>
 
     <div class="result-header">
       <h2>Din personlige anbefaling</h2>
@@ -2044,7 +2008,7 @@ async function fetchData() {
       S.annualBill = S.calculatedAnnualCost;
     }
 
-    // Vis adresse + tag fra Eloverblik-målepunkt
+    // Hent adresse + husfoto fra Eloverblik-målepunkt
     if (data.address) {
       S.address = data.address;
       S.zipcode = data.postCode || '';
@@ -2052,12 +2016,7 @@ async function fetchData() {
     }
 
     hide('stepLoading');
-    show('step2');
-    setProgress(2);
-    document.getElementById('eloAdresseSection').style.display = 'block';
-    document.getElementById('roofPanel2').style.display = 'block';
-    document.getElementById('tokenInput').closest('.card').scrollTop = 0;
-    window.scrollTo({top: 0, behavior: 'smooth'});
+    showResults();
 
   } catch (err) {
     hide('stepLoading');
