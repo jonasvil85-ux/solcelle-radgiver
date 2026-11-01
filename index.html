@@ -1184,11 +1184,11 @@ body {
 
     <!-- CHART 2: OPTIMIZED PROFILE -->
     <div class="chart-card">
-      <div class="chart-card-title">Potentiale ved optimering — simuleret gennemsnitsdag</div>
+      <div class="chart-card-title">Potentiale ved optimering — simuleret dag</div>
       <div style="display:inline-block;font-size:10.5px;font-weight:600;color:#D97706;background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.30);border-radius:5px;padding:2px 8px;margin-bottom:8px">⚠️ Simulering — viser ikke dit faktiske forbrug</div>
       <div class="chart-card-sub"><span style="color:#059669">■</span> Sol direkte · <span style="color:#7C3AED">■</span> Bat. oplader · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#0891B2">■</span> Bat. aflader · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion · <span id="optimalExtra" style="color:var(--emerald);font-weight:600"></span></div>
       <div style="font-size:11.5px;color:var(--text-3);line-height:1.6;margin:8px 0 12px;padding:10px 12px;background:rgba(5,150,105,0.04);border-radius:6px;border-left:3px solid var(--emerald)">
-        Viser en simuleret <strong style="color:var(--text-2)">gennemsnitsdag over hele året</strong> — inkl. mørke vintermåneder — hvor 35% af natteforbruget er rykket til soltimerne (09–16). Solkurven er et vægtet gennemsnit af alle 12 måneder, så grafen viser et realistisk billede af, hvad optimering giver på tværs af årstiderne. Dit <strong style="color:var(--text-2)">faktiske forbrug</strong> ses i graferne ovenfor og nedenfor.
+        <span id="optimalChartSub"></span> — simulerer 35% lastflytning til soltimerne (09–16). Måneden vælges automatisk som den dag hvor sol dækker ~50% af dit forbrug, da det er her optimering giver størst effekt. Dit <strong style="color:var(--text-2)">faktiske forbrug</strong> ses i graferne for sommer- og vinterdag nedenfor.
       </div>
       <div class="chart-wrap" style="height:210px"><canvas id="optimalChart"></canvas></div>
     </div>
@@ -2385,9 +2385,9 @@ function rebuildAll() {
     document.getElementById('kpi-bat').className = 'kpi-value emerald';
     document.getElementById('kpi-bat-sub').textContent = 'betaler sig i din situation';
   } else {
-    document.getElementById('kpi-bat').textContent = 'Anbefales ikke';
+    document.getElementById('kpi-bat').textContent = '—';
     document.getElementById('kpi-bat').className = 'kpi-value';
-    document.getElementById('kpi-bat-sub').textContent = 'tilbagebetalingstid > 15 år';
+    document.getElementById('kpi-bat-sub').textContent = 'Anbefales ikke · tilbagebetalingstid > 15 år';
   }
 
   // Override indicators: show when user has deviated from recommendation
@@ -2512,9 +2512,9 @@ function showResults() {
     document.getElementById('kpi-bat').className = 'kpi-value emerald';
     document.getElementById('kpi-bat-sub').textContent = 'batteri anbefales';
   } else {
-    document.getElementById('kpi-bat').textContent = 'Ikke nødvendigt';
+    document.getElementById('kpi-bat').textContent = '—';
     document.getElementById('kpi-bat').className = 'kpi-value';
-    document.getElementById('kpi-bat-sub').textContent = 'baseret på dit mønster';
+    document.getElementById('kpi-bat-sub').textContent = 'Anbefales ikke · baseret på dit mønster';
   }
   document.getElementById('kpi-savings').textContent = r.sav26.toLocaleString('da-DK');
   document.getElementById('kpi-payback').textContent = '~' + r.payback;
@@ -2831,15 +2831,17 @@ function buildPaybackChart(r, withAfgift) {
 const PRICE_W = [0.3,0.3,0.3,0.3,0.3,0.3, 0.6,0.6,0.6,0.6,0.6,0.6, 0.6,0.6,0.6,0.6,0.6,1.0, 1.0,1.0,1.0,0.6,0.5,0.4];
 
 function runBatterySim(solar, profile, batKwh) {
-  // Pass 0: oplad batteriet fra billig natel (00-05) til at dække peak-timer (17-21)
+  // Pass 0: oplad batteriet fra billig natel (00-05) til at dække alle timer uden sol
   const gridChargeArr = new Array(24).fill(0);
   let soc = 0;
   if (batKwh > 0) {
-    const peakDeficit = Array.from({length:24},(_,h)=>h)
-      .filter(h => PRICE_W[h] >= 1.0)
+    // Deficit i timer uden sol (alt hvad batteriet skal dække om aftenen/natten)
+    const offSolarDef = Array.from({length:24},(_,h)=>h)
       .reduce((s,h) => s + Math.max(0, (profile[h]||0) - solar[h]), 0);
+    // Sol-overskud som batteriet kan optage fra sol alene
     const solarSurplus = solar.reduce((s, v, h) => s + Math.max(0, v - (profile[h]||0)), 0);
-    const toCharge = Math.min(batKwh, Math.max(0, peakDeficit - solarSurplus));
+    // Oplad fra net det der ikke kan dækkes af sol-overskud
+    const toCharge = Math.min(batKwh, Math.max(0, offSolarDef - solarSurplus));
     if (toCharge > 0) {
       const perHour = toCharge / 6;
       for (let h = 0; h < 6; h++) { gridChargeArr[h] = perHour; soc += perHour; }
@@ -2949,16 +2951,24 @@ function buildFlowChart(r, season) {
 
 function buildOptimalChart(r) {
   const current = S.hourlyProfile;
-  // Beregn årsgennemsnitlig solkurve (vægtet over alle 12 måneder × dagantal)
-  const ss   = [0,0,0,0,0,0,0,0,0.48,1.93,4.32,6.72,8.16,8.64,7.20,5.28,2.88,1.44,0.19,0,0,0,0,0];
-  const mSc  = [0.15,0.33,0.57,0.81,0.91,1.0,0.91,0.79,0.60,0.32,0.16,0.11];
-  const mD   = [31,28,31,30,31,30,31,31,30,31,30,31];
-  const scale = r.kWp / 10;
-  const solar = ss.map((v,h) => {
-    let w = 0;
-    for (let m = 0; m < 12; m++) w += ss[h] * scale * mSc[m] * mD[m];
-    return Math.max(0, +(w / 365).toFixed(3));
-  });
+  // Vælg den måned hvor sol dækker ~50% af dagligt forbrug — det er her optimering giver mest mening
+  const ss     = [0,0,0,0,0,0,0,0,0.48,1.93,4.32,6.72,8.16,8.64,7.20,5.28,2.88,1.44,0.19,0,0,0,0,0];
+  const ssSum  = ss.reduce((a,b)=>a+b,0);
+  const mD     = [31,28,31,30,31,30,31,31,30,31,30,31];
+  const MO_NAMES = ['januar','februar','marts','april','maj','juni','juli','august','september','oktober','november','december'];
+  const dailyCons = (S.annualKwh || 5000) / 365;
+  const targetProd = dailyCons * 0.5; // 50%-dækning = bedst mulig optimeringdag
+  let bestMo = 0, bestDiff = Infinity;
+  for (let m = 0; m < 12; m++) {
+    const dayProd = r.monthlyProd[m] / mD[m];
+    const diff = Math.abs(dayProd - targetProd);
+    if (diff < bestDiff) { bestDiff = diff; bestMo = m; }
+  }
+  const refDayProd = r.monthlyProd[bestMo] / mD[bestMo];
+  const solar = ss.map(v => Math.max(0, +(v * refDayProd / ssSum).toFixed(3)));
+  // Opdatér undertitlen med den valgte måned
+  const optSubEl = document.getElementById('optimalChartSub');
+  if (optSubEl) optSubEl.textContent = `Typisk ${MO_NAMES[bestMo]}dag (sol dækker ~50% af forbrug)`;
 
   // Shift 35% of night load into solar hours
   const SOLAR_HOURS     = [9,10,11,12,13,14,15,16];
@@ -2972,9 +2982,14 @@ function buildOptimalChart(r) {
     return Math.max(0, +v.toFixed(3));
   });
 
-  // Self-consumption improvement label — skaler til år via gennemsnitsdag × 365
-  const selfCurrent = current.reduce((s,v,h) => s + Math.min(v, solar[h]), 0);
-  const selfOptimal  = profile.reduce((s,v,h)  => s + Math.min(v, solar[h]), 0);
+  // Self-consumption improvement label — brug årsgennemsnit for korrekt skala
+  const mSc2 = [0.15,0.33,0.57,0.81,0.91,1.0,0.91,0.79,0.60,0.32,0.16,0.11];
+  const solarAvg = ss.map((v,h) => {
+    let w = 0; for (let m = 0; m < 12; m++) w += v * (r.kWp/10) * mSc2[m] * mD[m];
+    return Math.max(0, +(w / 365).toFixed(3));
+  });
+  const selfCurrent = current.reduce((s,v,h) => s + Math.min(v, solarAvg[h]), 0);
+  const selfOptimal  = profile.reduce((s,v,h)  => s + Math.min(v, solarAvg[h]), 0);
   const extraKwh = Math.round((selfOptimal - selfCurrent) * 365);
   const extra = extraKwh > 0 ? `Ekstra selvforbrug: ~${extraKwh.toLocaleString('da-DK')} kWh/år` : '';
   document.getElementById('optimalExtra').textContent = extra;
