@@ -2161,49 +2161,75 @@ function calcRec() {
   const dailyKwh = kwh / 365;
   const evenKwh  = profFrac.slice(17, 22).reduce((a,b)=>a+b,0) * dailyKwh;
 
-  // System sizing (uses fallback scRatio only for kWp estimate, not for savings)
-  const scFallback = S.hasEV && S.evChargesHome ? 0.73 : 0.64;
-  const rawKwp     = (kwh * 0.80) / (irr * scFallback);
-  const sizes      = [5,6,7,8,9,10,12,15];
-  const maxKwpRoof = S.roofAreaM2 ? Math.max(3, Math.floor(S.roofAreaM2 / 6)) : Infinity;
-  const kWp        = S.overrideKwp !== null ? S.overrideKwp : Math.min(sizes.find(s=>s>=rawKwp)||15, maxKwpRoof);
-
-  const wantsBat    = kWp >= 6 && (evenKwh > 2.5 || (S.hasEV && S.evChargesHome));
-  const tentativeBat = S.overrideBatKwh !== null ? S.overrideBatKwh : (!wantsBat ? 0 : evenKwh > 5 ? 10 : 5);
-
+  // Prereqs needed for kWp sweep — defined before candidate selection
   const orientFactor = S.roofOrientFactor ||
     ({ S:1.00, SW:0.92, SE:0.92, W:0.78, E:0.78, NW:0.55, NE:0.55, N:0.40 }[S.roofOrientation] || 1.00);
 
-  const prod = Math.round(kWp * irr * orientFactor);
-
-  // Monthly production — needed for month-by-month self-consumption calculation
   const mScales = [0.15,0.33,0.57,0.81,0.91,1.0,0.91,0.79,0.60,0.32,0.16,0.11];
   const mDays   = [31,28,31,30,31,30,31,31,30,31,30,31];
   const mNorm   = mScales.reduce((a,s,i)=>a+s*mDays[i],0); // ~202.9
-  const monthlyProd = mScales.map((s,i)=>Math.round(kWp*irr*orientFactor*s*mDays[i]/mNorm));
 
-  // Normalized hourly solar shape for a typical production day
-  // (kWh/h for a 10 kWp system on a peak-summer day, normalized to sum=1)
   const SS = [0,0,0,0,0,0,0,0,0.48,1.93,4.32,6.72,8.16,8.64,7.20,5.28,2.88,1.44,0.19,0,0,0,0,0];
   const ssSum  = SS.reduce((a,b)=>a+b,0);
-  const ssNorm = SS.map(v=>v/ssSum); // proportional hourly solar shape
+  const ssNorm = SS.map(v=>v/ssSum);
 
-  // Price area: from Eloverblik or estimated from postal code (DK1=Jylland/Fyn, DK2=Sjælland)
   const priceArea = S.priceArea || (parseInt(S.zipcode) >= 5000 ? 'DK1' : 'DK2');
   const nt = NETTARIF[priceArea] || NETTARIF.DK1;
   const nettarifAnnAvg = (nt.summer.reduce((a,b)=>a+b,0) + nt.winter.reduce((a,b)=>a+b,0)) / 48;
 
-  // Flat buy price (used for display, export valuation, and annualCost cap)
   const buyPrice = (S.spotAvg && S.nettarifAvg)
     ? +((S.spotAvg + (S.spotSurcharge||0) + S.nettarifAvg + ELAGIFT) * 1.25).toFixed(3)
     : (S.annualBill && S.annualKwh > 0)
       ? +(S.annualBill / S.annualKwh).toFixed(3)
       : (S.effectiveKwhPrice && S.effectiveKwhPrice < 2.0 ? S.effectiveKwhPrice : 1.35);
 
-  // Spot price component for hourly calculation
   const spotEst = S.spotAvg
     ? S.spotAvg
     : Math.max(0.40, (buyPrice / 1.25) - ELAGIFT - (S.spotSurcharge||0) - nettarifAnnAvg);
+
+  // System sizing — sweep all candidate sizes and pick the one with best payback.
+  // Non-linear pricing (fixed base + variable/kWp) means optimal kWp ≠ "just enough".
+  const sizes      = [5,6,7,8,9,10,12,15];
+  const maxKwpRoof = S.roofAreaM2 ? Math.max(3, Math.floor(S.roofAreaM2 / 6)) : Infinity;
+  let kWp;
+  if (S.overrideKwp !== null) {
+    kWp = S.overrideKwp;
+  } else {
+    const annualCostEst = S.annualBill || (kwh * buyPrice);
+    const candidates = sizes.filter(s => s <= maxKwpRoof);
+    if (candidates.length === 0) candidates.push(Math.max(3, Math.min(5, maxKwpRoof)));
+    let bestKwp = candidates[0], bestPb = 999;
+    for (const sz of candidates) {
+      let szAnnSelf = 0, szAnnSavSelf = 0;
+      for (let m = 0; m < 12; m++) {
+        const isWinter = m <= 2 || m >= 9;
+        const ntt = isWinter ? nt.winter : nt.summer;
+        const dayProd = sz * irr * orientFactor * mScales[m] / mNorm;
+        const dayCons = (S.monthlyProfile ? S.monthlyProfile[m] : kwh * mDays[m] / 365) / mDays[m];
+        for (let h = 0; h < 24; h++) {
+          const selfH = Math.min(ssNorm[h] * dayProd, profFrac[h] * dayCons);
+          szAnnSelf    += selfH * mDays[m];
+          szAnnSavSelf += selfH * mDays[m] * (spotEst + (S.spotSurcharge||0) + ntt[h] + ELAGIFT) * 1.25;
+        }
+      }
+      const szBaseself = Math.min(Math.round(szAnnSelf), Math.round(kwh * 0.92));
+      const szProd     = Math.round(sz * irr * orientFactor);
+      const szExp      = szProd - szBaseself;
+      const szSavRaw   = szAnnSavSelf + szExp * 0.35;
+      const szSav      = Math.round(annualCostEst ? Math.min(szSavRaw, annualCostEst * 0.88) : szSavRaw);
+      const szPb       = szSav > 0 ? estimateSolarCost(sz) / szSav : 999;
+      if (szPb < bestPb) { bestPb = szPb; bestKwp = sz; }
+    }
+    kWp = bestKwp;
+  }
+
+  const wantsBat    = kWp >= 6 && (evenKwh > 2.5 || (S.hasEV && S.evChargesHome));
+  const tentativeBat = S.overrideBatKwh !== null ? S.overrideBatKwh : (!wantsBat ? 0 : evenKwh > 5 ? 10 : 5);
+
+  const prod = Math.round(kWp * irr * orientFactor);
+
+  // Monthly production — needed for month-by-month self-consumption calculation
+  const monthlyProd = mScales.map((s,i)=>Math.round(kWp*irr*orientFactor*s*mDays[i]/mNorm));
 
   // ── MONTH-BY-MONTH, HOUR-BY-HOUR SELF-CONSUMPTION ──
   // Sommer (apr–sep) og vinter (okt–mar) bruger forskellige nettariffer.
