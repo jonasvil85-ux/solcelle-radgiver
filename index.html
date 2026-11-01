@@ -748,7 +748,6 @@ body {
             </div>
             <div class="check-label">
               <strong>Elbil</strong>
-              <span id="ev-summary">Angiv km/år for præcis beregning</span>
             </div>
           </label>
           <div id="ev-details" class="ev-details hidden">
@@ -757,7 +756,6 @@ body {
                 <label>Km/år med elbilen</label>
                 <input type="text" id="evKm" value="15000" inputmode="numeric" oninput="updateEvEst()">
                 <div class="ev-est" id="ev-kwh-est">≈ 3.000 kWh/år</div>
-                <div style="font-size:11px;color:var(--text-3);margin-top:4px">Beregnet med 20 kWh/100 km — dansk gennemsnit inkl. vinteropvarmning og kold batteri. Har du flere elbiler, taster du blot det samlede antal km ind.</div>
               </div>
               <div class="field">
                 <label>Lader primært hjemme?</label>
@@ -776,7 +774,6 @@ body {
             </div>
             <div class="check-label">
               <strong>Varmepumpe</strong>
-              <span>Højt vinterforbrug — sol hjælper primært om sommeren</span>
             </div>
           </label>
         </div>
@@ -792,9 +789,6 @@ body {
           <div class="toggle-opt selected" id="opt-spot" onclick="selectPriceType('spot')">Spotpris</div>
           <div class="toggle-opt" id="opt-fixed" onclick="selectPriceType('fixed')">Fast pris</div>
         </div>
-        <div style="font-size:11px;color:var(--text-3);margin-top:6px" id="price-hint">
-          Vi henter din faktiske gennemsnitlige spotpris fra Energidataservice.dk baseret på dit forbrug
-        </div>
       </div>
       <div class="field hidden" id="fixed-price-field">
         <label>Din samlede faste pris inkl. afgifter (kr/kWh)</label>
@@ -803,7 +797,6 @@ body {
       <div class="field" id="spot-surcharge-field">
         <label>Spot-tillæg fra dit elselskab (kr/kWh, 0 hvis ingen)</label>
         <input type="text" id="spotSurcharge" value="0" inputmode="decimal">
-        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Nettariffen varierer efter tidspunkt og årstid — vinter spidslast (17–21) er 2–3× dyrere end sommer. DK1 (Jylland) er generelt billigere end DK2 (Sjælland). El-afgift ~0,01 kr/kWh + moms lægges oveni.</div>
       </div>
 
       <!-- EJERTID -->
@@ -1427,7 +1420,8 @@ function selectPriceType(type) {
   document.getElementById('opt-fixed').className = 'toggle-opt' + (type === 'fixed' ? ' selected' : '');
   document.getElementById('fixed-price-field').className = 'field' + (type === 'fixed' ? '' : ' hidden');
   document.getElementById('spot-surcharge-field').className = 'field' + (type === 'spot' ? '' : ' hidden');
-  document.getElementById('price-hint').textContent = type === 'spot'
+  const ph = document.getElementById('price-hint');
+  if (ph) ph.textContent = type === 'spot'
     ? 'Vi henter din faktiske gennemsnitlige spotpris fra Energidataservice.dk baseret på dit forbrug'
     : 'Brug den pris der står på din elregning inkl. alle afgifter og nettarif';
 }
@@ -1442,7 +1436,7 @@ function updateEvEst() {
   S.evKm = parseInt(document.getElementById('evKm').value) || 15000;
   const kwh = Math.round(S.evKm * 0.20);
   document.getElementById('ev-kwh-est').textContent = '≈ ' + kwh.toLocaleString('da-DK') + ' kWh/år';
-  document.getElementById('ev-summary').textContent = S.evKm.toLocaleString('da-DK') + ' km/år · ~' + kwh.toLocaleString('da-DK') + ' kWh';
+  const evSumEl = document.getElementById('ev-summary'); if (evSumEl) evSumEl.textContent = S.evKm.toLocaleString('da-DK') + ' km/år · ~' + kwh.toLocaleString('da-DK') + ' kWh';
 }
 
 function showErr(id, msg) {
@@ -1625,7 +1619,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
     S.roofOrientation = best;
 
     if (southAreaM2 > 0 && southAreaM2 < 2000) {
-      document.getElementById('roofAreaInput').value = southAreaM2;
+      const _rai1 = document.getElementById('roofAreaInput'); if (_rai1) _rai1.value = southAreaM2;
       S.roofAreaM2 = southAreaM2;
       document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
     }
@@ -1694,7 +1688,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
             S.roofOrientFactor = +weightedFactor.toFixed(3); // bruges i calcRec i stedet for simpelt lookup
 
             if (southAreaM2 > 0 && southAreaM2 < 2000) {
-              document.getElementById('roofAreaInput').value = southAreaM2;
+              const _rai2 = document.getElementById('roofAreaInput'); if (_rai2) _rai2.value = southAreaM2;
               S.roofAreaM2 = southAreaM2;
               document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
             }
@@ -1821,7 +1815,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
         const pitchFactor = (bbrData.tagkonstruktion === 1) ? 1.0 : 1.15;
         const southAreaM2 = Math.round(footprintM2 / 2 * pitchFactor);
         if (southAreaM2 > 0 && southAreaM2 < 2000) {
-          document.getElementById('roofAreaInput').value = southAreaM2;
+          const _rai3 = document.getElementById('roofAreaInput'); if (_rai3) _rai3.value = southAreaM2;
           S.roofAreaM2 = southAreaM2;
           document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
           if (statusEl) {
@@ -1846,7 +1840,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
 
 /* ── ROOF AREA ── */
 function setRoofArea(m2) {
-  document.getElementById('roofAreaInput').value = m2;
+  const _rai = document.getElementById('roofAreaInput'); if (_rai) _rai.value = m2;
   S.roofAreaM2 = m2;
   document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => {
     b.classList.toggle('selected', parseInt(b.getAttribute('onclick').match(/\d+/)[0]) === m2);
@@ -1859,7 +1853,8 @@ function onRoofAreaInput(v) {
 }
 
 /* ── COMPASS DIRECTION ── */
-document.getElementById('compassGrid').addEventListener('click', function (e) {
+const _compassGrid = document.getElementById('compassGrid');
+if (_compassGrid) _compassGrid.addEventListener('click', function (e) {
   const btn = e.target.closest('.cdir');
   if (!btn) return;
   this.querySelectorAll('.cdir').forEach(b => b.classList.remove('sel'));
@@ -1927,7 +1922,7 @@ function restart() {
   const raInput = document.getElementById('roofAreaInput'); if (raInput) raInput.value = '';
   const rds = document.getElementById('roofDetectStatus'); if (rds) rds.textContent = '';
   const cg = document.getElementById('compassGrid'); if (cg) cg.querySelectorAll('.cdir').forEach(b => b.classList.remove('sel'));
-  document.querySelector('.cdir[data-dir="S"]').classList.add('sel');
+  const sDir = document.querySelector('.cdir[data-dir="S"]'); if (sDir) sDir.classList.add('sel');
   document.getElementById('tokenInput').value = '';
   // Reset ejertid to 15 years default
   document.querySelectorAll('[id^="ej-"]').forEach(el => el.classList.remove('selected'));
@@ -2400,7 +2395,7 @@ function estimateRoofFromConsumption() {
   const floorM2 = Math.round(netKwh / 30);
   const southM2 = Math.max(35, Math.min(180, Math.round(floorM2 / 2 * 1.15)));
   S.roofAreaM2 = southM2;
-  document.getElementById('roofAreaInput').value = southM2;
+  const raInput = document.getElementById('roofAreaInput'); if (raInput) raInput.value = southM2;
   document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
   const ds = document.getElementById('roofDetectStatus');
   if (ds && !ds.textContent.includes('✅')) {
