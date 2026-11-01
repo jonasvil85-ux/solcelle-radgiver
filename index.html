@@ -2706,8 +2706,8 @@ function buildPaybackChart(r, withAfgift) {
       ctx.save();
       const y0 = y.getPixelForValue(0);
       ctx.font='10px Inter,sans-serif'; ctx.textBaseline='top'; ctx.textAlign='left';
-      ctx.fillStyle=isDark()?'rgba(252,165,165,0.90)':'rgba(220,38,38,0.75)'; ctx.fillText('Investering udestående',left+6,y0+5);
-      ctx.textBaseline='bottom'; ctx.fillStyle=isDark()?'rgba(110,231,183,0.90)':'rgba(5,150,105,0.80)'; ctx.fillText('Fortjeneste',left+6,y0-5);
+      ctx.fillStyle=isDark()?'rgba(252,165,165,0.90)':'rgba(220,38,38,0.75)'; ctx.fillText('Investering udestående',left+6,Math.min(y0+5, bottom-14));
+      ctx.textBaseline='bottom'; ctx.fillStyle=isDark()?'rgba(110,231,183,0.90)':'rgba(5,150,105,0.80)'; ctx.fillText('Fortjeneste',left+6,Math.max(y0-5, top+14));
 
       if (be1) {
         const xb = x.getPixelForValue(+be1);
