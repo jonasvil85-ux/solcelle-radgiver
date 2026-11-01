@@ -999,6 +999,7 @@ body {
             <span class="toggle-opt" id="bat20" onclick="onSliderBat(20)">20 kWh</span>
           </div>
         </div>
+        <div id="batWarning" style="display:none;font-size:11.5px;line-height:1.6;padding:10px 13px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;color:var(--text-2);"></div>
 
         <!-- Solcelle tilbudspris -->
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
@@ -2293,6 +2294,23 @@ function onSliderBat(v) {
     if (el) el.className = 'toggle-opt' + (b === v ? ' selected' : '');
   });
   rebuildAll();
+  updateBatWarning(v);
+}
+
+function updateBatWarning(batKwh) {
+  const warn = document.getElementById('batWarning');
+  if (!warn) return;
+  if (batKwh < 10) { warn.style.display = 'none'; return; }
+  const r = _lastRec;
+  if (!r) { warn.style.display = 'none'; return; }
+  const batCost    = r.batCost;
+  // Rough marginal saving from battery: shifts ~45% of capacity × 365 days × 60% grid offset
+  const batKwhYear = Math.round(batKwh * 0.45 * 365 * 0.60);
+  const batSaving  = Math.round(batKwhYear * (r.buyPrice || 2.70));
+  const batPB      = batCost > 0 && batSaving > 0 ? Math.round(batCost / batSaving) : null;
+  const pbTxt      = batPB ? `~${batPB} år` : 'usikkert';
+  warn.innerHTML = `⚠️ <strong>Stort batteri — overvej nøje:</strong> Et ${batKwh} kWh batteri koster ca. ${batCost.toLocaleString('da-DK')} kr. ekstra og giver typisk ~${batKwhYear.toLocaleString('da-DK')} kWh/år ekstra selvforbrug (${batSaving.toLocaleString('da-DK')} kr/år). Estimeret tilbagebetaling: <strong>${pbTxt}</strong> — ofte ud over batteriets levetid på 10–15 år. Kan give mening hvis du ønsker strøm ved netsvigt eller en lavere afhængighed af elnettet, men er sjældent den bedste rene investering.`;
+  warn.style.display = 'block';
 }
 
 function onSolarPrice(v) {
@@ -2417,7 +2435,7 @@ function estimateRoofFromConsumption() {
   const kwh = S.annualKwh;
   if (!kwh) return;
   // Fratræk EV og varmepumpe-estimat
-  const evKwh  = S.hasEV  ? S.evKm * 0.16 * (S.evChargesHome ? 0.85 : 0.12) : 0;
+  const evKwh  = S.hasEV  ? S.evKm * 0.20 * (S.evChargesHome ? 0.85 : 0.12) : 0;
   const hpKwh  = S.hasHP  ? Math.min(kwh * 0.55, 12000) : 0;
   const netKwh = Math.max(1500, kwh - evKwh - hpKwh);
   // ~30 kWh/m² for husholdningsapparater + lys i dansk villa
@@ -2535,7 +2553,7 @@ function showResults() {
   }
 
   const notes = [];
-  if (S.hasEV && S.evChargesHome) notes.push(`Elbil (${S.evKm.toLocaleString('da-DK')} km/år · ~${Math.round(S.evKm * 0.16).toLocaleString('da-DK')} kWh/år): lad i dagstimerne om sommeren fra solenergi og om natten om vinteren på billig natarif.`);
+  if (S.hasEV && S.evChargesHome) notes.push(`Elbil (${S.evKm.toLocaleString('da-DK')} km/år · ~${Math.round(S.evKm * 0.20).toLocaleString('da-DK')} kWh/år): lad i dagstimerne om sommeren fra solenergi og om natten om vinteren på billig natarif.`);
   if (S.hasEV && !S.evChargesHome) notes.push(`Elbil (${S.evKm.toLocaleString('da-DK')} km/år): da du primært lader ude, bidrager elbilen minimalt til dit hjemmeforbrug — solanlægget er dimensioneret efter husforbruget.`);
   if (S.hasHP)   notes.push('Varmepumpe: stor del af forbruget er om vinteren — sol hjælper primært maj–september.');
   if (!S.isOwner) notes.push('Husk at indhente udlejers tilladelse inden installation.');
