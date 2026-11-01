@@ -69,11 +69,11 @@ module.exports = async function (req, res) {
   const dsoGLNFromMP = mpPoint.gridCompanyGLNNumber || mpPoint.gridOperatorGLN
     || mpPoint.gridAreaGLN || mpPoint.gridCompanyGLN || null;
 
-  // Extract address from metering point
+  // Extract address from metering point (added to processed after it's created below)
   const mpStreet = [mpPoint.streetName, mpPoint.buildingNumber].filter(Boolean).join(' ');
   const mpCity   = [mpPoint.postCode, mpPoint.cityName].filter(Boolean).join(' ');
-  processed.address  = [mpStreet, mpCity].filter(Boolean).join(', ');
-  processed.postCode = mpPoint.postCode || '';
+  const mpAddress  = [mpStreet, mpCity].filter(Boolean).join(', ');
+  const mpPostCode = mpPoint.postCode || '';
 
   // 3. Fetch last 12 months of hourly data
   const now = new Date();
@@ -97,6 +97,8 @@ module.exports = async function (req, res) {
   }
 
   const processed = processTimeSeries(tsData);
+  processed.address  = mpAddress;
+  processed.postCode = mpPostCode;
 
   // 4. Calculate effective electricity price
   let effectiveKwhPrice = fixedPrice;
