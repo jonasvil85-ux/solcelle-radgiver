@@ -1552,8 +1552,6 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
     const city = p.city || p.locality || '';
     conf.textContent = `Postnummer ${zip}${city ? ' ' + city : ''} registreret`;
     conf.style.display = 'block';
-    const rp2 = document.getElementById('roofPanel2');
-    if (rp2) rp2.style.display = 'block';
 
     // Gadefoto
     const coords = feature.geometry && feature.geometry.coordinates;
@@ -1902,13 +1900,6 @@ function goStep2() {
   hide('step1'); show('step2'); setProgress(2);
 }
 
-function confirmAndCalculate() {
-  S.roofAreaM2 = parseInt(document.getElementById('roofAreaInput').value) || null;
-  hide('step2');
-  show('stepLoading');
-  setProgress(3);
-  setTimeout(() => { showResults(); }, 50);
-}
 
 function restart() {
   hide('step3');
@@ -1933,8 +1924,6 @@ function restart() {
   document.getElementById('zipcode').value = '';
   document.getElementById('addrInput').value = '';
   document.getElementById('addrConfirmed').style.display = 'none';
-  const rp2 = document.getElementById('roofPanel2'); if (rp2) rp2.style.display = 'none';
-  document.getElementById('eloAdresseSection').style.display = 'none';
   const raInput = document.getElementById('roofAreaInput'); if (raInput) raInput.value = '';
   const rds = document.getElementById('roofDetectStatus'); if (rds) rds.textContent = '';
   const cg = document.getElementById('compassGrid'); if (cg) cg.querySelectorAll('.cdir').forEach(b => b.classList.remove('sel'));
