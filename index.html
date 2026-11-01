@@ -1174,7 +1174,7 @@ body {
     <!-- PAYBACK CHART -->
     <div class="chart-card">
       <div class="chart-card-title">Hvornår har du tjent anlægget hjem?</div>
-      <div class="chart-card-sub">Kumulativ økonomi over 15 år · Grøn: med el-afgift 2028 · Grå: ren baseline</div>
+      <div class="chart-card-sub">Kumulativ økonomi over 25 år · Grøn: med el-afgift 2028</div>
       <div class="chart-wrap" style="height:200px"><canvas id="paybackChart"></canvas></div>
     </div>
 
@@ -2681,7 +2681,7 @@ function buildPaybackChart(r, withAfgift) {
   const INV = r.total;
   const BASE26 = r.sav26;
   const BASE28 = r.sav28;
-  const DEG = 0.005; const N = 16;
+  const DEG = 0.005; const N = 26;
   const AFGIFT_YR = 3;
 
   function cumul(useAfgift) {
@@ -2706,9 +2706,18 @@ function buildPaybackChart(r, withAfgift) {
       if (!x||!y) return;
       ctx.save();
       const y0 = y.getPixelForValue(0);
-      ctx.font='10px Inter,sans-serif'; ctx.textBaseline='top'; ctx.textAlign='left';
-      ctx.fillStyle=isDark()?'rgba(252,165,165,0.90)':'rgba(220,38,38,0.75)'; ctx.fillText('Investering udestående',left+6,Math.min(y0+5, bottom-14));
-      ctx.textBaseline='bottom'; ctx.fillStyle=isDark()?'rgba(110,231,183,0.90)':'rgba(5,150,105,0.80)'; ctx.fillText('Fortjeneste',left+6,Math.max(y0-5, top+14));
+      ctx.font='10px Inter,sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle';
+      // Place each label vertically centered in its region, with a minimum gap
+      const negMid = y0 + (bottom - y0) / 2;
+      const posMid = top + (y0 - top) / 2;
+      if (bottom - y0 > 22) {
+        ctx.fillStyle=isDark()?'rgba(252,165,165,0.90)':'rgba(220,38,38,0.75)';
+        ctx.fillText('Investering udestående', left+6, negMid);
+      }
+      if (y0 - top > 22) {
+        ctx.fillStyle=isDark()?'rgba(110,231,183,0.90)':'rgba(5,150,105,0.80)';
+        ctx.fillText('Fortjeneste', left+6, posMid);
+      }
 
       if (be1) {
         const xb = x.getPixelForValue(+be1);
