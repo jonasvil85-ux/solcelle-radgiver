@@ -1204,7 +1204,7 @@ body {
     <div class="chart-card">
       <div class="chart-card-title">Potentiale ved optimering — simuleret dag<span class="chart-info" data-tip="Viser energiflowet på den måned, hvor sol dækker ~50% af dit forbrug — her giver optimering mest. Simulerer 35% lastflytning fra nat (00–05) til soltimer (09–16). Batteri grid-oplader 00–05 og aflader ved dyre aftentimer. Brug det som inspiration til hvornår du bør sætte vaskemaskine, opvaskemaskine og elbil på.">i</span></div>
       <div style="display:inline-block;font-size:10.5px;font-weight:600;color:#D97706;background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.30);border-radius:5px;padding:2px 8px;margin-bottom:8px">⚠️ Simulering — viser ikke dit faktiske forbrug</div>
-      <div class="chart-card-sub"><span style="color:#059669">■</span> Sol direkte · <span style="color:#7C3AED">■</span> Bat. oplader · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#0891B2">■</span> Bat. aflader · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion · <span id="optimalExtra" style="color:var(--emerald);font-weight:600"></span></div>
+      <div class="chart-card-sub" id="optimalFlowSub"><span style="color:#059669">■</span> Sol direkte · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion · <span id="optimalExtra" style="color:var(--emerald);font-weight:600"></span></div>
       <div style="font-size:11.5px;color:var(--text-3);line-height:1.6;margin:8px 0 12px;padding:10px 12px;background:rgba(5,150,105,0.04);border-radius:6px;border-left:3px solid var(--emerald)">
         <span id="optimalChartSub"></span> — simulerer 35% lastflytning til soltimerne (09–16). Måneden vælges automatisk som den dag hvor sol dækker ~50% af dit forbrug, da det er her optimering giver størst effekt. Dit <strong style="color:var(--text-2)">faktiske forbrug</strong> ses i graferne for sommer- og vinterdag nedenfor.
       </div>
@@ -1214,14 +1214,14 @@ body {
     <!-- CHART 3: SUMMER FLOW -->
     <div class="chart-card">
       <div class="chart-card-title">Sommerdag — Energiflow<span class="chart-info" data-tip="Simuleret typisk juldag (maks. solindstråling). Solproduktionen skaleres til din placering og kWp. Batteriet oplader fra soloverskud i dagtimerne og aflader ved dyre aftentimer (17–21). Grid-opladning om natten sker kun hvis sol ikke kan dække aftenforbruget — det vises som lilla søjler 00–05.">i</span></div>
-      <div class="chart-card-sub">Typisk sommerdag · <span style="color:#059669">■</span> Sol direkte · <span style="color:#7C3AED">■</span> Bat. oplader · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#0891B2">■</span> Bat. aflader · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion</div>
+      <div class="chart-card-sub" id="summerFlowSub">Typisk sommerdag · <span style="color:#059669">■</span> Sol direkte · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion</div>
       <div class="chart-wrap" style="height:220px"><canvas id="summerFlowChart"></canvas></div>
     </div>
 
     <!-- CHART 4: WINTER FLOW -->
     <div class="chart-card">
       <div class="chart-card-title">Vinterdag — Energiflow<span class="chart-info" data-tip="Simuleret typisk decemberdag. Sol producerer kun 5–10 kWh/dag. Batteriet grid-oplader 00–05 (billig tarif) for at dække aftenforbrug. Grå søjler 00–05 = direkte forbrug fra elnet mens batteriet lader. Teal søjler = batteri aflader om aftenen. Jo større batteri, jo mere dækkes.">i</span></div>
-      <div class="chart-card-sub">Typisk vinterdag · <span style="color:#059669">■</span> Sol direkte · <span style="color:#7C3AED">■</span> Bat. oplader · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#0891B2">■</span> Bat. aflader · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion</div>
+      <div class="chart-card-sub" id="winterFlowSub">Typisk vinterdag · <span style="color:#059669">■</span> Sol direkte · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion</div>
       <div class="chart-wrap" style="height:220px"><canvas id="winterFlowChart"></canvas></div>
     </div>
 
@@ -2968,17 +2968,25 @@ function buildFlowChart(r, season) {
   const dark = isDark();
   const txt  = dark ? '#B8C5D0' : '#6B7280';
   const grid = dark ? 'rgba(148,163,184,0.12)' : 'rgba(107,114,128,0.10)';
+  const hasBat = (r.batKwh || 0) > 0;
+
+  // Opdatér undertekst-legende med/uden batteri-entries
+  const subId = season === 'summer' ? 'summerFlowSub' : 'winterFlowSub';
+  const subEl = document.getElementById(subId);
+  const season_dk = season === 'summer' ? 'Typisk sommerdag' : 'Typisk vinterdag';
+  const batLegend = hasBat ? ` · <span style="color:#7C3AED">■</span> Bat. oplader · <span style="color:#0891B2">■</span> Bat. aflader` : '';
+  if (subEl) subEl.innerHTML = `${season_dk} · <span style="color:#059669">■</span> Sol direkte${batLegend} · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion`;
 
   charts[chartKey] = new Chart(document.getElementById(canvasId), {
     type: 'bar',
     data: {
       labels: HOURS,
       datasets: [
-        { label:'Solel direkte',    data: direct,       backgroundColor:'rgba(5,150,105,0.75)',  stack:'s' },
-        { label:'Batteri oplader',  data: batCharge,    backgroundColor:'rgba(124,58,237,0.60)', stack:'s' },
-        { label:'Eksport til net',  data: gridExport,   backgroundColor:'rgba(245,158,11,0.55)', stack:'s' },
-        { label:'Batteri aflader',  data: batDischarge, backgroundColor:'rgba(8,145,178,0.70)',  stack:'s' },
-        { label:'Fra elnet',        data: fromGrid,     backgroundColor:'rgba(148,163,184,0.55)',stack:'s' },
+        { label:'Solel direkte',    data: direct,     backgroundColor:'rgba(5,150,105,0.75)',  stack:'s' },
+        ...(hasBat ? [{ label:'Batteri oplader', data: batCharge,    backgroundColor:'rgba(124,58,237,0.60)', stack:'s' }] : []),
+        { label:'Eksport til net',  data: gridExport, backgroundColor:'rgba(245,158,11,0.55)', stack:'s' },
+        ...(hasBat ? [{ label:'Batteri aflader', data: batDischarge, backgroundColor:'rgba(8,145,178,0.70)',  stack:'s' }] : []),
+        { label:'Fra elnet',        data: fromGrid,   backgroundColor:'rgba(148,163,184,0.55)',stack:'s' },
         { type:'line', label:'Solproduktion', data: solar,
           borderColor:'#EA580C', backgroundColor:'transparent',
           borderWidth:2.5, pointRadius:0, tension:0.4 },
@@ -3050,17 +3058,23 @@ function buildOptimalChart(r) {
   const dark = isDark();
   const txt  = dark ? '#B8C5D0' : '#6B7280';
   const grid = dark ? 'rgba(148,163,184,0.12)' : 'rgba(107,114,128,0.10)';
+  const hasBatOpt = (r.batKwh || 0) > 0;
+
+  // Opdatér undertekst-legende
+  const optSubLegend = document.getElementById('optimalFlowSub');
+  const batLegOpt = hasBatOpt ? ` · <span style="color:#7C3AED">■</span> Bat. oplader · <span style="color:#0891B2">■</span> Bat. aflader` : '';
+  if (optSubLegend) optSubLegend.innerHTML = `<span style="color:#059669">■</span> Sol direkte${batLegOpt} · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion · <span id="optimalExtra" style="color:var(--emerald);font-weight:600">${extra}</span>`;
 
   charts.optimal = new Chart(document.getElementById('optimalChart'), {
     type: 'bar',
     data: {
       labels: HOURS,
       datasets: [
-        { label:'Solel direkte',    data: direct,       backgroundColor:'rgba(5,150,105,0.75)',  stack:'s' },
-        { label:'Batteri oplader',  data: batCharge,    backgroundColor:'rgba(124,58,237,0.60)', stack:'s' },
-        { label:'Eksport til net',  data: gridExport,   backgroundColor:'rgba(245,158,11,0.55)', stack:'s' },
-        { label:'Batteri aflader',  data: batDischarge, backgroundColor:'rgba(8,145,178,0.70)',  stack:'s' },
-        { label:'Fra elnet',        data: fromGrid,     backgroundColor:'rgba(148,163,184,0.55)',stack:'s' },
+        { label:'Solel direkte',    data: direct,     backgroundColor:'rgba(5,150,105,0.75)',  stack:'s' },
+        ...(hasBatOpt ? [{ label:'Batteri oplader', data: batCharge,    backgroundColor:'rgba(124,58,237,0.60)', stack:'s' }] : []),
+        { label:'Eksport til net',  data: gridExport, backgroundColor:'rgba(245,158,11,0.55)', stack:'s' },
+        ...(hasBatOpt ? [{ label:'Batteri aflader', data: batDischarge, backgroundColor:'rgba(8,145,178,0.70)',  stack:'s' }] : []),
+        { label:'Fra elnet',        data: fromGrid,   backgroundColor:'rgba(148,163,184,0.55)',stack:'s' },
         { type:'line', label:'Solproduktion', data: solar,
           borderColor:'#EA580C', backgroundColor:'transparent',
           borderWidth:2.5, pointRadius:0, tension:0.4 },
