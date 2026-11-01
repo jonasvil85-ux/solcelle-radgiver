@@ -956,6 +956,12 @@ body {
       <div id="housePicLabel" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.55));color:#fff;font-size:10.5px;padding:18px 10px 6px;"></div>
     </div>
 
+    <!-- Adresse + taginfo fra Eloverblik-token -->
+    <div id="adresseCard" style="display:none;padding:14px 16px 10px;background:var(--surface);border-bottom:1px solid var(--border);">
+      <div id="step3Address" style="font-weight:600;font-size:14px;color:var(--text-1);margin-bottom:6px;"></div>
+      <div id="roofDetectStatus" style="font-size:12px;color:var(--text-3);min-height:16px;">⏳ Analyserer tag og orientering…</div>
+    </div>
+
     <div class="result-header">
       <h2>Din personlige anbefaling</h2>
       <p id="resultSub">Baseret på dit faktiske forbrug og din boligsituation</p>
@@ -1836,6 +1842,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
       if (statusEl) statusEl.textContent = 'Tagdata ikke tilgængeligt — vælg manuelt herunder.';
     }
   }
+  window.fetchBuildingOrientation = fetchBuildingOrientation;
 })();
 
 /* ── ROOF AREA ── */
@@ -1921,6 +1928,9 @@ function restart() {
   document.getElementById('addrConfirmed').style.display = 'none';
   const raInput = document.getElementById('roofAreaInput'); if (raInput) raInput.value = '';
   const rds = document.getElementById('roofDetectStatus'); if (rds) rds.textContent = '';
+  const ac = document.getElementById('adresseCard'); if (ac) ac.style.display = 'none';
+  const a3 = document.getElementById('step3Address'); if (a3) a3.textContent = '';
+  const hw = document.getElementById('housePicWrap'); if (hw) hw.style.display = 'none';
   const cg = document.getElementById('compassGrid'); if (cg) cg.querySelectorAll('.cdir').forEach(b => b.classList.remove('sel'));
   const sDir = document.querySelector('.cdir[data-dir="S"]'); if (sDir) sDir.classList.add('sel');
   document.getElementById('tokenInput').value = '';
@@ -2019,8 +2029,28 @@ async function geocodeAndShowAddress(address) {
     const feat = json.features?.[0];
     if (!feat) return;
     const [lon, lat] = feat.geometry.coordinates;
-    fetchStreetView(lat, lon, address);
-    roofDetect(lat, lon, address, S.zipcode);
+
+    // House photo
+    const wrap = document.getElementById('housePicWrap');
+    const img  = document.getElementById('housePic');
+    const lbl  = document.getElementById('housePicLabel');
+    if (img) {
+      img.src = `/api/streetview?lat=${lat}&lon=${lon}`;
+      img.onerror = () => { if (wrap) wrap.style.display = 'none'; };
+      img.onload  = () => { if (wrap) wrap.style.display = 'block'; };
+      if (lbl) lbl.textContent = address;
+    }
+
+    // Show address text card on step 3
+    const addrEl = document.getElementById('step3Address');
+    if (addrEl) {
+      addrEl.textContent = address;
+      const card = document.getElementById('adresseCard');
+      if (card) card.style.display = 'block';
+    }
+
+    // Roof detection (sets roofDetectStatus + S.roofAreaM2 + S.roofOrientation)
+    if (window.fetchBuildingOrientation) window.fetchBuildingOrientation(lat, lon);
   } catch (_) {}
 }
 
