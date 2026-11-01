@@ -2642,9 +2642,32 @@ function buildMonthlyChart(r) {
   const MONTHS = ['Jan','Feb','Mar','Apr','Maj','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
   const mp   = S.monthlyProfile;
   const prod = r.monthlyProd;
-  const selfC    = mp.map((m,i) => Math.max(0, Math.min(m, prod[i])));
-  const exported = mp.map((m,i) => Math.max(0, prod[i] - m));
-  const bought   = mp.map((m,i) => Math.max(0, m - prod[i]));
+
+  // Same hourly solar shape and consumption fractions as calcRec()
+  const _SS    = [0,0,0,0,0,0,0,0,0.48,1.93,4.32,6.72,8.16,8.64,7.20,5.28,2.88,1.44,0.19,0,0,0,0,0];
+  const _ssSum = _SS.reduce((a,b)=>a+b,0);
+  const _ssN   = _SS.map(v=>v/_ssSum);
+  const _pRaw  = S.hourlyProfile || new Array(24).fill(1);
+  const _pSum  = _pRaw.reduce((a,b)=>a+b,0) || 24;
+  const _pFrac = _pRaw.map(v=>v/_pSum);
+  const _mD    = [31,28,31,30,31,30,31,31,30,31,30,31];
+
+  // Hour-by-hour self-consumption per month (base, without battery)
+  let annBaseSelf = 0;
+  const selfC_base = prod.map((p,m) => {
+    const dayProd = p / _mD[m];
+    const dayCons = mp[m] / _mD[m];
+    let ms = 0;
+    for (let h=0; h<24; h++) ms += Math.min(_ssN[h]*dayProd, _pFrac[h]*dayCons) * _mD[m];
+    annBaseSelf += ms;
+    return ms;
+  });
+
+  // Scale to match calcRec() which already includes battery boost
+  const boostRatio = annBaseSelf > 0 ? r.selfCons / annBaseSelf : 1;
+  const selfC    = selfC_base.map((s,m) => Math.min(Math.round(s * boostRatio), mp[m]));
+  const exported = prod.map((p,m) => Math.max(0, p - selfC[m]));
+  const bought   = mp.map((m,i) => Math.max(0, m - selfC[i]));
 
   if (charts.monthly) { charts.monthly.destroy(); delete charts.monthly; }
   const dark = isDark(), txt = dark?'#B8C5D0':'#6B7280', grid = dark?'rgba(148,163,184,0.12)':'rgba(107,114,128,0.10)';
