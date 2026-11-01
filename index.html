@@ -719,55 +719,6 @@ body {
       <div class="card-sub">Vi bruger disse oplysninger til at beregne det rette anlæg for dig</div>
 
       <div class="field">
-        <label>Din adresse</label>
-        <div class="addr-wrap">
-          <input type="text" id="addrInput" placeholder="F.eks. Solbakken 3, 8700 Horsens" autocomplete="off" inputmode="text">
-          <div class="addr-drop" id="addrDrop"></div>
-        </div>
-        <div class="addr-confirmed" id="addrConfirmed"></div>
-        <input type="hidden" id="zipcode">
-      </div>
-
-      <div id="housePicWrap" style="display:none;margin-bottom:14px;border-radius:10px;overflow:hidden;position:relative;height:180px;background:var(--bg-2)">
-        <img id="housePic" style="width:100%;height:100%;object-fit:cover;display:block" alt="Gadefoto">
-        <div id="housePicLabel" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.55));color:#fff;font-size:10.5px;padding:18px 10px 6px;"></div>
-      </div>
-
-      <div id="roofPanel" class="roof-panel hidden">
-        <div class="roof-panel-title">🏠 Tagoplysninger</div>
-        <div id="roofDetectStatus" style="font-size:11.5px;margin:-4px 0 10px;min-height:14px;line-height:1.5"></div>
-        <div class="field-row">
-          <div class="field" id="compassField" style="margin-bottom:0">
-            <label>Tagretning</label>
-            <div id="compassWrap">
-            <div class="compass-grid" id="compassGrid">
-              <div class="cdir" data-dir="NW">NV<small>55%</small></div>
-              <div class="cdir" data-dir="N">N<small>40%</small></div>
-              <div class="cdir" data-dir="NE">NØ<small>55%</small></div>
-              <div class="cdir" data-dir="W">V<small>78%</small></div>
-              <div class="cdir sel" data-dir="S">S<small>100%</small></div>
-              <div class="cdir" data-dir="E">Ø<small>78%</small></div>
-              <div class="cdir" data-dir="SW">SV<small>92%</small></div>
-              <div class="cdir" data-dir="SE">SØ<small>92%</small></div>
-            </div>
-            <div style="font-size:10.5px;color:var(--text-3);margin-top:5px">Klik på din tagretning mod solen. Procentsatsen viser forventet solcelleudbytte ift. et perfekt sydvendt tag (100%).</div>
-            </div><!-- /compassWrap -->
-          </div>
-          <div class="field" style="margin-bottom:0">
-            <label>Brugbart tagareal (m²)</label>
-            <div id="roofPresets" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
-              <span class="toggle-opt" onclick="setRoofArea(45)" title="Rækkehus/kæde ca. 80m² bolig">Rækkehus<small style="display:block;font-size:9px;opacity:.7">~45 m²</small></span>
-              <span class="toggle-opt" onclick="setRoofArea(65)" title="Villa ca. 120m²">Villa S<small style="display:block;font-size:9px;opacity:.7">~65 m²</small></span>
-              <span class="toggle-opt" onclick="setRoofArea(85)" title="Villa ca. 160m²">Villa M<small style="display:block;font-size:9px;opacity:.7">~85 m²</small></span>
-              <span class="toggle-opt" onclick="setRoofArea(110)" title="Villa ca. 200m²+">Villa L<small style="display:block;font-size:9px;opacity:.7">~110 m²</small></span>
-            </div>
-            <input type="text" id="roofAreaInput" placeholder="Eller indtast m² manuelt" inputmode="numeric" oninput="onRoofAreaInput(this.value)">
-            <div style="font-size:10.5px;color:var(--text-3);margin-top:5px">1 kWp ≈ 6 m² · begrænser anlæggsstørrelse</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="field">
         <label>Antal personer i husstanden</label>
         <select id="persons">
           <option value="1">1 person</option>
@@ -933,6 +884,48 @@ body {
       <div class="error-box" id="err2"></div>
       <button class="btn btn-primary" onclick="fetchData()">Hent mine data →</button>
 
+      <!-- Adresse + tag — vises efter succesfuldt token-fetch -->
+      <div id="eloAdresseSection" style="display:none;margin-top:20px">
+        <div id="housePicWrap" style="display:none;margin-bottom:14px;border-radius:10px;overflow:hidden;position:relative;height:180px;background:var(--bg-2)">
+          <img id="housePic" style="width:100%;height:100%;object-fit:cover;display:block" alt="Gadefoto">
+          <div id="housePicLabel" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.55));color:#fff;font-size:10.5px;padding:18px 10px 6px;"></div>
+        </div>
+        <div id="roofPanel2" class="roof-panel" style="display:none">
+          <div class="roof-panel-title">🏠 Tagoplysninger</div>
+          <div id="roofDetectStatus" style="font-size:11.5px;margin:-4px 0 10px;min-height:14px;line-height:1.5"></div>
+          <div class="field-row">
+            <div class="field" id="compassField" style="margin-bottom:0">
+              <label>Tagretning</label>
+              <div id="compassWrap">
+              <div class="compass-grid" id="compassGrid">
+                <div class="cdir" data-dir="NW">NV<small>55%</small></div>
+                <div class="cdir" data-dir="N">N<small>40%</small></div>
+                <div class="cdir" data-dir="NE">NØ<small>55%</small></div>
+                <div class="cdir" data-dir="W">V<small>78%</small></div>
+                <div class="cdir sel" data-dir="S">S<small>100%</small></div>
+                <div class="cdir" data-dir="E">Ø<small>78%</small></div>
+                <div class="cdir" data-dir="SW">SV<small>92%</small></div>
+                <div class="cdir" data-dir="SE">SØ<small>92%</small></div>
+              </div>
+              <div style="font-size:10.5px;color:var(--text-3);margin-top:5px">Klik på din tagretning mod solen. Procentsatsen viser forventet solcelleudbytte ift. et perfekt sydvendt tag (100%).</div>
+              </div>
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label>Brugbart tagareal (m²)</label>
+              <div id="roofPresets" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
+                <span class="toggle-opt" onclick="setRoofArea(45)" title="Rækkehus/kæde ca. 80m² bolig">Rækkehus<small style="display:block;font-size:9px;opacity:.7">~45 m²</small></span>
+                <span class="toggle-opt" onclick="setRoofArea(65)" title="Villa ca. 120m²">Villa S<small style="display:block;font-size:9px;opacity:.7">~65 m²</small></span>
+                <span class="toggle-opt" onclick="setRoofArea(85)" title="Villa ca. 160m²">Villa M<small style="display:block;font-size:9px;opacity:.7">~85 m²</small></span>
+                <span class="toggle-opt" onclick="setRoofArea(110)" title="Villa ca. 200m²+">Villa L<small style="display:block;font-size:9px;opacity:.7">~110 m²</small></span>
+              </div>
+              <input type="text" id="roofAreaInput" placeholder="Eller indtast m² manuelt" inputmode="numeric" oninput="onRoofAreaInput(this.value)">
+              <div style="font-size:10.5px;color:var(--text-3);margin-top:5px">1 kWp ≈ 6 m² · begrænser anlæggsstørrelse</div>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:16px;width:100%" onclick="confirmAndCalculate()">Beregn mit anlæg →</button>
+      </div>
+
       <!-- Manuel fallback -->
       <div style="margin:28px 0 4px;display:flex;align-items:center;gap:12px">
         <div style="flex:1;height:1px;background:var(--border)"></div>
@@ -971,6 +964,15 @@ body {
           </div>
         </div>
 
+        <div class="field" style="margin-bottom:14px">
+          <label>Din adresse</label>
+          <div class="addr-wrap">
+            <input type="text" id="addrInput" placeholder="F.eks. Solbakken 3, 8700 Horsens" autocomplete="off" inputmode="text">
+            <div class="addr-drop" id="addrDrop"></div>
+          </div>
+          <div class="addr-confirmed" id="addrConfirmed"></div>
+          <input type="hidden" id="zipcode">
+        </div>
         <div class="field" style="margin-bottom:14px">
           <label>Dit årslige elforbrug (kWh)</label>
           <input type="number" id="manualKwh" placeholder="fx 4500" min="500" max="30000" step="100" style="font-size:16px">
@@ -1586,7 +1588,8 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
     const city = p.city || p.locality || '';
     conf.textContent = `Postnummer ${zip}${city ? ' ' + city : ''} registreret`;
     conf.style.display = 'block';
-    document.getElementById('roofPanel').classList.remove('hidden');
+    const rp2 = document.getElementById('roofPanel2');
+    if (rp2) rp2.style.display = 'block';
 
     // Gadefoto
     const coords = feature.geometry && feature.geometry.coordinates;
@@ -1928,22 +1931,19 @@ window.addEventListener('focus', function onReturn() {
 });
 
 function goStep2() {
-  // Accept address selection (zip hidden) OR fallback: 4-digit zip typed directly in the address field
-  let zip = document.getElementById('zipcode').value.trim();
-  if (!zip) {
-    const typed = document.getElementById('addrInput').value.trim();
-    const m = typed.match(/\b(\d{4})\b/);
-    if (m) { zip = m[1]; S.zipcode = zip; }
-  }
-  if (!/^\d{4}$/.test(zip)) { showErr('err1','Vælg en adresse fra listen, eller skriv dit postnummer'); return; }
   showErr('err1','');
-  S.zipcode = zip;
-  S.roofAreaM2 = parseInt(document.getElementById('roofAreaInput').value) || null;
   S.persons = parseInt(document.getElementById('persons').value);
   S.fixedPrice = parseFloat(document.getElementById('fixedPrice').value) || 2.70;
   S.spotSurcharge = parseFloat(document.getElementById('spotSurcharge').value) || 0;
-
   hide('step1'); show('step2'); setProgress(2);
+}
+
+function confirmAndCalculate() {
+  S.roofAreaM2 = parseInt(document.getElementById('roofAreaInput').value) || null;
+  hide('step2');
+  show('stepLoading');
+  setProgress(3);
+  setTimeout(() => { showResults(); }, 50);
 }
 
 function restart() {
@@ -1969,10 +1969,11 @@ function restart() {
   document.getElementById('zipcode').value = '';
   document.getElementById('addrInput').value = '';
   document.getElementById('addrConfirmed').style.display = 'none';
-  document.getElementById('roofPanel').classList.add('hidden');
-  document.getElementById('roofAreaInput').value = '';
+  const rp2 = document.getElementById('roofPanel2'); if (rp2) rp2.style.display = 'none';
+  document.getElementById('eloAdresseSection').style.display = 'none';
+  const raInput = document.getElementById('roofAreaInput'); if (raInput) raInput.value = '';
   const rds = document.getElementById('roofDetectStatus'); if (rds) rds.textContent = '';
-  document.getElementById('compassGrid').querySelectorAll('.cdir').forEach(b => b.classList.remove('sel'));
+  const cg = document.getElementById('compassGrid'); if (cg) cg.querySelectorAll('.cdir').forEach(b => b.classList.remove('sel'));
   document.querySelector('.cdir[data-dir="S"]').classList.add('sel');
   document.getElementById('tokenInput').value = '';
   // Reset ejertid to 15 years default
@@ -2040,11 +2041,23 @@ async function fetchData() {
       : spotOrFixed;
     // If no manual bill entered, use calculated cost to derive price
     if (!S.annualBill && S.calculatedAnnualCost && S.annualKwh > 0) {
-      S.annualBill = S.calculatedAnnualCost; // auto-fill
+      S.annualBill = S.calculatedAnnualCost;
+    }
+
+    // Vis adresse + tag fra Eloverblik-målepunkt
+    if (data.address) {
+      S.address = data.address;
+      S.zipcode = data.postCode || '';
+      geocodeAndShowAddress(data.address);
     }
 
     hide('stepLoading');
-    showResults();
+    show('step2');
+    setProgress(2);
+    document.getElementById('eloAdresseSection').style.display = 'block';
+    document.getElementById('roofPanel2').style.display = 'block';
+    document.getElementById('tokenInput').closest('.card').scrollTop = 0;
+    window.scrollTo({top: 0, behavior: 'smooth'});
 
   } catch (err) {
     hide('stepLoading');
@@ -2052,6 +2065,20 @@ async function fetchData() {
     setProgress(2);
     showErr('err2', err.message || 'Kunne ikke hente data — prøv igen');
   }
+}
+
+async function geocodeAndShowAddress(address) {
+  try {
+    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(address)}&limit=1&bbox=8.0,54.5,15.2,57.8`;
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const json = await res.json();
+    const feat = json.features?.[0];
+    if (!feat) return;
+    const [lon, lat] = feat.geometry.coordinates;
+    fetchStreetView(lat, lon, address);
+    roofDetect(lat, lon, address, S.zipcode);
+  } catch (_) {}
 }
 
 /* ── MANUEL FORBRUG FALLBACK ── */

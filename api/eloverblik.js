@@ -69,6 +69,12 @@ module.exports = async function (req, res) {
   const dsoGLNFromMP = mpPoint.gridCompanyGLNNumber || mpPoint.gridOperatorGLN
     || mpPoint.gridAreaGLN || mpPoint.gridCompanyGLN || null;
 
+  // Extract address from metering point
+  const mpStreet = [mpPoint.streetName, mpPoint.buildingNumber].filter(Boolean).join(' ');
+  const mpCity   = [mpPoint.postCode, mpPoint.cityName].filter(Boolean).join(' ');
+  processed.address  = [mpStreet, mpCity].filter(Boolean).join(', ');
+  processed.postCode = mpPoint.postCode || '';
+
   // 3. Fetch last 12 months of hourly data
   const now = new Date();
   const from = new Date(now); from.setFullYear(from.getFullYear() - 1);
