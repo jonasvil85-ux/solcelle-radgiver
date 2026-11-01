@@ -2155,8 +2155,8 @@ function calcRec() {
   const maxKwpRoof = S.roofAreaM2 ? Math.max(3, Math.floor(S.roofAreaM2 / 6)) : Infinity;
   const kWp        = S.overrideKwp !== null ? S.overrideKwp : Math.min(sizes.find(s=>s>=rawKwp)||15, maxKwpRoof);
 
-  const wantsBat = kWp >= 6 && (evenKwh > 2.5 || (S.hasEV && S.evChargesHome));
-  const batKwh   = S.overrideBatKwh !== null ? S.overrideBatKwh : (!wantsBat ? 0 : evenKwh > 5 ? 10 : 5);
+  const wantsBat    = kWp >= 6 && (evenKwh > 2.5 || (S.hasEV && S.evChargesHome));
+  const tentativeBat = S.overrideBatKwh !== null ? S.overrideBatKwh : (!wantsBat ? 0 : evenKwh > 5 ? 10 : 5);
 
   const orientFactor = S.roofOrientFactor ||
     ({ S:1.00, SW:0.92, SE:0.92, W:0.78, E:0.78, NW:0.55, NE:0.55, N:0.40 }[S.roofOrientation] || 1.00);
@@ -2215,6 +2215,26 @@ function calcRec() {
   // Battery shifts surplus solar (daytime overflow) to cover evening peak — adds to self-consumption
   const baseself = Math.min(Math.round(annSelf), Math.round(kwh * 0.92));
   const baseexp  = prod - baseself;
+
+  // Economic viability check: only recommend battery if marginal payback ≤ 15 years.
+  // Use full savings formula (same as below) so the annualCost cap is correctly accounted for.
+  function annSav26(bShift) {
+    const sc = Math.min(baseself + bShift, Math.round(kwh * 0.92));
+    const ex = prod - sc;
+    const scVal = baseself > 0 ? annSavSelf * (sc / baseself) : sc * buyPrice;
+    const raw   = scVal + ex * 0.35;
+    const annualCostEst = S.annualBill || (kwh * buyPrice);
+    return Math.round(annualCostEst ? Math.min(raw, annualCostEst * 0.88) : raw);
+  }
+  let batKwh = tentativeBat;
+  if (tentativeBat > 0 && S.overrideBatKwh === null) {
+    const tentBatCost     = tentativeBat * 3500 * 1.25;
+    const tentBatShift    = Math.round(Math.min(tentativeBat * 0.45 * 365, baseexp * 0.60));
+    const margSaving      = annSav26(tentBatShift) - annSav26(0);
+    const tentBatPayback  = margSaving > 0 ? tentBatCost / margSaving : 999;
+    if (tentBatPayback > 15) batKwh = 0;
+  }
+
   const batShift = batKwh > 0 ? Math.round(Math.min(batKwh * 0.45 * 365, baseexp * 0.60)) : 0;
   const selfCons = Math.min(baseself + batShift, Math.round(kwh * 0.92));
   const exported = prod - selfCons;
@@ -2350,11 +2370,11 @@ function rebuildAll() {
   if (orig.batKwh > 0) {
     document.getElementById('kpi-bat').textContent = orig.batKwh + ' kWh';
     document.getElementById('kpi-bat').className = 'kpi-value emerald';
-    document.getElementById('kpi-bat-sub').textContent = 'batteri anbefales';
+    document.getElementById('kpi-bat-sub').textContent = 'betaler sig i din situation';
   } else {
-    document.getElementById('kpi-bat').textContent = 'Ikke nødvendigt';
+    document.getElementById('kpi-bat').textContent = 'Anbefales ikke';
     document.getElementById('kpi-bat').className = 'kpi-value';
-    document.getElementById('kpi-bat-sub').textContent = 'baseret på dit mønster';
+    document.getElementById('kpi-bat-sub').textContent = 'tilbagebetalingstid > 15 år';
   }
 
   // Override indicators: show when user has deviated from recommendation
