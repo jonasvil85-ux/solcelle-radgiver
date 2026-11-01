@@ -570,8 +570,26 @@ body {
   border: 1px solid rgba(0,0,0,0.08);
   box-shadow: 0 2px 16px rgba(0,0,0,0.08);
 }
-.chart-card-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; letter-spacing: -0.025em; }
+.chart-card-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; letter-spacing: -0.025em; display:flex; align-items:center; gap:6px; }
 .chart-card-sub { font-size: 11px; color: var(--text-3); margin-bottom: 14px; }
+.chart-info {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:15px; height:15px; border-radius:50%; background:var(--border);
+  font-size:9px; font-weight:700; color:var(--text-3); cursor:help;
+  position:relative; flex-shrink:0; user-select:none;
+}
+.chart-info::after {
+  content: attr(data-tip);
+  position:absolute; bottom:calc(100% + 8px); left:0;
+  transform:none; white-space:pre-wrap; width:270px;
+  background:var(--surface-2,#0f172a); color:var(--text-1);
+  font-size:11px; font-weight:400; line-height:1.55;
+  padding:9px 11px; border-radius:9px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.35);
+  pointer-events:none; opacity:0; transition:opacity 0.15s;
+  z-index:200; text-align:left; letter-spacing:0;
+}
+.chart-info:hover::after { opacity:1; }
 .chart-wrap { position: relative; }
 
 /* RESULT HEADER */
@@ -681,7 +699,7 @@ body {
         <span class="w2">beregner</span>
       </div>
     </div>
-    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">Lys tilstand</button>
+    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">Sol tilstand</button>
   </div>
 
   <!-- PROGRESS -->
@@ -1143,7 +1161,7 @@ body {
 
     <!-- CONSUMPTION PROFILE CHART -->
     <div class="chart-card">
-      <div class="chart-card-title">Dit faktiske forbrug — gennemsnitsdag (årsgennemsnit)</div>
+      <div class="chart-card-title">Dit faktiske forbrug — gennemsnitsdag (årsgennemsnit)<span class="chart-info" data-tip="Dine rigtige Eloverblik-data vises som timegennemsnit over hele året. Solproduktionen (orange linje) er beregnet for dit kWp-anlæg og tagretning. Grønt = solel du bruger direkte. Gult = overskud eksporteret til nettet. Grå = hvad du stadig køber fra elnettet.">i</span></div>
       <div class="chart-card-sub" id="profileSub">Baseret på dine rigtige Eloverblik-data · <span style="color:#059669">■</span> Sol direkte · <span style="color:#F59E0B">■</span> Eksport til net · <span style="color:#94A3B8">■</span> Fra elnet (inkl. natlad, vask osv.) · <span style="color:#EA580C">—</span> Solproduktion</div>
       <div class="chart-wrap" style="height:200px"><canvas id="profileChart"></canvas></div>
     </div>
@@ -1160,7 +1178,7 @@ body {
 
     <!-- MONTHLY CHART -->
     <div class="chart-card">
-      <div class="chart-card-title">Månedlig produktion vs. forbrug</div>
+      <div class="chart-card-title">Månedlig produktion vs. forbrug<span class="chart-info" data-tip="Månedlig solproduktion beregnes ud fra irradians og sæsonfaktorer (jan=15%, jun=100%). Selvforbrug simuleres time-for-time for hver måned vha. din faktiske timeprofil. Batteriets bidrag estimeres som et energiskift fra sol til aftentimer. Eksport = produktion − selvforbrug.">i</span></div>
       <div class="chart-card-sub"><span style="color:#059669">■</span> Sol direkte · <span style="color:#F59E0B">■</span> Eksport til net · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion</div>
       <div class="chart-wrap" style="height:200px"><canvas id="monthlyChart"></canvas></div>
     </div>
@@ -1177,14 +1195,14 @@ body {
 
     <!-- PAYBACK CHART -->
     <div class="chart-card">
-      <div class="chart-card-title">Hvornår har du tjent anlægget hjem?</div>
+      <div class="chart-card-title">Hvornår har du tjent anlægget hjem?<span class="chart-info" data-tip="Kumulativ økonomi over 25 år. År 0 = din samlede investering (solcelle + batteri inkl. moms). Hvert år trækkes årsbesparelse fra: selvforbrug × elpris + eksport × 35 øre/kWh. Besparelsen begrænses til 88% af din nuværende elregning for at undgå overestimering.">i</span></div>
       <div class="chart-card-sub">Kumulativ økonomi over 25 år · Grøn: med el-afgift 2028</div>
       <div class="chart-wrap" style="height:200px"><canvas id="paybackChart"></canvas></div>
     </div>
 
     <!-- CHART 2: OPTIMIZED PROFILE -->
     <div class="chart-card">
-      <div class="chart-card-title">Potentiale ved optimering — simuleret dag</div>
+      <div class="chart-card-title">Potentiale ved optimering — simuleret dag<span class="chart-info" data-tip="Viser energiflowet på den måned, hvor sol dækker ~50% af dit forbrug — her giver optimering mest. Simulerer 35% lastflytning fra nat (00–05) til soltimer (09–16). Batteri grid-oplader 00–05 og aflader ved dyre aftentimer. Brug det som inspiration til hvornår du bør sætte vaskemaskine, opvaskemaskine og elbil på.">i</span></div>
       <div style="display:inline-block;font-size:10.5px;font-weight:600;color:#D97706;background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.30);border-radius:5px;padding:2px 8px;margin-bottom:8px">⚠️ Simulering — viser ikke dit faktiske forbrug</div>
       <div class="chart-card-sub"><span style="color:#059669">■</span> Sol direkte · <span style="color:#7C3AED">■</span> Bat. oplader · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#0891B2">■</span> Bat. aflader · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion · <span id="optimalExtra" style="color:var(--emerald);font-weight:600"></span></div>
       <div style="font-size:11.5px;color:var(--text-3);line-height:1.6;margin:8px 0 12px;padding:10px 12px;background:rgba(5,150,105,0.04);border-radius:6px;border-left:3px solid var(--emerald)">
@@ -1195,14 +1213,14 @@ body {
 
     <!-- CHART 3: SUMMER FLOW -->
     <div class="chart-card">
-      <div class="chart-card-title">Sommerdag — Energiflow</div>
+      <div class="chart-card-title">Sommerdag — Energiflow<span class="chart-info" data-tip="Simuleret typisk juldag (maks. solindstråling). Solproduktionen skaleres til din placering og kWp. Batteriet oplader fra soloverskud i dagtimerne og aflader ved dyre aftentimer (17–21). Grid-opladning om natten sker kun hvis sol ikke kan dække aftenforbruget — det vises som lilla søjler 00–05.">i</span></div>
       <div class="chart-card-sub">Typisk sommerdag · <span style="color:#059669">■</span> Sol direkte · <span style="color:#7C3AED">■</span> Bat. oplader · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#0891B2">■</span> Bat. aflader · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion</div>
       <div class="chart-wrap" style="height:220px"><canvas id="summerFlowChart"></canvas></div>
     </div>
 
     <!-- CHART 4: WINTER FLOW -->
     <div class="chart-card">
-      <div class="chart-card-title">Vinterdag — Energiflow</div>
+      <div class="chart-card-title">Vinterdag — Energiflow<span class="chart-info" data-tip="Simuleret typisk decemberdag. Sol producerer kun 5–10 kWh/dag. Batteriet grid-oplader 00–05 (billig tarif) for at dække aftenforbrug. Grå søjler 00–05 = direkte forbrug fra elnet mens batteriet lader. Teal søjler = batteri aflader om aftenen. Jo større batteri, jo mere dækkes.">i</span></div>
       <div class="chart-card-sub">Typisk vinterdag · <span style="color:#059669">■</span> Sol direkte · <span style="color:#7C3AED">■</span> Bat. oplader · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#0891B2">■</span> Bat. aflader · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion</div>
       <div class="chart-wrap" style="height:220px"><canvas id="winterFlowChart"></canvas></div>
     </div>
@@ -1280,7 +1298,7 @@ function toggleTheme() {
   const h = document.documentElement;
   const isLight = h.getAttribute('data-theme') === 'light';
   h.setAttribute('data-theme', isLight ? '' : 'light');
-  document.getElementById('themeBtn').textContent = isLight ? 'Lys tilstand' : 'Mørk tilstand';
+  document.getElementById('themeBtn').textContent = isLight ? 'Sol tilstand' : 'Måne tilstand';
 }
 
 /* ── PROGRESS ── */
@@ -2896,11 +2914,12 @@ function runBatterySim(solar, profile, batKwh) {
     }
   }
 
-  // Pass 2: udlad ved dyreste timer først
+  // Pass 2: udlad ved dyreste timer — men IKKE i timer hvor grid oplader batteriet
+  // (kan ikke lade og aflade samtidigt — fysisk umuligt)
   const disArr  = new Array(24).fill(0);
   const gridArr = new Array(24).fill(0);
   const dHours  = Array.from({length:24},(_,h)=>h)
-    .filter(h => deficitArr[h] > 0)
+    .filter(h => deficitArr[h] > 0 && gridChargeArr[h] === 0)
     .sort((a,b) => PRICE_W[b] - PRICE_W[a]);
   let avail = soc;
   for (const h of dHours) {
@@ -2908,6 +2927,10 @@ function runBatterySim(solar, profile, batKwh) {
     avail -= dis;
     disArr[h]  = dis;
     gridArr[h] = deficitArr[h] - dis;
+  }
+  // I opladningstimer: forbrug dækkes af elnettet direkte (ikke batteri)
+  for (let h = 0; h < 24; h++) {
+    if (gridChargeArr[h] > 0 && deficitArr[h] > 0) gridArr[h] = deficitArr[h];
   }
 
   // batCharge = sol-oplad + net-oplad (lilla søjle)
