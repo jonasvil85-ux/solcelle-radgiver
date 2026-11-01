@@ -2131,6 +2131,19 @@ function getIrradiance(zip) {
   return 920;               // Nordjylland
 }
 
+/* ── PRICE ESTIMATES ── */
+// Base installation cost (inverter, scaffolding, electrician, permits) is fixed
+// regardless of system size, making small systems cost more per kWp.
+function estimateSolarCost(kWp) {
+  // excl. moms: 25 000 kr base + 5 500 kr/kWp; incl. 25% moms
+  return Math.round((25000 + kWp * 5500) * 1.25 / 1000) * 1000;
+}
+function estimateBatCost(batKwh) {
+  if (!batKwh) return 0;
+  // excl. moms: 8 000 kr hybrid-inverter upgrade + 3 000 kr/kWh; incl. 25% moms
+  return Math.round((8000 + batKwh * 3000) * 1.25 / 1000) * 1000;
+}
+
 /* ── RECOMMENDATION ENGINE ── */
 function calcRec() {
   const irr = getIrradiance(S.zipcode);
@@ -2228,7 +2241,7 @@ function calcRec() {
   }
   let batKwh = tentativeBat;
   if (tentativeBat > 0 && S.overrideBatKwh === null) {
-    const tentBatCost     = tentativeBat * 3500 * 1.25;
+    const tentBatCost     = estimateBatCost(tentativeBat);
     const tentBatShift    = Math.round(Math.min(tentativeBat * 0.45 * 365, baseexp * 0.60));
     const margSaving      = annSav26(tentBatShift) - annSav26(0);
     const tentBatPayback  = margSaving > 0 ? tentBatCost / margSaving : 999;
@@ -2251,8 +2264,8 @@ function calcRec() {
   const afgift     = Math.round(selfCons * houseShare * 0.76);
   const sav28      = sav26 + afgift;
 
-  const sysCost = S.overrideSolarCost !== null ? S.overrideSolarCost : Math.round(kWp * 7500 * 1.25);
-  const batCost = S.overrideBatCost  !== null ? S.overrideBatCost  : Math.round(batKwh * 3500 * 1.25);
+  const sysCost = S.overrideSolarCost !== null ? S.overrideSolarCost : estimateSolarCost(kWp);
+  const batCost = S.overrideBatCost  !== null ? S.overrideBatCost  : estimateBatCost(batKwh);
   const total   = sysCost + batCost;
   const payback = +(total / sav26).toFixed(1);
 
@@ -2275,8 +2288,8 @@ function initSliders(r) {
   });
 
   // Estimerede priser som placeholders
-  const estSolar = Math.round(r.kWp * 7500 * 1.25 / 1000) * 1000;
-  const estBat   = r.batKwh > 0 ? Math.round(r.batKwh * 3500 * 1.25 / 1000) * 1000 : 0;
+  const estSolar = estimateSolarCost(r.kWp);
+  const estBat   = estimateBatCost(r.batKwh);
   const estTotal = estSolar + estBat;
   const batTxt   = r.batKwh > 0 ? ` + ${r.batKwh} kWh batteri` : '';
   const recLabel = document.getElementById('sliderRecLabel');
@@ -2423,8 +2436,8 @@ function rebuildAll() {
   renderVurdering(r);
 
   // Opdater prisestimater i slider-panelet
-  const _eS = Math.round(r.kWp * 7500 * 1.25 / 1000) * 1000;
-  const _eB = r.batKwh > 0 ? Math.round(r.batKwh * 3500 * 1.25 / 1000) * 1000 : 0;
+  const _eS = estimateSolarCost(r.kWp);
+  const _eB = estimateBatCost(r.batKwh);
   const _se = document.getElementById('sliderSolarPrice');
   if (_se && !S.overrideSolarCost) _se.placeholder = `~${_eS.toLocaleString('da-DK')} (estimat)`;
   const _sh = document.getElementById('sliderSolarPriceHint');
