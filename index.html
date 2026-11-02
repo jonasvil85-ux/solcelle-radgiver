@@ -1062,13 +1062,6 @@ body {
         <div style="flex:1;min-width:0;">
           <div id="step3Address" style="font-size:14px;font-weight:700;color:var(--text-1);letter-spacing:-0.02em;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
           <div id="roofDetectStatus" style="font-size:11.5px;color:var(--text-3);line-height:1.5;"></div>
-          <div style="margin-top:8px">
-            <label style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--text-2)">
-              <input type="checkbox" id="ewToggle" onchange="setEastWest(this.checked)"
-                style="width:15px;height:15px;accent-color:#059669;cursor:pointer;flex-shrink:0">
-              <span>Øst-vest installation <span style="color:var(--text-3)">(paneler på begge sider af tagryggen)</span></span>
-            </label>
-          </div>
         </div>
       </div>
     </div>
@@ -1246,7 +1239,7 @@ body {
           <div class="kpi-sub">ton CO₂/år</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
-          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Hvor stor en andel af tagarealet der bruges til solceller.&#10;&#10;Sydvendt: kWp × 5 m²/kWp ÷ tagflade (400W-paneler, ~30° hældning).&#10;Øst-vest: kWp × 3,5 m²/kWp ÷ tagflade — lavere hældning (10–15°) = tættere pakket, mere kWp per m².&#10;&#10;Over 100% betyder at panelerne ikke passer på taget — reducer kWp med slideren.">i</span>
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Andel af det samlede brugbare tagareal brugt til solceller.&#10;&#10;Beregnet som: kWp × 5 m²/kWp ÷ tagareal (400W-paneler kræver ~5 m² pr. kWp).&#10;&#10;Tagarealet inkluderer alle brugbare flader inden for 90° af syd — syd, sydøst, sydvest, øst og vest medregnes alle. Nordvendte flader udelades.&#10;&#10;Prioritering af anlægget:&#10;• Anlægget dimensioneres mod den samlede brugbare flade&#10;• Sydvendte paneler producerer mest (100%) — øst/vest giver ~78% og indgår vægtet i produktionsestimatet&#10;• 'Vægtet udbytte' under husbillede viser den kombinerede effektivitet&#10;&#10;Over 100% betyder at panelerne ikke passer på taget — reducer kWp med slideren.">i</span>
           <div style="font-size:1.4rem;line-height:1;margin-bottom:4px">🏗️</div>
           <div class="kpi-value" id="kpi-roof-pct">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Tagudnyttelse</div>
@@ -1425,7 +1418,7 @@ const NETTARIF = {
 const ELAGIFT = 0.008; // ~0,8 øre/kWh resterende el-afgift 2025/2026 (eks. moms)
 
 /* ── STATE ── */
-const S = { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, isEastWest:false, persons:3, isOwner:true, hasEV:false, hasEV2:false, hasHP:false, hasHO:false, hasPool:false, hasHybrid:false, evKm:15000, ev2Km:15000, evChargesHome:true, ev2ChargesHome:true, hybridKwh:500, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, nettarifAvg:null, actualSpotCost:null, actualNettarif:null, priceArea:null, dsoGLN:null, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, ejertidYr:15, financing:'cash', loanRate:4.0 };
+const S = { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasEV2:false, hasHP:false, hasHO:false, hasPool:false, hasHybrid:false, evKm:15000, ev2Km:15000, evChargesHome:true, ev2ChargesHome:true, hybridKwh:500, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, nettarifAvg:null, actualSpotCost:null, actualNettarif:null, priceArea:null, dsoGLN:null, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, ejertidYr:15, financing:'cash', loanRate:4.0 };
 let charts = {};
 let _lastRec = null;
 let _origRec = null;
@@ -1943,7 +1936,16 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
 
             if (statusEl) {
               statusEl.style.color = '#059669';
-              statusEl.innerHTML = `✅ Google Solar (${solar.imageryQuality}) · hældning: ${Math.round(bestSeg.pitchDegrees)}°${solar.sunshineHours ? ` · ${Math.round(solar.sunshineHours)} sol-timer/år` : ''}<br><span style="color:var(--text-2)">Tagflader: ${segBreakdown} = <strong>~${southAreaM2} m²</strong> · vægtet udbytte: <strong>${Math.round(weightedFactor*100)}% af sydvendt</strong></span> <span style="color:var(--text-3)">(justér m² ved behov)</span>`;
+              const segPills = Object.entries(grouped)
+                .sort(([a],[b]) => {
+                  const order = {S:0,SE:1,SW:2,E:3,W:4,NE:5,NW:6,N:7};
+                  return (order[a]??9) - (order[b]??9);
+                })
+                .map(([d, a]) => {
+                  const ef = {S:100,SE:92,SW:92,E:78,W:78,NE:55,NW:55,N:40}[d] || 70;
+                  return `<span style="display:inline-flex;align-items:center;gap:3px;background:var(--surface-2);border:1px solid var(--border-light);border-radius:5px;padding:1px 7px;font-size:10.5px;white-space:nowrap"><strong>${dirNames[d]||d}</strong>&thinsp;${Math.round(a)}&thinsp;m² <span style="color:var(--text-3)">(${ef}%)</span></span>`;
+                }).join(' ');
+              statusEl.innerHTML = `<span style="color:#059669">✅ Google Solar</span> · hældning: ${Math.round(bestSeg.pitchDegrees)}°${solar.sunshineHours ? ` · ${Math.round(solar.sunshineHours)} sol-timer/år` : ''}<br><span style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">${segPills}</span><span style="font-size:10.5px;color:var(--text-3);margin-top:3px;display:block">Samlet brugbart areal: <strong style="color:var(--text-2)">${southAreaM2} m²</strong> · vægtet udbytte: <strong style="color:var(--text-2)">${Math.round(weightedFactor*100)}% af rent sydvendt</strong></span>`;
             }
             return;
           }
@@ -2071,12 +2073,6 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
   window.fetchBuildingOrientation = fetchBuildingOrientation;
 })();
 
-/* ── EAST-WEST INSTALLATION ── */
-function setEastWest(checked) {
-  S.isEastWest = checked;
-  refreshRecommendation();
-}
-
 /* ── ROOF AREA ── */
 function setRoofArea(m2) {
   const _rai = document.getElementById('roofAreaInput'); if (_rai) _rai.value = m2;
@@ -2142,7 +2138,7 @@ function goStep2() {
 
 function restart() {
   hide('step3');
-  Object.assign(S, { zipcode:'', address:'', roofOrientation:'S', roofOrientFactor:null, roofAreaM2:null, isEastWest:false, persons:3, isOwner:true, hasEV:false, hasEV2:false, hasHP:false, hasHybrid:false, evKm:15000, ev2Km:15000, evChargesHome:true, ev2ChargesHome:true, hybridKwh:500, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, _manualKwh:false });
+  Object.assign(S, { zipcode:'', address:'', roofOrientation:'S', roofOrientFactor:null, roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasEV2:false, hasHP:false, hasHybrid:false, evKm:15000, ev2Km:15000, evChargesHome:true, ev2ChargesHome:true, hybridKwh:500, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, _manualKwh:false });
 
   const cf = document.getElementById('compassField'); if (cf) cf.style.display = '';
   const rp = document.getElementById('roofPresets'); if (rp) rp.style.display = '';
@@ -2168,7 +2164,6 @@ function restart() {
   document.getElementById('ev2-add-btn').style.display = '';
   document.getElementById('opt-ev2home').className = 'toggle-opt selected';
   document.getElementById('opt-ev2away').className = 'toggle-opt';
-  const ewEl = document.getElementById('ewToggle'); if (ewEl) ewEl.checked = false;
   document.getElementById('zipcode').value = '';
   document.getElementById('addrInput').value = '';
   document.getElementById('addrConfirmed').style.display = 'none';
@@ -2445,8 +2440,8 @@ function calcRec() {
   // System sizing — joint sweep over (kWp × batteri) to maximise net return over ejertid.
   // Metric: two-phase NPV — yr 1–2 no afgift (sav26), yr 3+ with afgift (sav28), 4%/yr growth
   const sizes      = [5,6,7,8,9,10,12,15];
-  // EW: lower pitch → ~3.5 m²/kWp effective (divide by 4 for cap); south-facing: 5 m²/kWp (divide by 6 with margin)
-  const maxKwpRoof = S.roofAreaM2 ? Math.max(3, Math.floor(S.roofAreaM2 / (S.isEastWest ? 4 : 6))) : Infinity;
+  // 5 m²/kWp is actual panel footprint — used as cap; roof area already includes all usable segments (S+E+W)
+  const maxKwpRoof = S.roofAreaM2 ? Math.max(3, Math.floor(S.roofAreaM2 / 5)) : Infinity;
   const ejertid    = S.ejertidYr || 15;
   const gf2  = 1 + 1.04;  // years 1–2 growth factors summed
   const gf28 = ejertid > 2 ? 1.04 ** 2 * ((1.04 ** (ejertid - 2) - 1) / 0.04) : 0;
@@ -2754,15 +2749,13 @@ function updateExtraTiles(r) {
   document.getElementById('kpi-total-sav-sub').textContent = `kr inkl. 4%/år vækst · ${r.ejertid} år`;
 
   const roofM2 = S.roofAreaM2 || 0;
-  const m2PerKwp = S.isEastWest ? 3.5 : 5; // EW: low-pitch panels pack tighter
-  const neededM2 = Math.round(r.kWp * m2PerKwp);
+  const neededM2 = r.kWp * 5; // 5 m²/kWp (400W-paneler)
   if (roofM2 > 0) {
     const pct = Math.round(neededM2 / roofM2 * 100);
     const el = document.getElementById('kpi-roof-pct');
     el.textContent = pct + '%';
     el.className = 'kpi-value' + (pct > 100 ? ' amber' : ' emerald');
-    const roofLabel = S.isEastWest ? `% af ${roofM2} m² tagareal (Ø-V)` : `% af ${roofM2} m² sydvendt tag`;
-    document.getElementById('kpi-roof-sub').textContent = roofLabel;
+    document.getElementById('kpi-roof-sub').textContent = `% af ${roofM2} m² tagareal`;
     const warn = document.getElementById('roof-oversize-warn');
     if (pct > 100) {
       warn.style.display = '';
