@@ -816,7 +816,6 @@ body {
             </div>
             <div class="check-label">
               <strong>Plugin-hybrid</strong>
-              <span>Bil der kan lades elektrisk</span>
             </div>
           </label>
           <div id="hybrid-details" class="ev-details hidden">
@@ -888,6 +887,10 @@ body {
 
       <div class="error-box" id="err1"></div>
       <button class="btn btn-primary" onclick="goStep2()">Næste: Hent dit forbrug →</button>
+
+      <p style="font-size:11px;color:var(--text-4);line-height:1.6;margin-top:20px;padding-top:16px;border-top:1px solid var(--border-light)">
+        Beregningerne på dette site er udelukkende vejledende og baseret på generelle estimater, historiske elpriser og typiske forbrugsprofiler. Resultaterne udgør ikke et tilbud, en garanti eller rådgivning. Faktiske besparelser og tilbagebetalingstider kan afvige som følge af ændringer i elpriser, forbrugsmønstre, tagforhold, anlægsvalg og lovgivning. Solcelleberegner.dk påtager sig intet ansvar for beslutninger truffet på baggrund af disse beregninger. Indhent altid tilbud fra en autoriseret installatør.
+      </p>
     </div>
   </div>
 
@@ -1043,7 +1046,7 @@ body {
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <div style="font-size:13px;font-weight:600;min-width:130px">☀️ Solcelleanlæg</div>
           <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:160px">
-            <input type="range" id="sliderKwp" min="3" max="20" step="1" style="flex:1;accent-color:#059669;cursor:pointer" oninput="onSliderKwp(this.value)">
+            <input type="range" id="sliderKwp" min="3" max="40" step="1" style="flex:1;accent-color:#059669;cursor:pointer" oninput="onSliderKwp(this.value)">
             <span id="sliderKwpVal" style="font-size:13px;font-weight:700;color:var(--emerald);min-width:52px;text-align:right">—</span>
           </div>
         </div>
@@ -1057,6 +1060,8 @@ body {
             <span class="toggle-opt" id="bat10" onclick="onSliderBat(10)">10 kWh</span>
             <span class="toggle-opt" id="bat15" onclick="onSliderBat(15)">15 kWh</span>
             <span class="toggle-opt" id="bat20" onclick="onSliderBat(20)">20 kWh</span>
+            <span class="toggle-opt" id="bat30" onclick="onSliderBat(30)">30 kWh</span>
+            <span class="toggle-opt" id="bat40" onclick="onSliderBat(40)">40 kWh</span>
           </div>
         </div>
         <div id="batWarning" style="display:none;font-size:11.5px;line-height:1.6;padding:10px 13px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;color:var(--text-2);"></div>
@@ -2459,7 +2464,7 @@ function onSliderKwp(v) {
 
 function onSliderBat(v) {
   S.overrideBatKwh = v;
-  [0,5,10,15,20].forEach(b => {
+  [0,5,10,15,20,30,40].forEach(b => {
     const el = document.getElementById('bat' + b);
     if (el) el.className = 'toggle-opt' + (b === v ? ' selected' : '');
   });
