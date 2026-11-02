@@ -1016,27 +1016,8 @@ body {
   <!-- ── STEP 3: RESULTS ── -->
   <div id="step3" class="hidden">
 
-    <!-- TOP STRIP: elpris, forbrug, el-udgift — vises altid øverst -->
-    <div class="kpi-grid" id="top-strip" style="margin:0 0 14px">
-      <div class="kpi-tile" style="background:var(--bg-2)">
-        <div class="kpi-label">⚡ Din elpris</div>
-        <div class="kpi-value" id="sit-price">—</div>
-        <div class="kpi-sub" id="sit-price-sub">kr/kWh gennemsnit</div>
-      </div>
-      <div class="kpi-tile" style="background:var(--bg-2)">
-        <div class="kpi-label">🏠 Dit forbrug</div>
-        <div class="kpi-value" id="sit-kwh">—</div>
-        <div class="kpi-sub">kWh/år</div>
-      </div>
-      <div class="kpi-tile" style="background:var(--bg-2)">
-        <div class="kpi-label">💸 El-udgift i dag</div>
-        <div class="kpi-value" id="sit-bill">—</div>
-        <div class="kpi-sub">kr/år estimeret</div>
-      </div>
-    </div>
-
     <!-- Ejendomskort: adresse, foto og taganalyse -->
-    <div id="adresseCard" style="display:none;margin:0 0 14px;background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
+    <div id="adresseCard" style="display:none;margin:16px 0 14px;background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
       <div id="housePicWrap" style="display:none;position:relative;height:185px;background:var(--bg-2);">
         <img id="housePic" style="width:100%;height:100%;object-fit:cover;display:block;" alt="">
         <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(0,0,0,0.45));pointer-events:none;"></div>
@@ -1145,53 +1126,93 @@ body {
     <!-- hidden compat spans for sit-prod (used in JS but not shown as tile) -->
     <span id="sit-prod" style="display:none"></span>
 
-    <!-- KPI STRIP -->
-    <div class="kpi-grid">
-      <div class="kpi-tile">
-        <div class="kpi-label">Anbefalet anlæg</div>
-        <div class="kpi-value emerald" id="kpi-kwp">— kWp</div>
-        <div class="kpi-sub" id="kpi-kwp-sub">solceller</div>
-        <div id="kpi-kwp-override" style="display:none;margin-top:8px;padding-top:7px;border-top:1px solid var(--border-light);font-size:10px;color:var(--text-3)">
-          Valgt: <span id="kpi-kwp-override-val" style="font-weight:600;color:var(--text-2)"></span>
+    <!-- ALL KPIs — SAMLET UNDER SLIDEREN -->
+    <div style="margin-bottom:16px">
+      <!-- Sektion: Nuværende situation -->
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:10px;padding-left:2px">Nuværende situation</div>
+      <div class="kpi-grid" style="margin-bottom:14px">
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+          <div style="font-size:2rem;line-height:1;margin-bottom:8px">⚡</div>
+          <div class="kpi-value" id="sit-price">—</div>
+          <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Din elpris</div>
+          <div class="kpi-sub" id="sit-price-sub">kr/kWh</div>
+        </div>
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+          <div style="font-size:2rem;line-height:1;margin-bottom:8px">🏠</div>
+          <div class="kpi-value" id="sit-kwh">—</div>
+          <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Dit forbrug</div>
+          <div class="kpi-sub">kWh/år</div>
+        </div>
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+          <div style="font-size:2rem;line-height:1;margin-bottom:8px">💸</div>
+          <div class="kpi-value" id="sit-bill">—</div>
+          <div class="kpi-label" style="margin-top:5px;margin-bottom:0">El-udgift nu</div>
+          <div class="kpi-sub">kr/år</div>
+        </div>
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+          <div style="font-size:2rem;line-height:1;margin-bottom:8px">🌍</div>
+          <div class="kpi-value" id="kpi-co2-now">—</div>
+          <div class="kpi-label" style="margin-top:5px;margin-bottom:0">CO₂-aftryk nu</div>
+          <div class="kpi-sub">ton CO₂/år</div>
         </div>
       </div>
-      <div class="kpi-tile">
-        <div class="kpi-label">Batteri</div>
-        <div class="kpi-value" id="kpi-bat">—</div>
-        <div class="kpi-sub" id="kpi-bat-sub"></div>
-        <div id="kpi-bat-override" style="display:none;margin-top:8px;padding-top:7px;border-top:1px solid var(--border-light);font-size:10px;color:var(--text-3)">
-          Valgt: <span id="kpi-bat-override-val" style="font-weight:600;color:var(--text-2)"></span>
+
+      <!-- Sektion: Med solceller -->
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--emerald);margin-bottom:10px;padding-left:2px">Med solceller</div>
+      <div class="kpi-grid" style="margin-bottom:0">
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+          <div style="font-size:2rem;line-height:1;margin-bottom:8px">☀️</div>
+          <div class="kpi-value emerald" id="kpi-kwp">—</div>
+          <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Anbefalet anlæg</div>
+          <div class="kpi-sub" id="kpi-kwp-sub">kWp</div>
+          <div id="kpi-kwp-override" style="display:none;margin-top:8px;padding-top:7px;border-top:1px solid var(--border-light);font-size:10px;color:var(--text-3)">
+            Valgt: <span id="kpi-kwp-override-val" style="font-weight:600;color:var(--text-2)"></span>
+          </div>
         </div>
-      </div>
-      <div class="kpi-tile">
-        <div class="kpi-label">Årsbesparelse</div>
-        <div class="kpi-value emerald" id="kpi-savings">—</div>
-        <div class="kpi-sub">kr/år</div>
-        <div style="display:flex;gap:4px;margin-top:7px;justify-content:center">
-          <span class="toggle-opt selected" id="kpi-afgift-off" onclick="setAfgift(false)" style="padding:2px 7px;font-size:10px;line-height:1.6">Uden afgift</span>
-          <span class="toggle-opt" id="kpi-afgift-on" onclick="setAfgift(true)" style="padding:2px 7px;font-size:10px;line-height:1.6">Med afgift</span>
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+          <div style="font-size:2rem;line-height:1;margin-bottom:8px">🔋</div>
+          <div class="kpi-value" id="kpi-bat">—</div>
+          <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Batteri</div>
+          <div class="kpi-sub" id="kpi-bat-sub"></div>
+          <div id="kpi-bat-override" style="display:none;margin-top:8px;padding-top:7px;border-top:1px solid var(--border-light);font-size:10px;color:var(--text-3)">
+            Valgt: <span id="kpi-bat-override-val" style="font-weight:600;color:var(--text-2)"></span>
+          </div>
         </div>
-        <div style="font-size:9.5px;color:var(--text-3);margin-top:3px;text-align:center">El-afgift forventes genindført 2028</div>
-      </div>
-      <div class="kpi-tile">
-        <div class="kpi-label">Break-even</div>
-        <div class="kpi-value" id="kpi-payback">—</div>
-        <div class="kpi-sub">år</div>
-      </div>
-      <div class="kpi-tile" style="background:var(--bg-2)">
-        <div class="kpi-label">📤 Salg til net</div>
-        <div class="kpi-value" id="sit-export">—</div>
-        <div class="kpi-sub">kWh/år · ~35 øre/kWh</div>
-      </div>
-      <div class="kpi-tile" style="background:var(--bg-2)">
-        <div class="kpi-label">🏡 Ny elregning</div>
-        <div class="kpi-value" id="kpi-new-bill">—</div>
-        <div class="kpi-sub">kr/år efter solceller</div>
-      </div>
-      <div class="kpi-tile" style="background:var(--bg-2)">
-        <div class="kpi-label">🌱 CO₂-besparelse</div>
-        <div class="kpi-value" id="kpi-co2">—</div>
-        <div class="kpi-sub">ton CO₂/år</div>
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+          <div style="font-size:2rem;line-height:1;margin-bottom:8px">💰</div>
+          <div class="kpi-value emerald" id="kpi-savings">—</div>
+          <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Årsbesparelse</div>
+          <div class="kpi-sub">kr/år</div>
+          <div style="display:flex;gap:4px;margin-top:7px;justify-content:center">
+            <span class="toggle-opt selected" id="kpi-afgift-off" onclick="setAfgift(false)" style="padding:2px 7px;font-size:10px;line-height:1.6">Uden afgift</span>
+            <span class="toggle-opt" id="kpi-afgift-on" onclick="setAfgift(true)" style="padding:2px 7px;font-size:10px;line-height:1.6">Med afgift</span>
+          </div>
+          <div style="font-size:9.5px;color:var(--text-3);margin-top:3px">El-afgift forventes genindført 2028</div>
+        </div>
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+          <div style="font-size:2rem;line-height:1;margin-bottom:8px">⏱️</div>
+          <div class="kpi-value" id="kpi-payback">—</div>
+          <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Break-even</div>
+          <div class="kpi-sub">år</div>
+        </div>
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+          <div style="font-size:2rem;line-height:1;margin-bottom:8px">📤</div>
+          <div class="kpi-value" id="sit-export">—</div>
+          <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Salg til net</div>
+          <div class="kpi-sub">kWh/år · ~35 øre/kWh</div>
+        </div>
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+          <div style="font-size:2rem;line-height:1;margin-bottom:8px">🏡</div>
+          <div class="kpi-value" id="kpi-new-bill">—</div>
+          <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Ny elregning</div>
+          <div class="kpi-sub">kr/år efter sol</div>
+        </div>
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+          <div style="font-size:2rem;line-height:1;margin-bottom:8px">🌱</div>
+          <div class="kpi-value" id="kpi-co2">—</div>
+          <div class="kpi-label" style="margin-top:5px;margin-bottom:0">CO₂-besparelse</div>
+          <div class="kpi-sub">ton CO₂/år</div>
+        </div>
       </div>
     </div>
 
@@ -1229,14 +1250,10 @@ body {
           <span class="rec-row-val" id="rec-self-val">—</span>
         </div>
         <div class="rec-row neutral">
-          <span class="rec-row-label">⚡ Beregnet elpris</span>
+          <span class="rec-row-label">⚡ Prisgrundlag</span>
           <span class="rec-row-val" id="rec-price-val">—</span>
         </div>
         <div id="price-low-warn" style="display:none;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);border-radius:8px;padding:8px 11px;font-size:0.80rem;color:var(--text-2);margin-top:4px;line-height:1.45"></div>
-        <div class="rec-row neutral">
-          <span class="rec-row-label">💰 Årsbesparelse</span>
-          <span class="rec-row-val" id="rec-sav-val">—</span>
-        </div>
         <div style="font-size:10px;color:var(--text-4);margin-top:6px;padding:0 2px">
           Besparelse beregnet time for time med tidsvarierende nettarif (lavlast/normal/højlast) og måned for måned solproduktion. Spotprisen er vægtet årsgennemsnit.
         </div>
@@ -2739,6 +2756,7 @@ function rebuildAll() {
   const _curBill2 = S.annualBill || Math.round(_kwh2 * r.buyPrice);
   document.getElementById('kpi-new-bill').textContent = Math.max(0, _curBill2 - r.sav26).toLocaleString('da-DK');
   document.getElementById('kpi-co2').textContent = (r.selfCons * 0.00013).toFixed(1).replace('.', ',') + ' ton';
+  document.getElementById('kpi-co2-now').textContent = (_kwh2 * 0.00013).toFixed(1).replace('.', ',') + ' ton';
 
   document.getElementById('rec-solar-val').textContent = `${r.kWp} kWp · ${r.sysCost.toLocaleString('da-DK')} kr`;
   if (r.batKwh > 0) {
@@ -2868,6 +2886,7 @@ function showResults() {
   document.getElementById('kpi-new-bill').textContent = newBill.toLocaleString('da-DK');
   const co2 = (r.selfCons * 0.00013).toFixed(1).replace('.', ',');
   document.getElementById('kpi-co2').textContent    = co2 + ' ton';
+  document.getElementById('kpi-co2-now').textContent = (kwh * 0.00013).toFixed(1).replace('.', ',') + ' ton';
 
   // Rec card
   document.getElementById('rec-solar-val').textContent = `${r.kWp} kWp · ${r.sysCost.toLocaleString('da-DK')} kr`;
