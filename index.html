@@ -1070,7 +1070,8 @@ body {
             <div style="padding:10px 12px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:8px;">
               <div style="font-size:12px;font-weight:700;color:#ef4444;margin-bottom:6px;">❌ Kun arbitrage</div>
               <div style="font-size:11px;color:var(--text-2);line-height:1.5;margin-bottom:6px;">Lade fra net om natten — bruge om dagen</div>
-              <div style="font-size:10.5px;color:var(--text-3);margin-bottom:8px;">Effektiv gevinst: ~0,80 kr/kWh*</div>
+              <div style="font-size:10.5px;color:var(--text-3);margin-bottom:4px;">Effektiv gevinst: ~0,80 kr/kWh*</div>
+              <div style="font-size:10.5px;color:var(--text-3);margin-bottom:8px;">Max cykler/år: <span id="econ-arb-cycles">—</span></div>
               <div style="font-size:13px;font-weight:700;color:var(--text-1)" id="econ-arb-annual">—</div>
               <div style="font-size:11px;color:var(--text-3);margin-top:2px;">kr/år</div>
               <div style="font-size:12px;margin-top:8px;">Tilbagebetaling: <span id="econ-arb-years" style="font-weight:700;color:#ef4444">—</span></div>
@@ -1078,7 +1079,8 @@ body {
             <div style="padding:10px 12px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:8px;">
               <div style="font-size:12px;font-weight:700;color:#059669;margin-bottom:6px;">✅ Sol + batteri</div>
               <div style="font-size:11px;color:var(--text-2);line-height:1.5;margin-bottom:6px;">Gemme sol-el til aftenbrug i stedet for at eksportere</div>
-              <div style="font-size:10.5px;color:var(--text-3);margin-bottom:8px;">Effektiv gevinst: ~2,70 kr/kWh</div>
+              <div style="font-size:10.5px;color:var(--text-3);margin-bottom:4px;">Effektiv gevinst: ~2,70 kr/kWh</div>
+              <div style="font-size:10.5px;color:var(--text-3);margin-bottom:8px;">Faktisk udnyttet: <span id="econ-sol-shift">—</span> kWh/år</div>
               <div style="font-size:13px;font-weight:700;color:var(--text-1)" id="econ-sol-annual">—</div>
               <div style="font-size:11px;color:var(--text-3);margin-top:2px;">kr/år</div>
               <div style="font-size:12px;margin-top:8px;">Tilbagebetaling: <span id="econ-sol-years" style="font-weight:700;color:#059669">—</span></div>
@@ -2543,27 +2545,34 @@ function updateBatEconomyPanel(batKwh) {
   panel.style.display = 'block';
 
   const batCost = estimateBatCost(batKwh);
+  const r = _lastRec;
 
-  // Arbitrage: lade fra net om natten, bruge om dagen
-  // Effektiv spread efter nettarif+PSO ≈ 0,80 kr/kWh, ~280 cykler/år, 90% effektivitet
-  const arbAnnual = Math.round(batKwh * 0.90 * 0.80 * 280);
+  // Arbitrage: capped af dagligt forbrug — kan ikke flytte mere end du bruger per dag
+  const dailyCons = (S.annualKwh || 5000) / 365;
+  const arbCyclesMax = batKwh > 0 ? Math.min(280, Math.floor(dailyCons * 0.85 / batKwh * 365)) : 0;
+  const arbAnnual = Math.round(batKwh * 0.90 * 0.80 * Math.max(1, arbCyclesMax));
   const arbYears  = Math.round(batCost / arbAnnual);
 
-  // Sol selvforbrug: gemme sol til aftenbrug
-  // Gevinst: elpris (~3,50) - eksportpris (~0,80) = 2,70 kr/kWh, ~200 cykler/år, 90% effektivitet
-  const solAnnual = Math.round(batKwh * 0.90 * 2.70 * 200);
-  const solYears  = Math.round(batCost / solAnnual);
+  // Sol selvforbrug: brug faktisk batShift fra rec (allerede capped af soleksport + forbrug)
+  // Marginal gevinst per kWh ≈ elpris - afregningspris
+  const actualBatShift = r && r.baseself !== undefined
+    ? Math.max(0, r.selfCons - r.baseself)
+    : batKwh * 0.45 * 200; // fallback hvis rec ikke klar
+  const valuePerKwh = r ? Math.max(0, (r.buyPrice || 3.0) - 0.35) : 2.65;
+  const solAnnual = Math.round(actualBatShift * valuePerKwh);
+  const solYears  = solAnnual > 0 ? Math.round(batCost / solAnnual) : 999;
 
-  document.getElementById('econ-bat-size').textContent  = batKwh + ' kWh';
-  document.getElementById('econ-bat-cost').textContent  = batCost.toLocaleString('da-DK');
+  document.getElementById('econ-bat-size').textContent   = batKwh + ' kWh';
+  document.getElementById('econ-bat-cost').textContent   = batCost.toLocaleString('da-DK');
   document.getElementById('econ-arb-annual').textContent = arbAnnual.toLocaleString('da-DK');
   document.getElementById('econ-arb-years').textContent  = arbYears + ' år';
+  document.getElementById('econ-arb-cycles').textContent = Math.max(1, arbCyclesMax);
   document.getElementById('econ-sol-annual').textContent = solAnnual.toLocaleString('da-DK');
-  document.getElementById('econ-sol-years').textContent  = solYears + ' år';
+  document.getElementById('econ-sol-years').textContent  = solYears === 999 ? '—' : solYears + ' år';
+  document.getElementById('econ-sol-shift').textContent  = Math.round(actualBatShift).toLocaleString('da-DK');
 
   // Vis "oversized battery" advarsel baseret på faktisk solar+forbrug profil
   const overEl = document.getElementById('econ-oversize');
-  const r = _lastRec;
   if (overEl && r && r.baseexp !== undefined && r.baseself !== undefined) {
     const annKwh = S.annualKwh || 5000;
     // Cap 1: kan ikke flytte mere end 60% af eksporten
