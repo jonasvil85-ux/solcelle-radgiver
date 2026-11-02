@@ -1833,6 +1833,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
       const _rai1 = document.getElementById('roofAreaInput'); if (_rai1) _rai1.value = southAreaM2;
       S.roofAreaM2 = southAreaM2;
       document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
+      if (_lastRec) rebuildAll(); // async: refresh tiles if results already shown
     }
 
     const dirNames = {S:'Sydvendt',SW:'Sydvestvendt',SE:'Sydøstvendt',W:'Vestvendt',E:'Østvendt',NW:'Nordvestvendt',NE:'Nordøstvendt',N:'Nordvendt'};
@@ -1902,6 +1903,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
               const _rai2 = document.getElementById('roofAreaInput'); if (_rai2) _rai2.value = southAreaM2;
               S.roofAreaM2 = southAreaM2;
               document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
+              if (_lastRec) rebuildAll(); // async: refresh tiles if results already shown
             }
 
             // Skjul kompas-felt og hustype-presets — vi har præcise data fra Google Solar
@@ -2029,6 +2031,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
           const _rai3 = document.getElementById('roofAreaInput'); if (_rai3) _rai3.value = southAreaM2;
           S.roofAreaM2 = southAreaM2;
           document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
+          if (_lastRec) rebuildAll(); // async: refresh tiles if results already shown
           if (statusEl) {
             statusEl.style.color = '#059669';
             statusEl.innerHTML = `✅ BBR-data fundet — fodaftryk: <strong>${footprintM2} m²</strong> · estimeret sydvendt areal: <strong>~${southAreaM2} m²</strong>${bbrData.byggeaar ? ` · opført ${bbrData.byggeaar}` : ''} <span style="color:var(--text-3);font-weight:400">Vælg tagretning herunder</span>`;
