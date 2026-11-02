@@ -1844,7 +1844,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
       const _rai1 = document.getElementById('roofAreaInput'); if (_rai1) _rai1.value = southAreaM2;
       S.roofAreaM2 = southAreaM2;
       document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
-      if (_lastRec) rebuildAll(); // async: refresh tiles if results already shown
+      refreshRecommendation(); // async: recalc recommendation if user hasn't overridden slider
     }
 
     const dirNames = {S:'Sydvendt',SW:'Sydvestvendt',SE:'Sydøstvendt',W:'Vestvendt',E:'Østvendt',NW:'Nordvestvendt',NE:'Nordøstvendt',N:'Nordvendt'};
@@ -1914,7 +1914,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
               const _rai2 = document.getElementById('roofAreaInput'); if (_rai2) _rai2.value = southAreaM2;
               S.roofAreaM2 = southAreaM2;
               document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
-              if (_lastRec) rebuildAll(); // async: refresh tiles if results already shown
+              refreshRecommendation(); // async: recalc recommendation if user hasn't overridden slider
             }
 
             // Skjul kompas-felt og hustype-presets — vi har præcise data fra Google Solar
@@ -2042,7 +2042,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
           const _rai3 = document.getElementById('roofAreaInput'); if (_rai3) _rai3.value = southAreaM2;
           S.roofAreaM2 = southAreaM2;
           document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
-          if (_lastRec) rebuildAll(); // async: refresh tiles if results already shown
+          refreshRecommendation(); // async: recalc recommendation if user hasn't overridden slider
           if (statusEl) {
             statusEl.style.color = '#059669';
             statusEl.innerHTML = `✅ BBR-data fundet — fodaftryk: <strong>${footprintM2} m²</strong> · estimeret sydvendt areal: <strong>~${southAreaM2} m²</strong>${bbrData.byggeaar ? ` · opført ${bbrData.byggeaar}` : ''} <span style="color:var(--text-3);font-weight:400">Vælg tagretning herunder</span>`;
@@ -2699,6 +2699,22 @@ function onBatPrice(v) {
   const price = parseInt(v);
   S.overrideBatCost = (price > 0) ? price : null;
   rebuildAll();
+}
+
+// Called when async API updates a key input (roofAreaM2, consumption profile).
+// If user hasn't manually moved the slider, recalculate recommendation + move slider.
+// If user already overrode the slider, just rebuild tiles with the new data.
+function refreshRecommendation() {
+  if (!_lastRec) return;
+  if (S.overrideKwp === null && S.overrideBatKwh === null) {
+    const r = calcRec();
+    _lastRec = r;
+    _origRec = r;
+    initSliders(r);
+    rebuildAll();
+  } else {
+    rebuildAll();
+  }
 }
 
 function resetSliders() {
