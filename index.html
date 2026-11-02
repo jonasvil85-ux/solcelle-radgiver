@@ -1016,8 +1016,27 @@ body {
   <!-- ── STEP 3: RESULTS ── -->
   <div id="step3" class="hidden">
 
+    <!-- TOP STRIP: elpris, forbrug, el-udgift — vises altid øverst -->
+    <div class="kpi-grid" id="top-strip" style="margin:0 0 14px">
+      <div class="kpi-tile" style="background:var(--bg-2)">
+        <div class="kpi-label">⚡ Din elpris</div>
+        <div class="kpi-value" id="sit-price">—</div>
+        <div class="kpi-sub" id="sit-price-sub">kr/kWh gennemsnit</div>
+      </div>
+      <div class="kpi-tile" style="background:var(--bg-2)">
+        <div class="kpi-label">🏠 Dit forbrug</div>
+        <div class="kpi-value" id="sit-kwh">—</div>
+        <div class="kpi-sub">kWh/år</div>
+      </div>
+      <div class="kpi-tile" style="background:var(--bg-2)">
+        <div class="kpi-label">💸 El-udgift i dag</div>
+        <div class="kpi-value" id="sit-bill">—</div>
+        <div class="kpi-sub">kr/år estimeret</div>
+      </div>
+    </div>
+
     <!-- Ejendomskort: adresse, foto og taganalyse -->
-    <div id="adresseCard" style="display:none;margin:16px 0 0;background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
+    <div id="adresseCard" style="display:none;margin:0 0 14px;background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
       <div id="housePicWrap" style="display:none;position:relative;height:185px;background:var(--bg-2);">
         <img id="housePic" style="width:100%;height:100%;object-fit:cover;display:block;" alt="">
         <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(0,0,0,0.45));pointer-events:none;"></div>
@@ -1123,29 +1142,8 @@ body {
       </div>
     </div>
 
-    <!-- SITUATION TILES: dit forbrug & solproduktion -->
-    <div class="kpi-grid" id="situation-tiles" style="margin-bottom:10px">
-      <div class="kpi-tile" style="background:var(--bg-2)">
-        <div class="kpi-label">⚡ Din elpris</div>
-        <div class="kpi-value" id="sit-price">—</div>
-        <div class="kpi-sub" id="sit-price-sub">kr/kWh gennemsnit</div>
-      </div>
-      <div class="kpi-tile" style="background:var(--bg-2)">
-        <div class="kpi-label">🏠 Dit forbrug</div>
-        <div class="kpi-value" id="sit-kwh">—</div>
-        <div class="kpi-sub">kWh/år</div>
-      </div>
-      <div class="kpi-tile" style="background:var(--bg-2)">
-        <div class="kpi-label">☀️ Solproduktion</div>
-        <div class="kpi-value" id="sit-prod">—</div>
-        <div class="kpi-sub">kWh/år</div>
-      </div>
-      <div class="kpi-tile" style="background:var(--bg-2)">
-        <div class="kpi-label">📤 Salg til net</div>
-        <div class="kpi-value" id="sit-export">—</div>
-        <div class="kpi-sub">kWh/år · ~35 øre/kWh</div>
-      </div>
-    </div>
+    <!-- hidden compat spans for sit-prod (used in JS but not shown as tile) -->
+    <span id="sit-prod" style="display:none"></span>
 
     <!-- KPI STRIP -->
     <div class="kpi-grid">
@@ -1179,6 +1177,21 @@ body {
         <div class="kpi-label">Break-even</div>
         <div class="kpi-value" id="kpi-payback">—</div>
         <div class="kpi-sub">år</div>
+      </div>
+      <div class="kpi-tile" style="background:var(--bg-2)">
+        <div class="kpi-label">📤 Salg til net</div>
+        <div class="kpi-value" id="sit-export">—</div>
+        <div class="kpi-sub">kWh/år · ~35 øre/kWh</div>
+      </div>
+      <div class="kpi-tile" style="background:var(--bg-2)">
+        <div class="kpi-label">🏡 Ny elregning</div>
+        <div class="kpi-value" id="kpi-new-bill">—</div>
+        <div class="kpi-sub">kr/år efter solceller</div>
+      </div>
+      <div class="kpi-tile" style="background:var(--bg-2)">
+        <div class="kpi-label">🌱 CO₂-besparelse</div>
+        <div class="kpi-value" id="kpi-co2">—</div>
+        <div class="kpi-sub">ton CO₂/år</div>
       </div>
     </div>
 
@@ -2719,9 +2732,13 @@ function rebuildAll() {
   document.getElementById('kpi-savings').textContent = sav.toLocaleString('da-DK');
   document.getElementById('kpi-payback').textContent = '~' + pb;
 
-  // Situation tiles — update on slider change too
+  // KPI tiles — update on slider change too
   document.getElementById('sit-prod').textContent   = r.prod.toLocaleString('da-DK');
   document.getElementById('sit-export').textContent = r.exported.toLocaleString('da-DK');
+  const _kwh2 = S.annualKwh || 0;
+  const _curBill2 = S.annualBill || Math.round(_kwh2 * r.buyPrice);
+  document.getElementById('kpi-new-bill').textContent = Math.max(0, _curBill2 - r.sav26).toLocaleString('da-DK');
+  document.getElementById('kpi-co2').textContent = (r.selfCons * 0.00013).toFixed(1).replace('.', ',') + ' ton';
 
   document.getElementById('rec-solar-val').textContent = `${r.kWp} kWp · ${r.sysCost.toLocaleString('da-DK')} kr`;
   if (r.batKwh > 0) {
@@ -2835,7 +2852,7 @@ function showResults() {
   document.getElementById('kpi-savings').textContent = r.sav26.toLocaleString('da-DK');
   document.getElementById('kpi-payback').textContent = '~' + r.payback;
 
-  // Situation tiles
+  // Top strip + KPI extra tiles
   const kwh = S.annualKwh || 0;
   document.getElementById('sit-price').textContent  = r.buyPrice.toFixed(2).replace('.', ',');
   document.getElementById('sit-price-sub').textContent =
@@ -2845,6 +2862,12 @@ function showResults() {
   document.getElementById('sit-kwh').textContent    = kwh.toLocaleString('da-DK');
   document.getElementById('sit-prod').textContent   = r.prod.toLocaleString('da-DK');
   document.getElementById('sit-export').textContent = r.exported.toLocaleString('da-DK');
+  const currentBill = S.annualBill || Math.round(kwh * r.buyPrice);
+  document.getElementById('sit-bill').textContent   = currentBill > 0 ? currentBill.toLocaleString('da-DK') : '—';
+  const newBill = Math.max(0, currentBill - r.sav26);
+  document.getElementById('kpi-new-bill').textContent = newBill.toLocaleString('da-DK');
+  const co2 = (r.selfCons * 0.00013).toFixed(1).replace('.', ',');
+  document.getElementById('kpi-co2').textContent    = co2 + ' ton';
 
   // Rec card
   document.getElementById('rec-solar-val').textContent = `${r.kWp} kWp · ${r.sysCost.toLocaleString('da-DK')} kr`;
