@@ -1195,6 +1195,7 @@ body {
           <span class="rec-row-label">⚡ Beregnet elpris</span>
           <span class="rec-row-val" id="rec-price-val">—</span>
         </div>
+        <div id="price-low-warn" style="display:none;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);border-radius:8px;padding:8px 11px;font-size:0.80rem;color:var(--text-2);margin-top:4px;line-height:1.45"></div>
         <div class="rec-row neutral">
           <span class="rec-row-label">💰 Årsbesparelse</span>
           <span class="rec-row-val" id="rec-sav-val">—</span>
@@ -2822,6 +2823,15 @@ function showResults() {
     : (S.spotAvg && S.nettarifAvg) ? 'vægtet spot + nettarif + systemtarif (ingen el-afgift 2026)' : 'fast pris';
   document.getElementById('rec-price-val').textContent =
     `${r.buyPrice.toFixed(2).replace('.',',')} kr/kWh (${priceSource})`;
+  const priceWarn = document.getElementById('price-low-warn');
+  if (priceWarn) {
+    if (r.buyPrice < 2.0 && !S.spotAvg) {
+      priceWarn.style.display = '';
+      priceWarn.innerHTML = `⚠️ <strong>${r.buyPrice.toFixed(2).replace('.',',')} kr/kWh</strong> er lavt for en dansk husholdning — typisk betaler man <strong>2,50–4,00 kr/kWh</strong> inkl. nettarif og moms. En lav elpris reducerer batteriets rentabilitet markant. Tast din fulde årsregning og kWh-forbrug ind for en mere præcis beregning.`;
+    } else {
+      priceWarn.style.display = 'none';
+    }
+  }
   const orientSuffix = r.orientFactor < 1
     ? ` · tagretning giver ${Math.round(r.orientFactor*100)}% af sydvendt udbytte`
     : '';
