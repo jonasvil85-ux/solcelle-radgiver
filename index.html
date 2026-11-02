@@ -2373,7 +2373,7 @@ function calcRec() {
     ? +((S.spotAvg + (S.spotSurcharge||0) + S.nettarifAvg + ELAGIFT) * 1.25).toFixed(3)
     : (S.annualBill && S.annualKwh > 0)
       ? +(S.annualBill / S.annualKwh).toFixed(3)
-      : (S.effectiveKwhPrice && S.effectiveKwhPrice < 2.0 ? S.effectiveKwhPrice : 1.35);
+      : (S.effectiveKwhPrice || 2.70);
 
   const spotEst = S.spotAvg
     ? S.spotAvg
