@@ -2901,6 +2901,30 @@ const C = { get text3() { return cTxt(); }, get grid() { return cGrid(); } };
 
 function isDark() { return document.documentElement.getAttribute('data-theme') !== 'light'; }
 
+// Plugin: tegner stiplet farvet kant på bars med dashedBorder:true
+Chart.register({
+  id: 'dashedBarBorder',
+  afterDatasetsDraw(chart) {
+    const ctx = chart.ctx;
+    chart.data.datasets.forEach((ds, di) => {
+      if (!ds.dashedBorder) return;
+      const meta = chart.getDatasetMeta(di);
+      if (meta.hidden) return;
+      ctx.save();
+      ctx.strokeStyle = ds.dashedBorderColor || 'rgba(124,58,237,0.9)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 3]);
+      meta.data.forEach(bar => {
+        if (!bar.width || Math.abs(bar.height) < 1) return;
+        const l = bar.x - bar.width / 2, r = bar.x + bar.width / 2;
+        const t = Math.min(bar.y, bar.base), b = Math.max(bar.y, bar.base);
+        ctx.strokeRect(l, t, r - l, b - t);
+      });
+      ctx.restore();
+    });
+  }
+});
+
 const HOURS = Array.from({length:24},(_,i)=>String(i).padStart(2,'0')+':00');
 function profileBase() { return { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { position:'bottom', labels: { boxWidth:16, boxHeight:2, padding:14, color:C.text3, font:{size:10.5} } }, tooltip: { backgroundColor: isDark()?'#1E293B':'#fff', titleColor:isDark()?'#F1F5F9':'#111', bodyColor:C.text3, borderColor:'#E5E7EB', borderWidth:1, padding:10 } }, scales: { x: { grid:{display:false}, ticks:{color:C.text3, font:{size:10}, maxRotation:45, minRotation:0, callback:(_,i)=>i%2===0?HOURS[i]:''} }, y: { grid:{color:C.grid}, ticks:{color:C.text3, font:{size:10.5}}, border:{dash:[3,3]} } } }; }
 
@@ -3191,7 +3215,7 @@ function buildFlowChart(r, season) {
   const subId = season === 'summer' ? 'summerFlowSub' : 'winterFlowSub';
   const subEl = document.getElementById(subId);
   const season_dk = season === 'summer' ? 'Typisk sommerdag' : 'Typisk vinterdag';
-  const batLegend = hasBat ? ` · <span style="color:#7C3AED">■</span> Bat. oplader · <span style="color:#0891B2">■</span> Bat. aflader` : '';
+  const batLegend = hasBat ? ` · <span style="display:inline-block;width:12px;height:12px;background:rgba(148,163,184,0.55);border:1.5px dashed rgba(124,58,237,0.85);vertical-align:middle;margin-right:2px"></span> Bat. oplader · <span style="color:#0891B2">■</span> Bat. aflader` : '';
   if (subEl) subEl.innerHTML = `${season_dk} · <span style="color:#059669">■</span> Sol direkte${batLegend} · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion`;
 
   charts[chartKey] = new Chart(document.getElementById(canvasId), {
@@ -3200,7 +3224,7 @@ function buildFlowChart(r, season) {
       labels: HOURS,
       datasets: [
         { label:'Solel direkte',    data: direct,     backgroundColor:'rgba(5,150,105,0.75)',  stack:'s' },
-        ...(hasBat ? [{ label:'Batteri oplader', data: batCharge,    backgroundColor:'rgba(124,58,237,0.60)', stack:'s' }] : []),
+        ...(hasBat ? [{ label:'Batteri oplader', data: batCharge, backgroundColor:'rgba(148,163,184,0.55)', dashedBorder:true, dashedBorderColor:'rgba(124,58,237,0.85)', stack:'s' }] : []),
         { label:'Eksport til net',  data: gridExport, backgroundColor:'rgba(245,158,11,0.55)', stack:'s' },
         ...(hasBat ? [{ label:'Batteri aflader', data: batDischarge, backgroundColor:'rgba(8,145,178,0.70)',  stack:'s' }] : []),
         { label:'Fra elnet',        data: fromGrid,   backgroundColor:'rgba(148,163,184,0.55)',stack:'s' },
@@ -3279,7 +3303,7 @@ function buildOptimalChart(r) {
 
   // Opdatér undertekst-legende
   const optSubLegend = document.getElementById('optimalFlowSub');
-  const batLegOpt = hasBatOpt ? ` · <span style="color:#7C3AED">■</span> Bat. oplader · <span style="color:#0891B2">■</span> Bat. aflader` : '';
+  const batLegOpt = hasBatOpt ? ` · <span style="display:inline-block;width:12px;height:12px;background:rgba(148,163,184,0.55);border:1.5px dashed rgba(124,58,237,0.85);vertical-align:middle;margin-right:2px"></span> Bat. oplader · <span style="color:#0891B2">■</span> Bat. aflader` : '';
   if (optSubLegend) optSubLegend.innerHTML = `<span style="color:#059669">■</span> Sol direkte${batLegOpt} · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion · <span id="optimalExtra" style="color:var(--emerald);font-weight:600">${extra}</span>`;
 
   charts.optimal = new Chart(document.getElementById('optimalChart'), {
@@ -3288,7 +3312,7 @@ function buildOptimalChart(r) {
       labels: HOURS,
       datasets: [
         { label:'Solel direkte',    data: direct,     backgroundColor:'rgba(5,150,105,0.75)',  stack:'s' },
-        ...(hasBatOpt ? [{ label:'Batteri oplader', data: batCharge,    backgroundColor:'rgba(124,58,237,0.60)', stack:'s' }] : []),
+        ...(hasBatOpt ? [{ label:'Batteri oplader', data: batCharge, backgroundColor:'rgba(148,163,184,0.55)', dashedBorder:true, dashedBorderColor:'rgba(124,58,237,0.85)', stack:'s' }] : []),
         { label:'Eksport til net',  data: gridExport, backgroundColor:'rgba(245,158,11,0.55)', stack:'s' },
         ...(hasBatOpt ? [{ label:'Batteri aflader', data: batDischarge, backgroundColor:'rgba(8,145,178,0.70)',  stack:'s' }] : []),
         { label:'Fra elnet',        data: fromGrid,   backgroundColor:'rgba(148,163,184,0.55)',stack:'s' },
