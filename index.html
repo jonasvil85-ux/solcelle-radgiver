@@ -1930,28 +1930,34 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
             const weightedFactor = segsForFactor.reduce((sum, seg) => {
               return sum + (ORIENT_FACTOR[closestDir(seg.azimuthDegrees)] || 1.0) * seg.areaMeters2;
             }, 0) / totalArea;
-            S.roofOrientFactor = +weightedFactor.toFixed(3); // bruges i calcRec i stedet for simpelt lookup
-
-            // Segmentfordeling: gruppér segmenter med samme retning
+            // Gruppér ALLE segmenter (inkl. nordvendte) — brugeren ser det fulde billede
             const grouped = {};
-            for (const s of segsForFactor) {
+            for (const s of solar.segments) {
               const d = closestDir(s.azimuthDegrees);
               grouped[d] = (grouped[d] || 0) + s.areaMeters2;
             }
 
-            // Byg roofFaces fra Solar API-data — kun retninger med faktisk areal
+            // Byg roofFaces: alle retninger med areal, N vises men er slået fra som default
             const FACE_ORDER = ['S','SE','SW','E','W','NE','NW','N'];
             S.roofFaces = FACE_ORDER
-              .filter(d => (grouped[d] || 0) > 0)
-              .map(d => ({ dir:d, areaM2:Math.round(grouped[d]), enabled:(ROOF_DIR_META[d]?.factor||0) >= 0.55 }));
-            buildRoofFacesUI();
+              .filter(d => (grouped[d] || 0) > 1)
+              .map(d => ({ dir:d, areaM2:Math.round(grouped[d]), enabled:(ROOF_DIR_META[d]?.factor||0) > 0.40 }));
 
-            if (southAreaM2 > 0 && southAreaM2 < 2000) {
-              const _rai2 = document.getElementById('roofAreaInput'); if (_rai2) _rai2.value = southAreaM2;
-              S.roofAreaM2 = southAreaM2;
+            // Beregn S.roofAreaM2 og S.roofOrientFactor direkte fra aktiverede flader
+            const _initEn = S.roofFaces.filter(f => f.enabled);
+            const _initTot = _initEn.reduce((s, f) => s + f.areaM2, 0);
+            const _initWF = _initTot > 0
+              ? _initEn.reduce((s, f) => s + f.areaM2 * ((ROOF_DIR_META[f.dir]||{factor:0.70}).factor), 0) / _initTot
+              : weightedFactor;
+            S.roofAreaM2 = _initTot > 0 ? _initTot : southAreaM2;
+            S.roofOrientFactor = +_initWF.toFixed(3);
+
+            if (S.roofAreaM2 > 0 && S.roofAreaM2 < 2000) {
+              const _rai2 = document.getElementById('roofAreaInput'); if (_rai2) _rai2.value = S.roofAreaM2;
               document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
-              refreshRecommendation(); // async: recalc recommendation if user hasn't overridden slider
             }
+            buildRoofFacesUI();
+            refreshRecommendation(); // async: recalc recommendation if user hasn't overridden slider
 
             // Skjul kompas-felt og hustype-presets — vi har præcise data fra Google Solar
             const compassField = document.getElementById('compassField');
