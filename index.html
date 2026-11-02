@@ -1099,34 +1099,15 @@ body {
         </div>
         <div id="batWarning" style="display:none;font-size:11.5px;line-height:1.6;padding:10px 13px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;color:var(--text-2);"></div>
 
-        <!-- Batteri økonomi sammenligning -->
-        <div id="batEconPanel" style="display:none;margin-top:4px;padding:14px 16px;background:rgba(99,102,241,0.04);border:1px solid rgba(99,102,241,0.15);border-radius:10px;">
-          <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--text-1)">Er et batteri rentabelt? To scenarier sammenlignet</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div style="padding:10px 12px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:8px;">
-              <div style="font-size:12px;font-weight:700;color:#ef4444;margin-bottom:8px;">⚡ Kun batteri (arbitrage)</div>
-              <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">Køb batteri — ingen solceller. Lad op når strøm er billig, brug når dyr.</div>
-              <div style="font-size:11px;color:var(--text-2);margin-bottom:2px;">Investering</div>
-              <div style="font-size:14px;font-weight:700;color:var(--text-1);margin-bottom:8px;"><span id="econ-arb-cost">—</span> kr</div>
-              <div style="font-size:11px;color:var(--text-2);margin-bottom:2px;">Årsbesparelse</div>
-              <div style="font-size:14px;font-weight:700;color:var(--text-1);margin-bottom:8px;"><span id="econ-arb-annual">—</span> kr/år</div>
-              <div style="font-size:12px;padding:6px 8px;background:rgba(239,68,68,0.1);border-radius:6px;">Break-even: <span id="econ-arb-years" style="font-weight:700">—</span></div>
-            </div>
-            <div style="padding:10px 12px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:8px;">
-              <div style="font-size:12px;font-weight:700;color:#059669;margin-bottom:8px;">☀️ Sol + batteri (dit valg)</div>
-              <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">Solceller + batteri. Producér, gem og brug din egen strøm.</div>
-              <div style="font-size:11px;color:var(--text-2);margin-bottom:2px;">Investering</div>
-              <div style="font-size:14px;font-weight:700;color:var(--text-1);margin-bottom:8px;"><span id="econ-sol-cost">—</span> kr</div>
-              <div style="font-size:11px;color:var(--text-2);margin-bottom:2px;">Årsbesparelse</div>
-              <div style="font-size:14px;font-weight:700;color:var(--text-1);margin-bottom:8px;"><span id="econ-sol-annual">—</span> kr/år</div>
-              <div style="font-size:12px;padding:6px 8px;background:rgba(16,185,129,0.1);border-radius:6px;">Break-even: <span id="econ-sol-years" style="font-weight:700;color:#059669">—</span></div>
-            </div>
-          </div>
-          <div id="econ-oversize" style="display:none;margin-top:8px;padding:9px 12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;font-size:11.5px;color:var(--text-2);line-height:1.5;"></div>
-          <div style="font-size:10.5px;color:var(--text-3);margin-top:8px;line-height:1.5;">
-            Arbitrage: ~220 cykler/år med smart styring, 1,30 kr/kWh effektiv spread (inkl. tariffer og moms), loft sat af dit elforbrug. Sol + batteri: samme tal som break-even-visningen ovenfor.
-          </div>
-        </div>
+        <!-- hidden compat spans for removed batEconPanel IDs -->
+        <span id="batEconPanel" style="display:none"></span>
+        <span id="econ-arb-cost" style="display:none"></span>
+        <span id="econ-arb-annual" style="display:none"></span>
+        <span id="econ-arb-years" style="display:none"></span>
+        <span id="econ-sol-cost" style="display:none"></span>
+        <span id="econ-sol-annual" style="display:none"></span>
+        <span id="econ-sol-years" style="display:none"></span>
+        <span id="econ-oversize" style="display:none"></span>
 
         <!-- Solcelle tilbudspris -->
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
@@ -1226,7 +1207,39 @@ body {
           <div class="kpi-label" style="margin-top:5px;margin-bottom:0">CO₂-besparelse</div>
           <div class="kpi-sub">ton CO₂/år</div>
         </div>
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px;position:relative">
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Samlet anlægspris inkl. moms for solceller + eventuelt batteri.&#10;&#10;Beregnet som: estimeret solcellepris + batteripris (0 hvis ikke anbefalet). Justér med egne tilbudspriser i panelet ovenfor.">i</span>
+          <div style="font-size:2rem;line-height:1;margin-bottom:8px">💳</div>
+          <div class="kpi-value" id="kpi-invest">—</div>
+          <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Total investering</div>
+          <div class="kpi-sub">kr inkl. moms</div>
+        </div>
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px;position:relative">
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Solcelleanlæggets samlede årsproduktion.&#10;&#10;Beregnet fra dit kWp-antal, din tagretning og danske irradians-data (måned for måned sæsonfaktorer). Sydvendt tag = 100% — øst/vest giver ~85%, nord ~60%.">i</span>
+          <div style="font-size:2rem;line-height:1;margin-bottom:8px">📈</div>
+          <div class="kpi-value emerald" id="kpi-prod">—</div>
+          <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Årsproduktion</div>
+          <div class="kpi-sub">kWh/år</div>
+        </div>
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px;position:relative">
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Andel af dit elforbrug dækket af solceller direkte (inkl. batteri).&#10;&#10;Beregnet time for time: selvforbrugt solenergi ÷ dit samlede forbrug × 100. Et batteri øger selvforsyningen ved at gemme dagsoverskud til aftenforbrug.">i</span>
+          <div style="font-size:2rem;line-height:1;margin-bottom:8px">🔆</div>
+          <div class="kpi-value emerald" id="kpi-self">—</div>
+          <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Selvforsyning</div>
+          <div class="kpi-sub">% af dit forbrug</div>
+        </div>
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px;position:relative">
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Hvor stor en andel af dit sydvendte tagareal der udnyttes til solceller.&#10;&#10;Beregnet som: kWp × 5 m²/kWp ÷ sydvendt tagflade. 1 kWp kræver ca. 5 m² (moderne 400W-paneler). Over 100% betyder at panelerne ikke passer på taget — reducer kWp.">i</span>
+          <div style="font-size:2rem;line-height:1;margin-bottom:8px">🏗️</div>
+          <div class="kpi-value" id="kpi-roof-pct">—</div>
+          <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Tagudnyttelse</div>
+          <div class="kpi-sub" id="kpi-roof-sub">% af sydvendt tag</div>
+        </div>
       </div>
+    </div>
+    <!-- Tagudnyttelse advarsel -->
+    <div id="roof-oversize-warn" style="display:none;background:rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.35);border-radius:9px;padding:10px 14px;font-size:12px;color:var(--text-1);margin-bottom:12px;line-height:1.5">
+      ⚠️ <strong>Anlægget er for stort til taget:</strong> <span id="roof-oversize-text"></span> Reducer kWp med slideren ovenfor.
     </div>
 
     <!-- EL-AFGIFT INFO BOX -->
@@ -1236,44 +1249,18 @@ body {
       <span style="color:var(--text-3);margin-top:4px;display:block">Bemærk: Strøm til <strong>elbil</strong> er undtaget — her gælder en særlig refusionsordning, så elbilens ladning regnes ikke med i afgiftsbesparelsen.</span>
     </div>
 
-    <!-- RECOMMENDATION CARD -->
-    <div class="rec-card">
-      <div class="rec-title">Anbefalet konfiguration & økonomi</div>
-      <div class="rec-items">
-        <div class="rec-row" id="rec-solar">
-          <span class="rec-row-label">☀️ Solcelleanlæg</span>
-          <span class="rec-row-val" id="rec-solar-val">—</span>
-        </div>
-        <div class="rec-row" id="rec-battery">
-          <span class="rec-row-label">🔋 Batteri</span>
-          <span class="rec-row-val" id="rec-battery-val">—</span>
-        </div>
-        <div class="rec-divider"></div>
-        <div class="rec-total">
-          <span>Total investering (inkl. moms)</span>
-          <span id="rec-total-val">—</span>
-        </div>
-        <div class="rec-divider"></div>
-        <div class="rec-row neutral">
-          <span class="rec-row-label">📈 Årsproduktion</span>
-          <span class="rec-row-val" id="rec-prod-val">—</span>
-        </div>
-        <div class="rec-row neutral">
-          <span class="rec-row-label">⚡ Selvforsyning</span>
-          <span class="rec-row-val" id="rec-self-val">—</span>
-        </div>
-        <div class="rec-row neutral">
-          <span class="rec-row-label">⚡ Prisgrundlag</span>
-          <span class="rec-row-val" id="rec-price-val">—</span>
-        </div>
-        <div id="price-low-warn" style="display:none;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);border-radius:8px;padding:8px 11px;font-size:0.80rem;color:var(--text-2);margin-top:4px;line-height:1.45"></div>
-        <span id="rec-sav-val" style="display:none"></span>
-        <div style="font-size:10px;color:var(--text-4);margin-top:6px;padding:0 2px">
-          Besparelse beregnet time for time med tidsvarierende nettarif (lavlast/normal/højlast) og måned for måned solproduktion. Spotprisen er vægtet årsgennemsnit.
-        </div>
-      </div>
-      <div class="rec-note" id="rec-note"></div>
-    </div>
+    <!-- hidden compat spans for removed rec-card IDs -->
+    <span id="rec-solar" style="display:none"></span>
+    <span id="rec-solar-val" style="display:none"></span>
+    <span id="rec-battery" style="display:none"></span>
+    <span id="rec-battery-val" style="display:none"></span>
+    <span id="rec-total-val" style="display:none"></span>
+    <span id="rec-prod-val" style="display:none"></span>
+    <span id="rec-self-val" style="display:none"></span>
+    <span id="rec-price-val" style="display:none"></span>
+    <span id="rec-sav-val" style="display:none"></span>
+    <span id="rec-note" style="display:none"></span>
+    <div id="price-low-warn" style="display:none;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);border-radius:9px;padding:10px 13px;font-size:0.82rem;color:var(--text-2);margin-bottom:12px;line-height:1.5"></div>
 
     <!-- VURDERING CARD -->
     <div class="rec-card" id="vurdering-card" style="display:none;border-left:4px solid var(--emerald)">
@@ -2726,6 +2713,33 @@ function resetSliders() {
   rebuildAll();
 }
 
+function updateExtraTiles(r) {
+  document.getElementById('kpi-invest').textContent = r.total.toLocaleString('da-DK');
+  document.getElementById('kpi-prod').textContent   = r.prod.toLocaleString('da-DK');
+  document.getElementById('kpi-self').textContent   = r.selfPct + '%';
+
+  const roofM2 = S.roofAreaM2 || 0;
+  const neededM2 = r.kWp * 5;
+  if (roofM2 > 0) {
+    const pct = Math.round(neededM2 / roofM2 * 100);
+    const el = document.getElementById('kpi-roof-pct');
+    el.textContent = pct + '%';
+    el.className = 'kpi-value' + (pct > 100 ? ' amber' : ' emerald');
+    document.getElementById('kpi-roof-sub').textContent = `% af ${roofM2} m² sydvendt tag`;
+    const warn = document.getElementById('roof-oversize-warn');
+    if (pct > 100) {
+      warn.style.display = '';
+      document.getElementById('roof-oversize-text').textContent =
+        `${r.kWp} kWp kræver ~${neededM2} m² men dit tag er kun ~${roofM2} m².`;
+    } else {
+      warn.style.display = 'none';
+    }
+  } else {
+    document.getElementById('kpi-roof-pct').textContent = '—';
+    document.getElementById('kpi-roof-pct').className = 'kpi-value';
+  }
+}
+
 function rebuildAll() {
   const r = calcRec();
   _lastRec = r;
@@ -2787,6 +2801,9 @@ function rebuildAll() {
   document.getElementById('rec-prod-val').textContent = r.prod.toLocaleString('da-DK') + ' kWh/år' + orientSuffix;
   document.getElementById('rec-self-val').textContent = `${r.selfPct}% (${r.selfCons.toLocaleString('da-DK')} kWh/år)`;
   document.getElementById('rec-sav-val').textContent = sav.toLocaleString('da-DK') + ' kr/år';
+
+  // Nye tiles: investering, årsproduktion, selvforsyning, tagudnyttelse
+  updateExtraTiles(r);
 
   destroyCharts();
   buildProfileChart(r);
@@ -2912,6 +2929,7 @@ function showResults() {
     document.getElementById('rec-battery').className = 'rec-row neutral';
   }
   document.getElementById('rec-total-val').textContent = r.total.toLocaleString('da-DK') + ' kr';
+  updateExtraTiles(r);
   const priceSource = S.annualBill
     ? `faktisk regning (${S.annualBill.toLocaleString('da-DK')} kr ÷ ${S.annualKwh.toLocaleString('da-DK')} kWh)`
     : (S.spotAvg && S.nettarifAvg)
