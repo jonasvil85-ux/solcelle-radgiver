@@ -1064,6 +1064,9 @@ body {
           <div id="roofDetectStatus" style="font-size:11.5px;color:var(--text-3);line-height:1.5;"></div>
         </div>
       </div>
+      <div id="roofFacesPanel" style="display:none;padding:6px 16px 14px;border-top:1px solid rgba(255,255,255,0.06)">
+        <!-- udfyldes af buildRoofFacesUI() -->
+      </div>
     </div>
 
     <div class="result-header">
@@ -1418,7 +1421,17 @@ const NETTARIF = {
 const ELAGIFT = 0.008; // ~0,8 øre/kWh resterende el-afgift 2025/2026 (eks. moms)
 
 /* ── STATE ── */
-const S = { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasEV2:false, hasHP:false, hasHO:false, hasPool:false, hasHybrid:false, evKm:15000, ev2Km:15000, evChargesHome:true, ev2ChargesHome:true, hybridKwh:500, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, nettarifAvg:null, actualSpotCost:null, actualNettarif:null, priceArea:null, dsoGLN:null, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, ejertidYr:15, financing:'cash', loanRate:4.0 };
+const S = { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, roofFaces:null, persons:3, isOwner:true, hasEV:false, hasEV2:false, hasHP:false, hasHO:false, hasPool:false, hasHybrid:false, evKm:15000, ev2Km:15000, evChargesHome:true, ev2ChargesHome:true, hybridKwh:500, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, nettarifAvg:null, actualSpotCost:null, actualNettarif:null, priceArea:null, dsoGLN:null, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, ejertidYr:15, financing:'cash', loanRate:4.0 };
+const ROOF_DIR_META = {
+  S:  { label:'Sydvendt',  factor:1.00, tip:'100% udbytte — optimalt. Sydvendte paneler modtager mest sol hele dagen og giver fuldt udbytte.' },
+  SE: { label:'Sydøst',    factor:0.92, tip:'~92% udbytte — næsten optimalt. Sydøstvendte paneler producerer godt om formiddagen og er kun marginalt dårligere end sydvendt.' },
+  SW: { label:'Sydvest',   factor:0.92, tip:'~92% udbytte — næsten optimalt. Sydvestvendte paneler producerer godt om eftermiddagen og er kun marginalt dårligere end sydvendt.' },
+  E:  { label:'Østvendt',  factor:0.78, tip:'~78% udbytte. Østvendte paneler producerer primært om morgenen (07–13). Kombineret med vestvendte giver en jævn dagskurve der matcher morgenforbrug.' },
+  W:  { label:'Vestvendt', factor:0.78, tip:'~78% udbytte. Vestvendte paneler producerer primært om eftermiddagen (11–17). Kombineret med østvendte giver bedre match med aftenforbruget.' },
+  NE: { label:'Nordøst',   factor:0.55, tip:'~55% udbytte — begrænset. Anbefales kun hvis der ikke er sydvendte eller østvendte flader til rådighed.' },
+  NW: { label:'Nordvest',  factor:0.55, tip:'~55% udbytte — begrænset. Anbefales kun hvis der ikke er sydvendte eller vestvendte flader til rådighed.' },
+  N:  { label:'Nordvendt', factor:0.40, tip:'~40% udbytte — frarådes. Nordvendte paneler modtager meget lidt direkte sollys og tjener sig sjældent hjem i Danmark.' },
+};
 let charts = {};
 let _lastRec = null;
 let _origRec = null;
@@ -1844,6 +1857,15 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
       const _rai1 = document.getElementById('roofAreaInput'); if (_rai1) _rai1.value = southAreaM2;
       S.roofAreaM2 = southAreaM2;
       document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
+      S.roofFaces = [
+        {dir:'S',  areaM2:southAreaM2, enabled:true},
+        {dir:'SE', areaM2:0, enabled:false},
+        {dir:'SW', areaM2:0, enabled:false},
+        {dir:'E',  areaM2:0, enabled:false},
+        {dir:'W',  areaM2:0, enabled:false},
+        {dir:'N',  areaM2:0, enabled:false},
+      ];
+      buildRoofFacesUI();
       refreshRecommendation(); // async: recalc recommendation if user hasn't overridden slider
     }
 
@@ -1910,6 +1932,20 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
             }, 0) / totalArea;
             S.roofOrientFactor = +weightedFactor.toFixed(3); // bruges i calcRec i stedet for simpelt lookup
 
+            // Segmentfordeling: gruppér segmenter med samme retning
+            const grouped = {};
+            for (const s of segsForFactor) {
+              const d = closestDir(s.azimuthDegrees);
+              grouped[d] = (grouped[d] || 0) + s.areaMeters2;
+            }
+
+            // Byg roofFaces fra Solar API-data — kun retninger med faktisk areal
+            const FACE_ORDER = ['S','SE','SW','E','W','NE','NW','N'];
+            S.roofFaces = FACE_ORDER
+              .filter(d => (grouped[d] || 0) > 0)
+              .map(d => ({ dir:d, areaM2:Math.round(grouped[d]), enabled:(ROOF_DIR_META[d]?.factor||0) >= 0.55 }));
+            buildRoofFacesUI();
+
             if (southAreaM2 > 0 && southAreaM2 < 2000) {
               const _rai2 = document.getElementById('roofAreaInput'); if (_rai2) _rai2.value = southAreaM2;
               S.roofAreaM2 = southAreaM2;
@@ -1923,29 +1959,9 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
             const roofPresets = document.getElementById('roofPresets');
             if (roofPresets) roofPresets.style.display = 'none';
 
-            // Segmentfordeling: gruppér segmenter med samme retning
-            const dirNames = {S:'Syd',SW:'SV',SE:'SØ',W:'Vest',E:'Øst',NW:'NV',NE:'NØ',N:'Nord'};
-            const grouped = {};
-            for (const s of segsForFactor) {
-              const d = closestDir(s.azimuthDegrees);
-              grouped[d] = (grouped[d] || 0) + s.areaMeters2;
-            }
-            const segBreakdown = Object.entries(grouped)
-              .map(([d, a]) => `${Math.round(a)} m² ${dirNames[d]||d}`)
-              .join(' · ');
-
             if (statusEl) {
               statusEl.style.color = '#059669';
-              const segPills = Object.entries(grouped)
-                .sort(([a],[b]) => {
-                  const order = {S:0,SE:1,SW:2,E:3,W:4,NE:5,NW:6,N:7};
-                  return (order[a]??9) - (order[b]??9);
-                })
-                .map(([d, a]) => {
-                  const ef = {S:100,SE:92,SW:92,E:78,W:78,NE:55,NW:55,N:40}[d] || 70;
-                  return `<span style="display:inline-flex;align-items:center;gap:3px;background:var(--surface-2);border:1px solid var(--border-light);border-radius:5px;padding:1px 7px;font-size:10.5px;white-space:nowrap"><strong>${dirNames[d]||d}</strong>&thinsp;${Math.round(a)}&thinsp;m² <span style="color:var(--text-3)">(${ef}%)</span></span>`;
-                }).join(' ');
-              statusEl.innerHTML = `<span style="color:#059669">✅ Google Solar</span> · hældning: ${Math.round(bestSeg.pitchDegrees)}°${solar.sunshineHours ? ` · ${Math.round(solar.sunshineHours)} sol-timer/år` : ''}<br><span style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">${segPills}</span><span style="font-size:10.5px;color:var(--text-3);margin-top:3px;display:block">Samlet brugbart areal: <strong style="color:var(--text-2)">${southAreaM2} m²</strong> · vægtet udbytte: <strong style="color:var(--text-2)">${Math.round(weightedFactor*100)}% af rent sydvendt</strong></span>`;
+              statusEl.innerHTML = `<span style="color:#059669">✅ Google Solar</span> · hældning: ${Math.round(bestSeg.pitchDegrees)}°${solar.sunshineHours ? ` · ${Math.round(solar.sunshineHours)} sol-timer/år` : ''} · vægtet udbytte: <strong style="color:var(--text-2)">${Math.round(weightedFactor*100)}%</strong> af rent sydvendt`;
             }
             return;
           }
@@ -2051,10 +2067,19 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
           const _rai3 = document.getElementById('roofAreaInput'); if (_rai3) _rai3.value = southAreaM2;
           S.roofAreaM2 = southAreaM2;
           document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
+          S.roofFaces = [
+            {dir:'S',  areaM2:southAreaM2, enabled:true},
+            {dir:'SE', areaM2:0, enabled:false},
+            {dir:'SW', areaM2:0, enabled:false},
+            {dir:'E',  areaM2:0, enabled:false},
+            {dir:'W',  areaM2:0, enabled:false},
+            {dir:'N',  areaM2:0, enabled:false},
+          ];
+          buildRoofFacesUI();
           refreshRecommendation(); // async: recalc recommendation if user hasn't overridden slider
           if (statusEl) {
             statusEl.style.color = '#059669';
-            statusEl.innerHTML = `✅ BBR-data fundet — fodaftryk: <strong>${footprintM2} m²</strong> · estimeret sydvendt areal: <strong>~${southAreaM2} m²</strong>${bbrData.byggeaar ? ` · opført ${bbrData.byggeaar}` : ''} <span style="color:var(--text-3);font-weight:400">Vælg tagretning herunder</span>`;
+            statusEl.innerHTML = `✅ BBR-data fundet — fodaftryk: <strong>${footprintM2} m²</strong> · estimeret sydvendt areal: <strong>~${southAreaM2} m²</strong>${bbrData.byggeaar ? ` · opført ${bbrData.byggeaar}` : ''} <span style="color:var(--text-3);font-weight:400">Justér tagflader herunder</span>`;
           }
           return;
         }
@@ -2136,10 +2161,76 @@ function goStep2() {
 }
 
 
+function buildRoofFacesUI() {
+  const panel = document.getElementById('roofFacesPanel');
+  if (!panel) return;
+  if (!S.roofFaces || S.roofFaces.length === 0) { panel.style.display = 'none'; return; }
+  panel.style.display = '';
+  const rows = S.roofFaces.map((f, i) => {
+    const meta = ROOF_DIR_META[f.dir] || { label:f.dir, factor:0.70, tip:'' };
+    const col = meta.factor >= 0.85 ? 'var(--emerald)' : meta.factor >= 0.70 ? '#D97706' : 'var(--text-4)';
+    const tip = meta.tip.replace(/"/g,'&quot;');
+    return `<div style="display:grid;grid-template-columns:16px 1fr auto 58px 22px;align-items:center;gap:6px;padding:4px 0;${i>0?'border-top:1px solid rgba(255,255,255,0.05)':''}">
+      <input type="checkbox" ${f.enabled?'checked':''} onchange="toggleRoofFace(${i},this.checked)" style="width:13px;height:13px;accent-color:#059669;cursor:pointer">
+      <div style="font-size:12px;color:${f.enabled?'var(--text-1)':'var(--text-4)'}">
+        ${meta.label}&nbsp;<span style="font-size:10.5px;color:${col};font-weight:600">${Math.round(meta.factor*100)}%</span>
+      </div>
+      <span class="chart-info" style="font-size:10px" data-tip="${tip}">i</span>
+      <input type="number" value="${f.areaM2||''}" placeholder="0" min="0" max="500" step="1"
+        onchange="setRoofFaceArea(${i},parseInt(this.value)||0)"
+        style="width:58px;padding:3px 5px;border:1px solid var(--border);border-radius:5px;background:var(--surface-2);color:${f.enabled?'var(--text-1)':'var(--text-4)'};font-size:12px;text-align:right">
+      <span style="font-size:11px;color:var(--text-3)">m²</span>
+    </div>`;
+  }).join('');
+  panel.innerHTML = `<div style="font-size:9.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:5px">Tagflader — vælg hvilke du bruger</div>${rows}<div id="roofFacesSummary" style="font-size:10.5px;color:var(--text-3);margin-top:7px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.07)"></div>`;
+  updateRoofFacesSummary();
+}
+
+function toggleRoofFace(idx, checked) {
+  if (!S.roofFaces || !S.roofFaces[idx]) return;
+  S.roofFaces[idx].enabled = checked;
+  buildRoofFacesUI();
+  updateFromRoofFaces();
+}
+
+function setRoofFaceArea(idx, m2) {
+  if (!S.roofFaces || !S.roofFaces[idx]) return;
+  S.roofFaces[idx].areaM2 = m2;
+  updateFromRoofFaces();
+}
+
+function updateFromRoofFaces() {
+  const enabled = (S.roofFaces || []).filter(f => f.enabled);
+  const totalM2 = enabled.reduce((s, f) => s + (f.areaM2 || 0), 0);
+  const weightedF = totalM2 > 0
+    ? enabled.reduce((s, f) => s + (f.areaM2||0) * ((ROOF_DIR_META[f.dir]||{factor:0.70}).factor), 0) / totalM2
+    : 1.0;
+  S.roofAreaM2 = totalM2 > 0 ? totalM2 : null;
+  S.roofOrientFactor = +weightedF.toFixed(3);
+  const raInput = document.getElementById('roofAreaInput'); if (raInput && totalM2 > 0) raInput.value = totalM2;
+  updateRoofFacesSummary();
+  refreshRecommendation();
+}
+
+function updateRoofFacesSummary() {
+  const el = document.getElementById('roofFacesSummary');
+  if (!el) return;
+  const enabled = (S.roofFaces || []).filter(f => f.enabled && f.areaM2 > 0);
+  const totalM2 = enabled.reduce((s, f) => s + f.areaM2, 0);
+  const wF = totalM2 > 0
+    ? enabled.reduce((s, f) => s + f.areaM2 * ((ROOF_DIR_META[f.dir]||{factor:0.70}).factor), 0) / totalM2
+    : 0;
+  el.innerHTML = totalM2 > 0
+    ? `Samlet: <strong style="color:var(--text-2)">${totalM2} m²</strong> · vægtet udbytte: <strong style="color:var(--text-2)">${Math.round(wF*100)}%</strong> af rent sydvendt`
+    : `<span style="color:var(--amber)">Ingen tagflader valgt — udfyld mindst ét areal</span>`;
+}
+
 function restart() {
   hide('step3');
   Object.assign(S, { zipcode:'', address:'', roofOrientation:'S', roofOrientFactor:null, roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasEV2:false, hasHP:false, hasHybrid:false, evKm:15000, ev2Km:15000, evChargesHome:true, ev2ChargesHome:true, hybridKwh:500, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, _manualKwh:false });
 
+  S.roofFaces = null;
+  const rfp = document.getElementById('roofFacesPanel'); if (rfp) rfp.style.display = 'none';
   const cf = document.getElementById('compassField'); if (cf) cf.style.display = '';
   const rp = document.getElementById('roofPresets'); if (rp) rp.style.display = '';
   document.getElementById('opt-spot').className = 'toggle-opt selected';
