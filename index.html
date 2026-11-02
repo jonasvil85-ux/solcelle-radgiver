@@ -1068,7 +1068,9 @@ body {
 
         <!-- Solcelle tilbudspris -->
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <div style="font-size:13px;font-weight:600;min-width:130px">💰 Pris solceller</div>
+          <div style="font-size:13px;font-weight:600;min-width:130px;display:flex;align-items:center;gap:5px">💰 Pris solceller
+            <span class="chart-info" data-tip="Estimeret pris inkluderer:&#10;• Solpaneler&#10;• Hybridinverter&#10;• Monteringssystem til tag&#10;• El-installation og tilmelding til net&#10;• Opstarts­vejledning&#10;&#10;Priser varierer med tagtype, anlægsstørrelse og installatør. Indhent altid 2-3 tilbud.">i</span>
+          </div>
           <div style="display:flex;align-items:center;gap:6px">
             <input type="number" id="sliderSolarPrice" min="10000" max="400000" step="1000"
               style="width:140px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-1);font-size:13px"
@@ -1080,7 +1082,9 @@ body {
 
         <!-- Batteri tilbudspris -->
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <div style="font-size:13px;font-weight:600;min-width:130px">💰 Pris batteri</div>
+          <div style="font-size:13px;font-weight:600;min-width:130px;display:flex;align-items:center;gap:5px">💰 Pris batteri
+            <span class="chart-info" data-tip="Estimeret pris inkluderer:&#10;• Lithiumbatteri (typisk LFP)&#10;• Tilslutning til hybridinverter&#10;• El-installation og opsætning&#10;• Konfiguration og idriftsættelse&#10;&#10;Kræver hybridinverter — er medregnet i solcelleprisen. Tillæg ved retrofit til eksisterende anlæg.">i</span>
+          </div>
           <div style="display:flex;align-items:center;gap:6px">
             <input type="number" id="sliderBatPrice" min="0" max="200000" step="1000"
               style="width:140px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text-1);font-size:13px"
@@ -2249,12 +2253,13 @@ function getIrradiance(zip) {
 // Base installation cost (inverter, scaffolding, electrician, permits) is fixed
 // regardless of system size, making small systems cost more per kWp.
 function estimateSolarCost(kWp) {
-  // excl. moms: 25 000 kr base + 5 500 kr/kWp; incl. 25% moms
-  return Math.round((25000 + kWp * 5500) * 1.25 / 1000) * 1000;
+  // excl. moms: 30 000 kr base (inverter, montage, el-installation) + 6 500 kr/kWp; incl. 25% moms
+  // Svarer til ca. 10.000-14.000 kr/kWp inkl. moms — midten af dansk marked 2026
+  return Math.round((30000 + kWp * 6500) * 1.25 / 1000) * 1000;
 }
 function estimateBatCost(batKwh) {
   if (!batKwh) return 0;
-  // excl. moms: 8 000 kr hybrid-inverter upgrade + 3 000 kr/kWh; incl. 25% moms
+  // excl. moms: 8 000 kr hybrid-inverter tilslutning + 3 000 kr/kWh; incl. 25% moms
   return Math.round((8000 + batKwh * 3000) * 1.25 / 1000) * 1000;
 }
 
