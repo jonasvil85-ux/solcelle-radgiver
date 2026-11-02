@@ -1062,6 +1062,34 @@ body {
         </div>
         <div id="batWarning" style="display:none;font-size:11.5px;line-height:1.6;padding:10px 13px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;color:var(--text-2);"></div>
 
+        <!-- Batteri økonomi sammenligning -->
+        <div id="batEconPanel" style="display:none;margin-top:4px;padding:14px 16px;background:rgba(99,102,241,0.04);border:1px solid rgba(99,102,241,0.15);border-radius:10px;">
+          <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--text-1)">⚡ Hvad giver batteriet — og hvad giver det ikke?</div>
+          <div style="font-size:11.5px;color:var(--text-2);margin-bottom:12px;">For et <strong id="econ-bat-size">—</strong> batteri til ca. <strong id="econ-bat-cost">—</strong> kr</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="padding:10px 12px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:8px;">
+              <div style="font-size:12px;font-weight:700;color:#ef4444;margin-bottom:6px;">❌ Kun arbitrage</div>
+              <div style="font-size:11px;color:var(--text-2);line-height:1.5;margin-bottom:6px;">Lade fra net om natten — bruge om dagen</div>
+              <div style="font-size:10.5px;color:var(--text-3);margin-bottom:8px;">Effektiv gevinst: ~0,80 kr/kWh*</div>
+              <div style="font-size:13px;font-weight:700;color:var(--text-1)" id="econ-arb-annual">—</div>
+              <div style="font-size:11px;color:var(--text-3);margin-top:2px;">kr/år</div>
+              <div style="font-size:12px;margin-top:8px;">Tilbagebetaling: <span id="econ-arb-years" style="font-weight:700;color:#ef4444">—</span></div>
+            </div>
+            <div style="padding:10px 12px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:8px;">
+              <div style="font-size:12px;font-weight:700;color:#059669;margin-bottom:6px;">✅ Sol + batteri</div>
+              <div style="font-size:11px;color:var(--text-2);line-height:1.5;margin-bottom:6px;">Gemme sol-el til aftenbrug i stedet for at eksportere</div>
+              <div style="font-size:10.5px;color:var(--text-3);margin-bottom:8px;">Effektiv gevinst: ~2,70 kr/kWh</div>
+              <div style="font-size:13px;font-weight:700;color:var(--text-1)" id="econ-sol-annual">—</div>
+              <div style="font-size:11px;color:var(--text-3);margin-top:2px;">kr/år</div>
+              <div style="font-size:12px;margin-top:8px;">Tilbagebetaling: <span id="econ-sol-years" style="font-weight:700;color:#059669">—</span></div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:10px;line-height:1.6;border-top:1px solid var(--border);padding-top:10px;">
+            💡 <strong>Hvorfor er forskellen så stor?</strong> Ved arbitrage betaler du stadig nettarif og PSO når du køber fra net om natten — den reelle prisgevinst er kun ca. 0,80 kr/kWh. Sol-el du gemmer og bruger selv sparer det fulde elpris (~3,50 kr/kWh) sammenlignet med afregningsprisen du ellers ville eksportere til (~0,80 kr/kWh). Det er 3× mere værd per kWh.<br>
+            <span style="font-size:10px;opacity:0.7">* Forudsætter ca. 280 arbitragecykler/år og 90% round-trip-effektivitet. Solscenarie forudsætter ~200 cykler/år begrænset af solproduktion.</span>
+          </div>
+        </div>
+
         <!-- Solcelle tilbudspris -->
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <div style="font-size:13px;font-weight:600;min-width:130px;display:flex;align-items:center;gap:5px">💰 Pris solceller
@@ -2504,6 +2532,33 @@ function onSliderBat(v) {
   if (batValEl) batValEl.textContent = v > 0 ? v + ' kWh' : 'Ingen';
   rebuildAll();
   updateBatWarning(v);
+  updateBatEconomyPanel(v);
+}
+
+function updateBatEconomyPanel(batKwh) {
+  const panel = document.getElementById('batEconPanel');
+  if (!panel) return;
+  if (!batKwh || batKwh < 1) { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+
+  const batCost = estimateBatCost(batKwh);
+
+  // Arbitrage: lade fra net om natten, bruge om dagen
+  // Effektiv spread efter nettarif+PSO ≈ 0,80 kr/kWh, ~280 cykler/år, 90% effektivitet
+  const arbAnnual = Math.round(batKwh * 0.90 * 0.80 * 280);
+  const arbYears  = Math.round(batCost / arbAnnual);
+
+  // Sol selvforbrug: gemme sol til aftenbrug
+  // Gevinst: elpris (~3,50) - eksportpris (~0,80) = 2,70 kr/kWh, ~200 cykler/år, 90% effektivitet
+  const solAnnual = Math.round(batKwh * 0.90 * 2.70 * 200);
+  const solYears  = Math.round(batCost / solAnnual);
+
+  document.getElementById('econ-bat-size').textContent  = batKwh + ' kWh';
+  document.getElementById('econ-bat-cost').textContent  = batCost.toLocaleString('da-DK');
+  document.getElementById('econ-arb-annual').textContent = arbAnnual.toLocaleString('da-DK');
+  document.getElementById('econ-arb-years').textContent  = arbYears + ' år';
+  document.getElementById('econ-sol-annual').textContent = solAnnual.toLocaleString('da-DK');
+  document.getElementById('econ-sol-years').textContent  = solYears + ' år';
 }
 
 function updateBatWarning(batKwh) {
