@@ -2370,15 +2370,14 @@ function calcRec() {
   const nt = NETTARIF[priceArea] || NETTARIF.DK1;
   const nettarifAnnAvg = (nt.summer.reduce((a,b)=>a+b,0) + nt.winter.reduce((a,b)=>a+b,0)) / 48;
 
+  // spotEst: real Eloverblik spot avg if available, else conservative 2024-2025 DK estimate
+  const spotEst = S.spotAvg || 0.65;
+
   const buyPrice = (S.spotAvg && S.nettarifAvg)
     ? +((S.spotAvg + (S.spotSurcharge||0) + S.nettarifAvg + ELAGIFT) * 1.25).toFixed(3)
     : (S.annualBill && S.annualKwh > 0)
       ? +(S.annualBill / S.annualKwh).toFixed(3)
-      : (S.effectiveKwhPrice || 2.70);
-
-  const spotEst = S.spotAvg
-    ? S.spotAvg
-    : Math.max(0.40, (buyPrice / 1.25) - ELAGIFT - (S.spotSurcharge||0) - nettarifAnnAvg);
+      : +((spotEst + (S.spotSurcharge||0) + nettarifAnnAvg + ELAGIFT) * 1.25).toFixed(3);
 
   // System sizing — joint sweep over (kWp × batteri) to maximise net return over ejertid.
   // Metric: annualSav * growFactor − totalCost  (NPV-approx at 4 %/år price growth)
@@ -2820,12 +2819,14 @@ function showResults() {
   document.getElementById('rec-total-val').textContent = r.total.toLocaleString('da-DK') + ' kr';
   const priceSource = S.annualBill
     ? `faktisk regning (${S.annualBill.toLocaleString('da-DK')} kr ÷ ${S.annualKwh.toLocaleString('da-DK')} kWh)`
-    : (S.spotAvg && S.nettarifAvg) ? 'vægtet spot + nettarif + systemtarif (ingen el-afgift 2026)' : 'fast pris';
+    : (S.spotAvg && S.nettarifAvg)
+      ? 'vægtet spot + nettarif + systemtarif (ingen el-afgift 2026)'
+      : `estimeret (spot ~0,65 kr/kWh + ${S.priceArea || 'DK1'}-nettarif · tast årsregning for præcis pris)`;
   document.getElementById('rec-price-val').textContent =
     `${r.buyPrice.toFixed(2).replace('.',',')} kr/kWh (${priceSource})`;
   const priceWarn = document.getElementById('price-low-warn');
   if (priceWarn) {
-    if (r.buyPrice < 2.0 && !S.spotAvg) {
+    if (r.buyPrice < 1.0 && !S.spotAvg) {
       priceWarn.style.display = '';
       priceWarn.innerHTML = `⚠️ <strong>${r.buyPrice.toFixed(2).replace('.',',')} kr/kWh</strong> er lavt for en dansk husholdning — typisk betaler man <strong>2,50–4,00 kr/kWh</strong> inkl. nettarif og moms. En lav elpris reducerer batteriets rentabilitet markant. Tast din fulde årsregning og kWh-forbrug ind for en mere præcis beregning.`;
     } else {
