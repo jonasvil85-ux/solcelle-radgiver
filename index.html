@@ -862,11 +862,13 @@ body {
       <!-- EJERTID -->
       <div class="field">
         <label>Hvor mange år planlægger du at blive boende?</label>
-        <div class="toggle-group">
+        <div class="toggle-group" style="flex-wrap:wrap;gap:6px;">
           <div class="toggle-opt" id="ej-5"  onclick="selectEjertid(5)">Under 5 år</div>
           <div class="toggle-opt" id="ej-10" onclick="selectEjertid(10)">5–10 år</div>
           <div class="toggle-opt selected" id="ej-15" onclick="selectEjertid(15)">10–15 år</div>
-          <div class="toggle-opt" id="ej-25" onclick="selectEjertid(25)">15+ år</div>
+          <div class="toggle-opt" id="ej-20" onclick="selectEjertid(20)">15–20 år</div>
+          <div class="toggle-opt" id="ej-25" onclick="selectEjertid(25)">20–25 år</div>
+          <div class="toggle-opt" id="ej-30" onclick="selectEjertid(30)">25+ år</div>
         </div>
       </div>
 
@@ -1434,7 +1436,7 @@ function selectOwnership(type) {
 
 function selectEjertid(yr) {
   S.ejertidYr = yr;
-  [5,10,15,25].forEach(v => {
+  [5,10,15,20,25,30].forEach(v => {
     document.getElementById('ej-'+v).className = 'toggle-opt' + (v===yr ? ' selected' : '');
   });
 }
