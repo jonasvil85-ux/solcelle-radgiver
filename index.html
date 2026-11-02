@@ -1168,19 +1168,15 @@ body {
           </div>
         </div>
         <div class="kpi-tile" style="text-align:center;padding:16px 12px;position:relative">
-          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Beregnet time for time for hver måned:&#10;• Solenergi brugt direkte × din elpris&#10;• Eksporteret overskud × salgspris (~0,35 kr/kWh)&#10;• Batteri: soloverskud forskudt til aftentimer&#10;&#10;Vises uden el-afgift (suspenderet 2026). 'Med afgift' viser besparelsen inkl. den forventede afgift fra 2028.">i</span>
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Beregnet time for time for hver måned:&#10;• Solenergi brugt direkte × din elpris&#10;• Eksporteret overskud × salgspris (~0,35 kr/kWh)&#10;• Batteri: soloverskud forskudt til aftentimer&#10;&#10;2026–2027: El-afgiften er suspenderet — ingen afgift på egenproduktion.&#10;Fra jan. 2028: El-afgift (~0,76 kr/kWh inkl. moms) genindføres. Besparelsen stiger fordi du undgår afgift på den sol-el du bruger direkte.&#10;&#10;Elbil er undtaget — ladning til bil har refusion og medregnes ikke i afgiftsbesparelsen.">i</span>
           <div style="font-size:2rem;line-height:1;margin-bottom:8px">💰</div>
           <div class="kpi-value emerald" id="kpi-savings">—</div>
           <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Årsbesparelse</div>
-          <div class="kpi-sub">kr/år</div>
-          <div style="display:flex;gap:4px;margin-top:7px;justify-content:center">
-            <span class="toggle-opt selected" id="kpi-afgift-off" onclick="setAfgift(false)" style="padding:2px 7px;font-size:10px;line-height:1.6">Uden afgift</span>
-            <span class="toggle-opt" id="kpi-afgift-on" onclick="setAfgift(true)" style="padding:2px 7px;font-size:10px;line-height:1.6">Med afgift</span>
-          </div>
-          <div style="font-size:9.5px;color:var(--text-3);margin-top:3px">El-afgift forventes genindført 2028</div>
+          <div class="kpi-sub">kr/år (2026–2027, uden afgift)</div>
+          <div id="kpi-savings-2028" style="font-size:10px;color:var(--emerald,#10b981);font-weight:600;margin-top:5px"></div>
         </div>
         <div class="kpi-tile" style="text-align:center;padding:16px 12px;position:relative">
-          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Antal år til din investering er tilbagebetalt af løbende besparelser.&#10;&#10;Beregnet med 4%/år elprisvækst (lukket formel):&#10;ln(1 + 4% × investering ÷ årsbesparelse) ÷ ln(1,04)&#10;&#10;Fladt break-even ville give et højere tal — elprisvæksten fremrykker tilbagebetalingen.">i</span>
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Antal år til din investering er tilbagebetalt af løbende besparelser.&#10;&#10;Beregnet med 4%/år elprisvækst og el-afgift modellen:&#10;• År 1–2 (2026–2027): uden el-afgift&#10;• År 3+ (2028+): med el-afgift (~0,76 kr/kWh inkl. moms)&#10;&#10;Elbil-ladning er undtaget via refusionsordningen og medregnes ikke.">i</span>
           <div style="font-size:2rem;line-height:1;margin-bottom:8px">⏱️</div>
           <div class="kpi-value" id="kpi-payback">—</div>
           <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Break-even</div>
@@ -1627,23 +1623,7 @@ function updateHybridEst() {
   document.getElementById('hybrid-kwh-est').textContent = '≈ ' + S.hybridKwh.toLocaleString('da-DK') + ' kWh/år';
 }
 
-function setAfgift(on) {
-  _useAfgift = on;
-  document.getElementById('kpi-afgift-off').className = 'toggle-opt' + (!on ? ' selected' : '');
-  document.getElementById('kpi-afgift-on').className  = 'toggle-opt' + (on  ? ' selected' : '');
-  const infoEl = document.getElementById('afgift-info');
-  if (infoEl) infoEl.style.display = on ? 'block' : 'none';
-  if (!_lastRec) return;
-  const r = _lastRec;
-  const sav = on ? r.sav28 : r.sav26;
-  const pb  = on ? +(r.total / r.sav28).toFixed(1) : r.payback;
-  document.getElementById('rec-sav-val').textContent     = sav.toLocaleString('da-DK') + ' kr/år';
-  document.getElementById('kpi-savings').textContent     = sav.toLocaleString('da-DK');
-  document.getElementById('kpi-payback').textContent     = '~' + pb;
-  // Rebuild payback chart with new scenario
-  if (charts.payback) { charts.payback.destroy(); delete charts.payback; }
-  buildPaybackChart(r, on);
-}
+function setAfgift() {} // toggle removed; afgift auto-applied from jan. 2028 in calculations
 
 function selectPriceType(type) {
   S.priceType = type;
@@ -2435,11 +2415,13 @@ function calcRec() {
       : +((spotEst + (S.spotSurcharge||0) + nettarifAnnAvg + ELAGIFT) * 1.25).toFixed(3);
 
   // System sizing — joint sweep over (kWp × batteri) to maximise net return over ejertid.
-  // Metric: annualSav * growFactor − totalCost  (NPV-approx at 4 %/år price growth)
+  // Metric: two-phase NPV — yr 1–2 no afgift (sav26), yr 3+ with afgift (sav28), 4%/yr growth
   const sizes      = [5,6,7,8,9,10,12,15];
   const maxKwpRoof = S.roofAreaM2 ? Math.max(3, Math.floor(S.roofAreaM2 / 6)) : Infinity;
   const ejertid    = S.ejertidYr || 15;
-  const growFactor = ((1.04 ** ejertid) - 1) / 0.04;
+  const gf2  = 1 + 1.04;  // years 1–2 growth factors summed
+  const gf28 = ejertid > 2 ? 1.04 ** 2 * ((1.04 ** (ejertid - 2) - 1) / 0.04) : 0;
+  const houseShareOpt = (S.hasEV || S.hasEV2 || S.hasHybrid) ? Math.max(0, (kwh - evKwhHome) / kwh) : 1.0;
   const annCostEst = S.annualBill || (kwh * buyPrice);
 
   let kWp, autoRecBat;
@@ -2474,7 +2456,9 @@ function calcRec() {
         const szSavVal = szBaseself > 0 ? szAnnSavSelf * (szSelf / szBaseself) : szSelf * buyPrice;
         const szSavRaw = szSavVal + szExport * 0.35;
         const szSav    = Math.round(annCostEst ? Math.min(szSavRaw, annCostEst * 0.88) : szSavRaw);
-        const netRet   = szSav * growFactor - (estimateSolarCost(sz) + estimateBatCost(bKwh));
+        const szAfgift = Math.round(szSelf * houseShareOpt * 0.76);
+        const szSav28  = szSav + szAfgift;
+        const netRet   = szSav * gf2 + szSav28 * gf28 - (estimateSolarCost(sz) + estimateBatCost(bKwh));
         if (netRet > bestReturn) { bestReturn = netRet; bestKwp = sz; autoRecBat = bKwh; }
       }
     }
@@ -2529,9 +2513,11 @@ function calcRec() {
     let bestBatRet = -Infinity;
     batKwh = 0;
     for (const bKwh of [0, 5, 10]) {
-      const bShift = bKwh > 0 ? Math.round(Math.min(bKwh * 0.45 * 365, baseexp * 0.60)) : 0;
-      const bSav   = annSav26(bShift);
-      const netRet = bSav * growFactor - (estimateSolarCost(kWp) + estimateBatCost(bKwh));
+      const bShift  = bKwh > 0 ? Math.round(Math.min(bKwh * 0.45 * 365, baseexp * 0.60)) : 0;
+      const bSav    = annSav26(bShift);
+      const bSelf   = Math.min(baseself + bShift, Math.round(kwh * 0.92));
+      const bSav28  = bSav + Math.round(bSelf * houseShareOpt * 0.76);
+      const netRet  = bSav * gf2 + bSav28 * gf28 - (estimateSolarCost(kWp) + estimateBatCost(bKwh));
       if (netRet > bestBatRet) { bestBatRet = netRet; batKwh = bKwh; }
     }
   }
@@ -2555,11 +2541,17 @@ function calcRec() {
   const sysCost = S.overrideSolarCost !== null ? S.overrideSolarCost : estimateSolarCost(kWp);
   const batCost = S.overrideBatCost  !== null ? S.overrideBatCost  : estimateBatCost(batKwh);
   const total   = sysCost + batCost;
-  // Payback with 4%/yr growth: find n where sum(sav26 * 1.04^(y-1), y=1..n) >= total
-  // Closed form: n = log(1 + 0.04 * total/sav26) / log(1.04)
-  const payback = sav26 > 0
-    ? +(Math.log(1 + 0.04 * total / sav26) / Math.log(1.04)).toFixed(1)
-    : 999;
+  // Payback: yr 1–2 no afgift (sav26), yr 3+ with afgift (sav28), 4%/yr growth
+  let payback = 999;
+  if (sav26 > 0) {
+    let _cum = 0;
+    for (let _y = 1; _y <= 40; _y++) {
+      const _base = _y <= 2 ? sav26 : sav28;
+      const _ann = _base * Math.pow(1.04, _y - 1);
+      const _prev = _cum; _cum += _ann;
+      if (_cum >= total) { payback = +((_y - 1) + (total - _prev) / _ann).toFixed(1); break; }
+    }
+  }
 
   return { kWp, batKwh, prod, selfCons, exported, selfPct, sav26, sav28, afgift, sysCost, batCost, total, payback, irr, orientFactor, monthlyProd, buyPrice, baseself, baseexp };
 }
@@ -2771,11 +2763,9 @@ function rebuildAll() {
     batOvr.style.display = batDiff ? 'block' : 'none';
     if (batDiff) document.getElementById('kpi-bat-override-val').textContent = r.batKwh > 0 ? r.batKwh + ' kWh' : 'Ingen batteri';
   }
-  // Apply current afgift toggle state to savings and payback
-  const sav = _useAfgift ? r.sav28 : r.sav26;
-  const pb  = _useAfgift ? +(r.total / r.sav28).toFixed(1) : r.payback;
-  document.getElementById('kpi-savings').textContent = sav.toLocaleString('da-DK');
-  document.getElementById('kpi-payback').textContent = '~' + pb;
+  document.getElementById('kpi-savings').textContent = r.sav26.toLocaleString('da-DK');
+  document.getElementById('kpi-savings-2028').textContent = '~' + r.sav28.toLocaleString('da-DK') + ' kr/år fra jan. 2028';
+  document.getElementById('kpi-payback').textContent = '~' + r.payback;
 
   // KPI tiles — update on slider change too
   document.getElementById('sit-prod').textContent   = r.prod.toLocaleString('da-DK');
@@ -2800,7 +2790,7 @@ function rebuildAll() {
     : '';
   document.getElementById('rec-prod-val').textContent = r.prod.toLocaleString('da-DK') + ' kWh/år' + orientSuffix;
   document.getElementById('rec-self-val').textContent = `${r.selfPct}% (${r.selfCons.toLocaleString('da-DK')} kWh/år)`;
-  document.getElementById('rec-sav-val').textContent = sav.toLocaleString('da-DK') + ' kr/år';
+  document.getElementById('rec-sav-val').textContent = r.sav26.toLocaleString('da-DK') + ' kr/år';
 
   // Nye tiles: investering, årsproduktion, selvforsyning, tagudnyttelse
   updateExtraTiles(r);
@@ -2811,7 +2801,7 @@ function rebuildAll() {
   buildFlowChart(r, 'summer');
   buildFlowChart(r, 'winter');
   buildMonthlyChart(r);
-  buildPaybackChart(r, _useAfgift);
+  buildPaybackChart(r, true);
   if (S.hasEV) buildEVHeatmap(r);
   renderVurdering(r);
 
@@ -2880,12 +2870,6 @@ function showResults() {
       ? 'Baseret på estimeret forbrug og typiske danske forbrugskurver'
       : 'Baseret på dit faktiske forbrug og din boligsituation';
   }
-  _useAfgift = false;
-  document.getElementById('kpi-afgift-off').className = 'toggle-opt selected';
-  document.getElementById('kpi-afgift-on').className  = 'toggle-opt';
-  const infoEl = document.getElementById('afgift-info');
-  if (infoEl) infoEl.style.display = 'none';
-
   // KPI strip
   document.getElementById('kpi-kwp').textContent = r.kWp + ' kWp';
   document.getElementById('kpi-kwp-sub').textContent = `~${r.prod.toLocaleString('da-DK')} kWh/år`;
@@ -2899,6 +2883,7 @@ function showResults() {
     document.getElementById('kpi-bat-sub').textContent = 'Anbefales ikke · baseret på dit mønster';
   }
   document.getElementById('kpi-savings').textContent = r.sav26.toLocaleString('da-DK');
+  document.getElementById('kpi-savings-2028').textContent = '~' + r.sav28.toLocaleString('da-DK') + ' kr/år fra jan. 2028';
   document.getElementById('kpi-payback').textContent = '~' + r.payback;
 
   // Top strip + KPI extra tiles
