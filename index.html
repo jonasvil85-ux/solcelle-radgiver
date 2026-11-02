@@ -1278,11 +1278,11 @@ body {
 
     <!-- CHART 2: OPTIMIZED PROFILE -->
     <div class="chart-card">
-      <div class="chart-card-title">Potentiale ved optimering — simuleret dag<span class="chart-info" data-tip="Viser energiflowet på den måned, hvor sol dækker ~50% af dit forbrug — her giver optimering mest. Simulerer 35% lastflytning fra nat (00–05) til soltimer (09–16). Batteri grid-oplader 00–05 og aflader ved dyre aftentimer. Brug det som inspiration til hvornår du bør sætte vaskemaskine, opvaskemaskine og elbil på.">i</span></div>
+      <div class="chart-card-title">Hvad sker der hvis du flytter forbrug til soltimerne?<span class="chart-info" data-tip="Simulerer hvad der sker hvis du rykker 35% af nat- og aftenforbrug (00–05, 21–23) ind i soltimerne (09–16) — fx vaskemaskine, opvaskemaskine og elbil-opladning. Jo mere forbrug du rammer solproduktionen, jo mindre køber du fra nettet. Viser den måned hvor sol dækker ~50% af forbrug, da her er gevinsten størst. Det er ikke prisoptimering baseret på spotpriser — det er solar selvforbrugsoptimering.">i</span></div>
       <div style="display:inline-block;font-size:10.5px;font-weight:600;color:#D97706;background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.30);border-radius:5px;padding:2px 8px;margin-bottom:8px">⚠️ Simulering — viser ikke dit faktiske forbrug</div>
       <div class="chart-card-sub" id="optimalFlowSub"><span style="color:#059669">■</span> Sol direkte · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion · <span id="optimalExtra" style="color:var(--emerald);font-weight:600"></span></div>
       <div style="font-size:11.5px;color:var(--text-3);line-height:1.6;margin:8px 0 12px;padding:10px 12px;background:rgba(5,150,105,0.04);border-radius:6px;border-left:3px solid var(--emerald)">
-        <span id="optimalChartSub"></span> — simulerer 35% lastflytning til soltimerne (09–16). Måneden vælges automatisk som den dag hvor sol dækker ~50% af dit forbrug, da det er her optimering giver størst effekt. Dit <strong style="color:var(--text-2)">faktiske forbrug</strong> ses i graferne for sommer- og vinterdag nedenfor.
+        <span id="optimalChartSub"></span> — simulerer at 35% af dit nat- og aftenforbrug flyttes til soltimerne (09–16). Grå søjler bliver grønne: du køber mindre fra nettet og bruger din egen sol. Dit <strong style="color:var(--text-2)">faktiske forbrug uden optimering</strong> ses i graferne nedenfor.
       </div>
       <div class="chart-wrap" style="height:210px"><canvas id="optimalChart"></canvas></div>
     </div>
