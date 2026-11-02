@@ -1079,7 +1079,7 @@ body {
         <!-- Batteri tilbudspris -->
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <div style="font-size:13px;font-weight:600;min-width:130px;display:flex;align-items:center;gap:5px">💰 Pris batteri
-            <span class="chart-info" data-tip="Estimeret pris inkluderer:&#10;• Lithiumbatteri (typisk LFP)&#10;• Tilslutning til hybridinverter&#10;• El-installation og opsætning&#10;• Konfiguration og idriftsættelse&#10;&#10;Eksempler på markedspriser 2026 (inkl. moms):&#10;5 kWh batteri komplet: 35.000–50.000 kr&#10;10 kWh batteri komplet: 50.000–75.000 kr&#10;&#10;Hardware-only (fx Mikma) koster mindre, men kræver separat montage og el-installation oveni.">i</span>
+            <span class="chart-info" data-tip="Estimeret pris inkluderer:&#10;• Lithiumbatteri (typisk LFP)&#10;• Tilslutning til hybridinverter&#10;• El-installation og opsætning&#10;• Konfiguration og idriftsættelse&#10;&#10;Eksempler på markedspriser 2026 (inkl. moms):&#10;10 kWh batteri komplet: 50.000–70.000 kr&#10;15 kWh batteri komplet: 75.000–95.000 kr&#10;20 kWh batteri komplet: 90.000–140.000 kr&#10;80 kWh er et semi-kommercielt anlæg og koster typisk 280.000–440.000 kr&#10;&#10;Hardware-only (fx Mikma) koster mindre, men kræver separat montage og el-installation oveni.">i</span>
           </div>
           <div style="display:flex;align-items:center;gap:6px">
             <input type="number" id="sliderBatPrice" min="0" max="200000" step="1000"
@@ -2288,10 +2288,10 @@ function estimateSolarCost(kWp) {
 }
 function estimateBatCost(batKwh) {
   if (!batKwh) return 0;
-  // Degressiv pris: stor stordriftsfordel ved høj kapacitet
-  // 3.500 kr/kWh ved 5 kWh → 1.800 kr/kWh ved 80 kWh (gulv)
-  const kwhRate = Math.max(1800, 3500 - batKwh * 25);
-  return Math.round((10000 + batKwh * kwhRate) * 1.25 / 1000) * 1000;
+  // Degressiv pris baseret på dansk marked 2026 (4.500-7.000 kr/kWh installeret)
+  // 6.000 kr/kWh ved 5 kWh → 3.500 kr/kWh ved 80 kWh (gulv)
+  const kwhRate = Math.max(3500, 6500 - batKwh * 35);
+  return Math.round(batKwh * kwhRate / 1000) * 1000;
 }
 
 /* ── RECOMMENDATION ENGINE ── */
