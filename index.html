@@ -1069,9 +1069,9 @@ body {
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <div style="padding:10px 12px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:8px;">
               <div style="font-size:12px;font-weight:700;color:#ef4444;margin-bottom:6px;">❌ Kun arbitrage</div>
-              <div style="font-size:11px;color:var(--text-2);line-height:1.5;margin-bottom:6px;">Lade fra net om natten — bruge om dagen</div>
-              <div style="font-size:10.5px;color:var(--text-3);margin-bottom:4px;">Effektiv gevinst: ~0,80 kr/kWh*</div>
-              <div style="font-size:10.5px;color:var(--text-3);margin-bottom:8px;">Max cykler/år: <span id="econ-arb-cycles">—</span></div>
+              <div style="font-size:11px;color:var(--text-2);line-height:1.5;margin-bottom:6px;">Lade fra net (billigt) — bruge når strøm er dyr</div>
+              <div style="font-size:10.5px;color:var(--text-3);margin-bottom:4px;">Effektiv spread inkl. tariffer: ~1,30 kr/kWh</div>
+              <div style="font-size:10.5px;color:var(--text-3);margin-bottom:8px;" id="econ-arb-limit">Udnyttet: — kWh/år</div>
               <div style="font-size:13px;font-weight:700;color:var(--text-1)" id="econ-arb-annual">—</div>
               <div style="font-size:11px;color:var(--text-3);margin-top:2px;">kr/år</div>
               <div style="font-size:12px;margin-top:8px;">Tilbagebetaling: <span id="econ-arb-years" style="font-weight:700;color:#ef4444">—</span></div>
@@ -1087,8 +1087,9 @@ body {
             </div>
           </div>
           <div style="font-size:11px;color:var(--text-3);margin-top:10px;line-height:1.6;border-top:1px solid var(--border);padding-top:10px;">
-            💡 <strong>Hvorfor er forskellen så stor?</strong> Ved arbitrage betaler du stadig nettarif og PSO når du køber fra net om natten — den reelle prisgevinst er kun ca. 0,80 kr/kWh. Sol-el du gemmer og bruger selv sparer det fulde elpris (~3,50 kr/kWh) sammenlignet med afregningsprisen du ellers ville eksportere til (~0,80 kr/kWh). Det er 3× mere værd per kWh.<br>
-            <span style="font-size:10px;opacity:0.7">* Forudsætter ca. 280 arbitragecykler/år og 90% round-trip-effektivitet. Solscenarie forudsætter ~200 cykler/år begrænset af solproduktion.</span>
+            💡 <strong>Arbitrage virker — men har et loft.</strong> Et stort batteri kan sagtens lade billigt over flere nætter og holde ladningen i dage. Men du kan aldrig spare mere via arbitrage end dit samlede elforbrug. Når batteriet er "stort nok" til at fange alle billige timer, giver et endnu større batteri ikke mere i besparelse — men koster proportionalt mere.<br><br>
+            Sol-selvforbrug er anderledes: her udnytter du sol-el der <em>ellers ville blive eksporteret</em> til lav afregningspris (~0,35 kr/kWh). Hvert kWh du gemmer er typisk 2,65–3,15 kr/kWh mere værd end det alternativ.<br>
+            <span style="font-size:10px;opacity:0.7">Arbitrage forudsætter smart batteri-styring med spotpris-integration, ~220 cykler/år og 90% round-trip-effektivitet. Effektiv spread ~1,30 kr/kWh inkl. tidsvariation i nettarif og moms.</span>
           </div>
           <div id="econ-oversize" style="display:none;margin-top:8px;padding:9px 12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;font-size:11.5px;color:var(--text-2);line-height:1.5;"></div>
         </div>
@@ -2547,10 +2548,15 @@ function updateBatEconomyPanel(batKwh) {
   const batCost = estimateBatCost(batKwh);
   const r = _lastRec;
 
-  // Arbitrage: capped af dagligt forbrug — kan ikke flytte mere end du bruger per dag
-  const dailyCons = (S.annualKwh || 5000) / 365;
-  const arbCyclesMax = batKwh > 0 ? Math.min(280, Math.floor(dailyCons * 0.85 / batKwh * 365)) : 0;
-  const arbAnnual = Math.round(batKwh * 0.90 * 0.80 * Math.max(1, arbCyclesMax));
+  // Arbitrage: ~220 meningsfulde cykler/år med smart styring (multi-dag mulig)
+  // Men loft: du kan ikke spare mere end ~65% af dit samlede forbrug ad arbitrage-vejen
+  const annKwh = S.annualKwh || 5000;
+  const arbKwhRaw = batKwh * 0.90 * 220;
+  const arbKwhCap = annKwh * 0.65;
+  const arbKwhYear = Math.min(arbKwhRaw, arbKwhCap);
+  const arbCapped = arbKwhRaw >= arbKwhCap; // batteriet er "stort nok til at ramme loftet"
+  // Effektiv spread efter alle tariffer (spot-forskel, nettarif tidsvariation, moms): ~1,30 kr/kWh
+  const arbAnnual = Math.round(arbKwhYear * 1.30);
   const arbYears  = Math.round(batCost / arbAnnual);
 
   // Sol selvforbrug: brug faktisk batShift fra rec (allerede capped af soleksport + forbrug)
@@ -2566,7 +2572,10 @@ function updateBatEconomyPanel(batKwh) {
   document.getElementById('econ-bat-cost').textContent   = batCost.toLocaleString('da-DK');
   document.getElementById('econ-arb-annual').textContent = arbAnnual.toLocaleString('da-DK');
   document.getElementById('econ-arb-years').textContent  = arbYears + ' år';
-  document.getElementById('econ-arb-cycles').textContent = Math.max(1, arbCyclesMax);
+  const arbLimitEl = document.getElementById('econ-arb-limit');
+  if (arbLimitEl) arbLimitEl.innerHTML = arbCapped
+    ? `⚠️ Loft nået: max ~${Math.round(arbKwhCap).toLocaleString('da-DK')} kWh/år (dit forbrug sætter grænsen)`
+    : `Udnyttet: ~${Math.round(arbKwhYear).toLocaleString('da-DK')} kWh/år`;
   document.getElementById('econ-sol-annual').textContent = solAnnual.toLocaleString('da-DK');
   document.getElementById('econ-sol-years').textContent  = solYears === 999 ? '—' : solYears + ' år';
   document.getElementById('econ-sol-shift').textContent  = Math.round(actualBatShift).toLocaleString('da-DK');
