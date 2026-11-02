@@ -1123,6 +1123,30 @@ body {
       </div>
     </div>
 
+    <!-- SITUATION TILES: dit forbrug & solproduktion -->
+    <div class="kpi-grid" id="situation-tiles" style="margin-bottom:10px">
+      <div class="kpi-tile" style="background:var(--bg-2)">
+        <div class="kpi-label">⚡ Din elpris</div>
+        <div class="kpi-value" id="sit-price">—</div>
+        <div class="kpi-sub" id="sit-price-sub">kr/kWh gennemsnit</div>
+      </div>
+      <div class="kpi-tile" style="background:var(--bg-2)">
+        <div class="kpi-label">🏠 Dit forbrug</div>
+        <div class="kpi-value" id="sit-kwh">—</div>
+        <div class="kpi-sub">kWh/år</div>
+      </div>
+      <div class="kpi-tile" style="background:var(--bg-2)">
+        <div class="kpi-label">☀️ Solproduktion</div>
+        <div class="kpi-value" id="sit-prod">—</div>
+        <div class="kpi-sub">kWh/år</div>
+      </div>
+      <div class="kpi-tile" style="background:var(--bg-2)">
+        <div class="kpi-label">📤 Salg til net</div>
+        <div class="kpi-value" id="sit-export">—</div>
+        <div class="kpi-sub">kWh/år · ~35 øre/kWh</div>
+      </div>
+    </div>
+
     <!-- KPI STRIP -->
     <div class="kpi-grid">
       <div class="kpi-tile">
@@ -2695,6 +2719,10 @@ function rebuildAll() {
   document.getElementById('kpi-savings').textContent = sav.toLocaleString('da-DK');
   document.getElementById('kpi-payback').textContent = '~' + pb;
 
+  // Situation tiles — update on slider change too
+  document.getElementById('sit-prod').textContent   = r.prod.toLocaleString('da-DK');
+  document.getElementById('sit-export').textContent = r.exported.toLocaleString('da-DK');
+
   document.getElementById('rec-solar-val').textContent = `${r.kWp} kWp · ${r.sysCost.toLocaleString('da-DK')} kr`;
   if (r.batKwh > 0) {
     document.getElementById('rec-battery-val').textContent = `${r.batKwh} kWh · ${r.batCost.toLocaleString('da-DK')} kr`;
@@ -2806,6 +2834,17 @@ function showResults() {
   }
   document.getElementById('kpi-savings').textContent = r.sav26.toLocaleString('da-DK');
   document.getElementById('kpi-payback').textContent = '~' + r.payback;
+
+  // Situation tiles
+  const kwh = S.annualKwh || 0;
+  document.getElementById('sit-price').textContent  = r.buyPrice.toFixed(2).replace('.', ',');
+  document.getElementById('sit-price-sub').textContent =
+    S.spotAvg && S.nettarifAvg ? 'kr/kWh · faktisk vejede pris' :
+    S.annualBill               ? 'kr/kWh · fra din regning'     :
+                                 'kr/kWh · estimeret';
+  document.getElementById('sit-kwh').textContent    = kwh.toLocaleString('da-DK');
+  document.getElementById('sit-prod').textContent   = r.prod.toLocaleString('da-DK');
+  document.getElementById('sit-export').textContent = r.exported.toLocaleString('da-DK');
 
   // Rec card
   document.getElementById('rec-solar-val').textContent = `${r.kWp} kWp · ${r.sysCost.toLocaleString('da-DK')} kr`;
