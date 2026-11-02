@@ -2500,7 +2500,11 @@ function calcRec() {
   const sysCost = S.overrideSolarCost !== null ? S.overrideSolarCost : estimateSolarCost(kWp);
   const batCost = S.overrideBatCost  !== null ? S.overrideBatCost  : estimateBatCost(batKwh);
   const total   = sysCost + batCost;
-  const payback = +(total / sav26).toFixed(1);
+  // Payback with 4%/yr growth: find n where sum(sav26 * 1.04^(y-1), y=1..n) >= total
+  // Closed form: n = log(1 + 0.04 * total/sav26) / log(1.04)
+  const payback = sav26 > 0
+    ? +(Math.log(1 + 0.04 * total / sav26) / Math.log(1.04)).toFixed(1)
+    : 999;
 
   return { kWp, batKwh, prod, selfCons, exported, selfPct, sav26, sav28, afgift, sysCost, batCost, total, payback, irr, orientFactor, monthlyProd, buyPrice, baseself, baseexp };
 }
