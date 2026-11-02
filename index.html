@@ -1064,34 +1064,31 @@ body {
 
         <!-- Batteri økonomi sammenligning -->
         <div id="batEconPanel" style="display:none;margin-top:4px;padding:14px 16px;background:rgba(99,102,241,0.04);border:1px solid rgba(99,102,241,0.15);border-radius:10px;">
-          <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--text-1)">⚡ Hvad giver batteriet — og hvad giver det ikke?</div>
-          <div style="font-size:11.5px;color:var(--text-2);margin-bottom:12px;">For et <strong id="econ-bat-size">—</strong> batteri til ca. <strong id="econ-bat-cost">—</strong> kr</div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--text-1)">Er et batteri rentabelt? To scenarier sammenlignet</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <div style="padding:10px 12px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:8px;">
-              <div style="font-size:12px;font-weight:700;color:#ef4444;margin-bottom:6px;">❌ Kun arbitrage</div>
-              <div style="font-size:11px;color:var(--text-2);line-height:1.5;margin-bottom:6px;">Lade fra net (billigt) — bruge når strøm er dyr</div>
-              <div style="font-size:10.5px;color:var(--text-3);margin-bottom:4px;">Effektiv spread inkl. tariffer: ~1,30 kr/kWh</div>
-              <div style="font-size:10.5px;color:var(--text-3);margin-bottom:8px;" id="econ-arb-limit">Udnyttet: — kWh/år</div>
-              <div style="font-size:13px;font-weight:700;color:var(--text-1)" id="econ-arb-annual">—</div>
-              <div style="font-size:11px;color:var(--text-3);margin-top:2px;">kr/år</div>
-              <div style="font-size:12px;margin-top:8px;">Tilbagebetaling: <span id="econ-arb-years" style="font-weight:700;color:#ef4444">—</span></div>
+              <div style="font-size:12px;font-weight:700;color:#ef4444;margin-bottom:8px;">⚡ Kun batteri (arbitrage)</div>
+              <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">Køb batteri — ingen solceller. Lad op når strøm er billig, brug når dyr.</div>
+              <div style="font-size:11px;color:var(--text-2);margin-bottom:2px;">Investering</div>
+              <div style="font-size:14px;font-weight:700;color:var(--text-1);margin-bottom:8px;"><span id="econ-arb-cost">—</span> kr</div>
+              <div style="font-size:11px;color:var(--text-2);margin-bottom:2px;">Årsbesparelse</div>
+              <div style="font-size:14px;font-weight:700;color:var(--text-1);margin-bottom:8px;"><span id="econ-arb-annual">—</span> kr/år</div>
+              <div style="font-size:12px;padding:6px 8px;background:rgba(239,68,68,0.1);border-radius:6px;">Break-even: <span id="econ-arb-years" style="font-weight:700">—</span></div>
             </div>
             <div style="padding:10px 12px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:8px;">
-              <div style="font-size:12px;font-weight:700;color:#059669;margin-bottom:6px;">✅ Sol + batteri</div>
-              <div style="font-size:11px;color:var(--text-2);line-height:1.5;margin-bottom:6px;">Gemme sol-el til aftenbrug i stedet for at eksportere</div>
-              <div style="font-size:10.5px;color:var(--text-3);margin-bottom:4px;">Effektiv gevinst: ~2,70 kr/kWh</div>
-              <div style="font-size:10.5px;color:var(--text-3);margin-bottom:8px;">Faktisk udnyttet: <span id="econ-sol-shift">—</span> kWh/år</div>
-              <div style="font-size:13px;font-weight:700;color:var(--text-1)" id="econ-sol-annual">—</div>
-              <div style="font-size:11px;color:var(--text-3);margin-top:2px;">kr/år</div>
-              <div style="font-size:12px;margin-top:8px;">Tilbagebetaling: <span id="econ-sol-years" style="font-weight:700;color:#059669">—</span></div>
+              <div style="font-size:12px;font-weight:700;color:#059669;margin-bottom:8px;">☀️ Sol + batteri (dit valg)</div>
+              <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">Solceller + batteri. Producér, gem og brug din egen strøm.</div>
+              <div style="font-size:11px;color:var(--text-2);margin-bottom:2px;">Investering</div>
+              <div style="font-size:14px;font-weight:700;color:var(--text-1);margin-bottom:8px;"><span id="econ-sol-cost">—</span> kr</div>
+              <div style="font-size:11px;color:var(--text-2);margin-bottom:2px;">Årsbesparelse</div>
+              <div style="font-size:14px;font-weight:700;color:var(--text-1);margin-bottom:8px;"><span id="econ-sol-annual">—</span> kr/år</div>
+              <div style="font-size:12px;padding:6px 8px;background:rgba(16,185,129,0.1);border-radius:6px;">Break-even: <span id="econ-sol-years" style="font-weight:700;color:#059669">—</span></div>
             </div>
           </div>
-          <div style="font-size:11px;color:var(--text-3);margin-top:10px;line-height:1.6;border-top:1px solid var(--border);padding-top:10px;">
-            💡 <strong>Arbitrage virker — men har et loft.</strong> Et stort batteri kan sagtens lade billigt over flere nætter og holde ladningen i dage. Men du kan aldrig spare mere via arbitrage end dit samlede elforbrug. Når batteriet er "stort nok" til at fange alle billige timer, giver et endnu større batteri ikke mere i besparelse — men koster proportionalt mere.<br><br>
-            Sol-selvforbrug er anderledes: her udnytter du sol-el der <em>ellers ville blive eksporteret</em> til lav afregningspris (~0,35 kr/kWh). Hvert kWh du gemmer er typisk 2,65–3,15 kr/kWh mere værd end det alternativ.<br>
-            <span style="font-size:10px;opacity:0.7">Arbitrage forudsætter smart batteri-styring med spotpris-integration, ~220 cykler/år og 90% round-trip-effektivitet. Effektiv spread ~1,30 kr/kWh inkl. tidsvariation i nettarif og moms.</span>
-          </div>
           <div id="econ-oversize" style="display:none;margin-top:8px;padding:9px 12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;font-size:11.5px;color:var(--text-2);line-height:1.5;"></div>
+          <div style="font-size:10.5px;color:var(--text-3);margin-top:8px;line-height:1.5;">
+            Arbitrage: ~220 cykler/år med smart styring, 1,30 kr/kWh effektiv spread (inkl. tariffer og moms), loft sat af dit elforbrug. Sol + batteri: samme tal som break-even-visningen ovenfor.
+          </div>
         </div>
 
         <!-- Solcelle tilbudspris -->
@@ -2559,26 +2556,17 @@ function updateBatEconomyPanel(batKwh) {
   const arbAnnual = Math.round(arbKwhYear * 1.30);
   const arbYears  = Math.round(batCost / arbAnnual);
 
-  // Sol selvforbrug: brug faktisk batShift fra rec (allerede capped af soleksport + forbrug)
-  // Marginal gevinst per kWh ≈ elpris - afregningspris
-  const actualBatShift = r && r.baseself !== undefined
-    ? Math.max(0, r.selfCons - r.baseself)
-    : batKwh * 0.45 * 200; // fallback hvis rec ikke klar
-  const valuePerKwh = r ? Math.max(0, (r.buyPrice || 3.0) - 0.35) : 2.65;
-  const solAnnual = Math.round(actualBatShift * valuePerKwh);
-  const solYears  = solAnnual > 0 ? Math.round(batCost / solAnnual) : 999;
+  // Sol + batteri: brug totaltal fra rec (samme som KPI-strippen)
+  const solTotal  = r ? r.total  : null;
+  const solAnnual = r ? r.sav26  : null;
+  const solYears  = r ? r.payback : null;
 
-  document.getElementById('econ-bat-size').textContent   = batKwh + ' kWh';
-  document.getElementById('econ-bat-cost').textContent   = batCost.toLocaleString('da-DK');
+  document.getElementById('econ-arb-cost').textContent   = batCost.toLocaleString('da-DK');
   document.getElementById('econ-arb-annual').textContent = arbAnnual.toLocaleString('da-DK');
   document.getElementById('econ-arb-years').textContent  = arbYears + ' år';
-  const arbLimitEl = document.getElementById('econ-arb-limit');
-  if (arbLimitEl) arbLimitEl.innerHTML = arbCapped
-    ? `⚠️ Loft nået: max ~${Math.round(arbKwhCap).toLocaleString('da-DK')} kWh/år (dit forbrug sætter grænsen)`
-    : `Udnyttet: ~${Math.round(arbKwhYear).toLocaleString('da-DK')} kWh/år`;
-  document.getElementById('econ-sol-annual').textContent = solAnnual.toLocaleString('da-DK');
-  document.getElementById('econ-sol-years').textContent  = solYears === 999 ? '—' : solYears + ' år';
-  document.getElementById('econ-sol-shift').textContent  = Math.round(actualBatShift).toLocaleString('da-DK');
+  document.getElementById('econ-sol-cost').textContent   = solTotal ? solTotal.toLocaleString('da-DK') : '—';
+  document.getElementById('econ-sol-annual').textContent = solAnnual ? solAnnual.toLocaleString('da-DK') : '—';
+  document.getElementById('econ-sol-years').textContent  = solYears ? solYears.toFixed(1) + ' år' : '—';
 
   // Vis "oversized battery" advarsel baseret på faktisk solar+forbrug profil
   const overEl = document.getElementById('econ-oversize');
