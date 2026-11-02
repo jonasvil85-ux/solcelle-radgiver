@@ -1065,7 +1065,7 @@ body {
         <!-- Solcelle tilbudspris -->
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <div style="font-size:13px;font-weight:600;min-width:130px;display:flex;align-items:center;gap:5px">💰 Pris solceller
-            <span class="chart-info" data-tip="Estimeret pris inkluderer:&#10;• Solpaneler&#10;• Hybridinverter&#10;• Monteringssystem til tag&#10;• El-installation og tilmelding til net&#10;• Opstartsvejledning&#10;&#10;Eksempler på markedspriser 2026 (inkl. moms):&#10;6 kWp komplet: 75.000–95.000 kr&#10;10 kWp komplet: 95.000–130.000 kr&#10;&#10;Hardware-only (fx Mikma) er billigere, men kræver separat autoriseret elektriker til montering og el-installation (typisk +20.000–35.000 kr).">i</span>
+            <span class="chart-info" data-tip="Estimeret pris inkluderer:&#10;• Solpaneler&#10;• Hybridinverter&#10;• Monteringssystem til tag&#10;• El-installation og tilmelding til net&#10;• Opstartsvejledning&#10;&#10;Eksempler på markedspriser 2026 (inkl. moms):&#10;6 kWp komplet: 75.000–95.000 kr&#10;10 kWp komplet: 95.000–130.000 kr&#10;&#10;Hardware-only uden montering er billigere, men kræver separat autoriseret elektriker til montering og el-installation (typisk +20.000–35.000 kr).">i</span>
           </div>
           <div style="display:flex;align-items:center;gap:6px">
             <input type="number" id="sliderSolarPrice" min="10000" max="400000" step="1000"
@@ -1079,7 +1079,7 @@ body {
         <!-- Batteri tilbudspris -->
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <div style="font-size:13px;font-weight:600;min-width:130px;display:flex;align-items:center;gap:5px">💰 Pris batteri
-            <span class="chart-info" data-tip="Estimeret pris inkluderer:&#10;• Lithiumbatteri (typisk LFP)&#10;• Tilslutning til hybridinverter&#10;• El-installation og opsætning&#10;• Konfiguration og idriftsættelse&#10;&#10;Eksempler på markedspriser 2026 (inkl. moms):&#10;10 kWh batteri komplet: 50.000–70.000 kr&#10;15 kWh batteri komplet: 75.000–95.000 kr&#10;20 kWh batteri komplet: 90.000–140.000 kr&#10;80 kWh er et semi-kommercielt anlæg og koster typisk 280.000–440.000 kr&#10;&#10;Hardware-only (fx Mikma) koster mindre, men kræver separat montage og el-installation oveni.">i</span>
+            <span class="chart-info" data-tip="Estimeret pris inkluderer:&#10;• Lithiumbatteri (typisk LFP)&#10;• Tilslutning til hybridinverter&#10;• El-installation og opsætning&#10;• Konfiguration og idriftsættelse&#10;&#10;Eksempler på markedspriser 2026 (inkl. moms):&#10;10 kWh batteri komplet: 50.000–70.000 kr&#10;15 kWh batteri komplet: 75.000–95.000 kr&#10;20 kWh batteri komplet: 90.000–140.000 kr&#10;80 kWh er et semi-kommercielt anlæg og koster typisk 280.000–440.000 kr&#10;&#10;Hardware-only koster mindre, men kræver separat montage og el-installation oveni.">i</span>
           </div>
           <div style="display:flex;align-items:center;gap:6px">
             <input type="number" id="sliderBatPrice" min="0" max="200000" step="1000"
@@ -2282,9 +2282,9 @@ function getIrradiance(zip) {
 // Base installation cost (inverter, scaffolding, electrician, permits) is fixed
 // regardless of system size, making small systems cost more per kWp.
 function estimateSolarCost(kWp) {
-  // excl. moms: 30 000 kr base (inverter, montage, el-installation) + 6 500 kr/kWp; incl. 25% moms
-  // Svarer til ca. 10.000-14.000 kr/kWp inkl. moms — midten af dansk marked 2026
-  return Math.round((30000 + kWp * 6500) * 1.25 / 1000) * 1000;
+  // excl. moms: 18 000 kr base (inverter, montage, el-installation) + 5 500 kr/kWp; incl. 25% moms
+  // Svarer til ca. 8.500-12.000 kr/kWp inkl. moms — dansk marked 2026
+  return Math.round((18000 + kWp * 5500) * 1.25 / 1000) * 1000;
 }
 function estimateBatCost(batKwh) {
   if (!batKwh) return 0;
