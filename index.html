@@ -580,8 +580,8 @@ body {
 }
 .chart-info::after {
   content: attr(data-tip);
-  position:absolute; bottom:calc(100% + 8px); left:0;
-  transform:none; white-space:pre-wrap; width:270px;
+  position:absolute; top:calc(100% + 8px); right:0; left:auto;
+  white-space:pre-wrap; width:270px;
   background:var(--surface-2,#0f172a); color:var(--text-1);
   font-size:11px; font-weight:400; line-height:1.55;
   padding:9px 11px; border-radius:9px;
@@ -589,7 +589,8 @@ body {
   pointer-events:none; opacity:0; transition:opacity 0.15s;
   z-index:200; text-align:left; letter-spacing:0;
 }
-.chart-info:hover::after { opacity:1; }
+.chart-info:hover::after,
+.chart-info:focus::after { opacity:1; }
 .chart-wrap { position: relative; }
 
 /* RESULT HEADER */
@@ -771,7 +772,7 @@ body {
           <div id="ev-details" class="ev-details hidden">
             <div class="field-row">
               <div class="field">
-                <label>Km/år med elbilen</label>
+                <label>Km/år med elbil 1</label>
                 <input type="text" id="evKm" value="15000" inputmode="numeric" oninput="updateEvEst()">
                 <div class="ev-est" id="ev-kwh-est">≈ 3.000 kWh/år</div>
               </div>
@@ -782,6 +783,47 @@ body {
                   <div class="toggle-opt" id="opt-evaway" onclick="selectEvHome(false)">Nej, ude/arbejde</div>
                 </div>
               </div>
+            </div>
+            <div id="ev2-add-row" style="margin-top:10px">
+              <button type="button" id="ev2-add-btn" onclick="addSecondCar()" style="background:none;border:1px dashed var(--border);border-radius:8px;width:100%;padding:8px 12px;color:var(--text-3);font-size:12.5px;cursor:pointer;font-family:inherit;text-align:left">+ Tilføj endnu en elbil</button>
+            </div>
+            <div id="ev2-details" class="hidden" style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(16,185,129,0.18)">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <span style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em">Elbil 2</span>
+                <button type="button" onclick="removeSecondCar()" style="background:none;border:none;color:var(--text-3);font-size:12px;cursor:pointer;padding:2px 6px;border-radius:4px;font-family:inherit">✕ Fjern</button>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label>Km/år med elbil 2</label>
+                  <input type="text" id="ev2Km" value="15000" inputmode="numeric" oninput="updateEv2Est()">
+                  <div class="ev-est" id="ev2-kwh-est">≈ 3.000 kWh/år</div>
+                </div>
+                <div class="field">
+                  <label>Lader primært hjemme?</label>
+                  <div class="toggle-group">
+                    <div class="toggle-opt selected" id="opt-ev2home" onclick="selectEv2Home(true)">Ja, hjemme</div>
+                    <div class="toggle-opt" id="opt-ev2away" onclick="selectEv2Home(false)">Nej, ude/arbejde</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <label class="check-item" id="ci-hybrid" onclick="toggleCheck('hybrid')">
+            <div class="check-box">
+              <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                <path d="M1 4l3 3 5-6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="check-label">
+              <strong>Plugin-hybrid</strong>
+              <span>Bil der kan lades elektrisk</span>
+            </div>
+          </label>
+          <div id="hybrid-details" class="ev-details hidden">
+            <div class="field">
+              <label>kWh brugt til hjemmeladning pr. år</label>
+              <input type="text" id="hybridKwh" value="500" inputmode="numeric" oninput="updateHybridEst()">
+              <div class="ev-est" id="hybrid-kwh-est">≈ 500 kWh/år</div>
             </div>
           </div>
           <label class="check-item" id="ci-hp" onclick="toggleCheck('hp')">
@@ -1274,7 +1316,7 @@ const NETTARIF = {
 const ELAGIFT = 0.008; // ~0,8 øre/kWh resterende el-afgift 2025/2026 (eks. moms)
 
 /* ── STATE ── */
-const S = { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, hasHO:false, hasPool:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, nettarifAvg:null, actualSpotCost:null, actualNettarif:null, priceArea:null, dsoGLN:null, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, ejertidYr:15, financing:'cash', loanRate:4.0 };
+const S = { zipcode:'', address:'', roofOrientation:'S', roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasEV2:false, hasHP:false, hasHO:false, hasPool:false, hasHybrid:false, evKm:15000, ev2Km:15000, evChargesHome:true, ev2ChargesHome:true, hybridKwh:500, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, annualBill:null, effectiveKwhPrice:2.70, spotAvg:null, nettarifAvg:null, actualSpotCost:null, actualNettarif:null, priceArea:null, dsoGLN:null, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, ejertidYr:15, financing:'cash', loanRate:4.0 };
 let charts = {};
 let _lastRec = null;
 let _origRec = null;
@@ -1418,10 +1460,46 @@ function toggleCheck(key) {
     S.hasEV = !S.hasEV;
     document.getElementById('ci-ev').className = 'check-item' + (S.hasEV ? ' checked' : '');
     document.getElementById('ev-details').className = S.hasEV ? 'ev-details' : 'ev-details hidden';
+    if (!S.hasEV) { S.hasEV2 = false; document.getElementById('ev2-details').className = 'ev-details hidden'; document.getElementById('ev2-add-btn').style.display = ''; }
     updateEvEst();
   }
-  if (key === 'hp')   { S.hasHP   = !S.hasHP;   document.getElementById('ci-hp').className   = 'check-item' + (S.hasHP   ? ' checked' : ''); }
+  if (key === 'hp')     { S.hasHP     = !S.hasHP;     document.getElementById('ci-hp').className     = 'check-item' + (S.hasHP     ? ' checked' : ''); }
+  if (key === 'hybrid') {
+    S.hasHybrid = !S.hasHybrid;
+    document.getElementById('ci-hybrid').className = 'check-item' + (S.hasHybrid ? ' checked' : '');
+    document.getElementById('hybrid-details').className = S.hasHybrid ? 'ev-details' : 'ev-details hidden';
+    updateHybridEst();
+  }
+}
 
+function addSecondCar() {
+  S.hasEV2 = true;
+  document.getElementById('ev2-details').className = 'ev-details';
+  document.getElementById('ev2-add-btn').style.display = 'none';
+  updateEv2Est();
+}
+
+function removeSecondCar() {
+  S.hasEV2 = false;
+  document.getElementById('ev2-details').className = 'ev-details hidden';
+  document.getElementById('ev2-add-btn').style.display = '';
+}
+
+function selectEv2Home(val) {
+  S.ev2ChargesHome = val;
+  document.getElementById('opt-ev2home').className = 'toggle-opt' + (val ? ' selected' : '');
+  document.getElementById('opt-ev2away').className = 'toggle-opt' + (!val ? ' selected' : '');
+}
+
+function updateEv2Est() {
+  S.ev2Km = parseInt(document.getElementById('ev2Km').value) || 15000;
+  const kwh = Math.round(S.ev2Km * 0.20);
+  document.getElementById('ev2-kwh-est').textContent = '≈ ' + kwh.toLocaleString('da-DK') + ' kWh/år';
+}
+
+function updateHybridEst() {
+  S.hybridKwh = parseInt(document.getElementById('hybridKwh').value) || 500;
+  document.getElementById('hybrid-kwh-est').textContent = '≈ ' + S.hybridKwh.toLocaleString('da-DK') + ' kWh/år';
 }
 
 function setAfgift(on) {
@@ -1932,7 +2010,7 @@ function goStep2() {
 
 function restart() {
   hide('step3');
-  Object.assign(S, { zipcode:'', address:'', roofOrientation:'S', roofOrientFactor:null, roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasHP:false, evKm:15000, evChargesHome:true, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, _manualKwh:false });
+  Object.assign(S, { zipcode:'', address:'', roofOrientation:'S', roofOrientFactor:null, roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasEV2:false, hasHP:false, hasHybrid:false, evKm:15000, ev2Km:15000, evChargesHome:true, ev2ChargesHome:true, hybridKwh:500, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, _manualKwh:false });
 
   const cf = document.getElementById('compassField'); if (cf) cf.style.display = '';
   const rp = document.getElementById('roofPresets'); if (rp) rp.style.display = '';
@@ -1950,6 +2028,14 @@ function restart() {
   document.getElementById('opt-renter').className = 'toggle-opt';
   document.getElementById('ci-ev').className = 'check-item';
   document.getElementById('ci-hp').className = 'check-item';
+  document.getElementById('ci-hybrid').className = 'check-item';
+  document.getElementById('hybrid-details').className = 'ev-details hidden';
+  document.getElementById('hybridKwh').value = '500';
+  document.getElementById('ev2-details').className = 'ev-details hidden';
+  document.getElementById('ev2Km').value = '15000';
+  document.getElementById('ev2-add-btn').style.display = '';
+  document.getElementById('opt-ev2home').className = 'toggle-opt selected';
+  document.getElementById('opt-ev2away').className = 'toggle-opt';
   document.getElementById('zipcode').value = '';
   document.getElementById('addrInput').value = '';
   document.getElementById('addrConfirmed').style.display = 'none';
@@ -2172,8 +2258,10 @@ function calcRec() {
   const irr = getIrradiance(S.zipcode);
   const kwh = S.annualKwh;
 
-  const evKwhTotal = S.hasEV ? S.evKm * 0.20 : 0;
-  const evKwhHome  = S.hasEV ? evKwhTotal * (S.evChargesHome ? 0.85 : 0.12) : 0;
+  const evKwhTotal = (S.hasEV ? S.evKm * 0.20 : 0) + (S.hasEV2 ? S.ev2Km * 0.20 : 0) + (S.hasHybrid ? S.hybridKwh : 0);
+  const evKwhHome  = (S.hasEV ? S.evKm * 0.20 * (S.evChargesHome ? 0.85 : 0.12) : 0)
+                   + (S.hasEV2 ? S.ev2Km * 0.20 * (S.ev2ChargesHome ? 0.85 : 0.12) : 0)
+                   + (S.hasHybrid ? S.hybridKwh : 0);
 
   // Hourly consumption fractions (normalized — works whether profile is daily or annual totals)
   const profRaw  = S.hourlyProfile || new Array(24).fill(1);
@@ -2309,7 +2397,7 @@ function calcRec() {
   const annualCost = S.annualBill || (S.annualKwh && buyPrice ? Math.round(S.annualKwh * buyPrice) : null);
   const sav26Raw   = selfConsValue + exported * sellPrice;
   const sav26      = Math.round(annualCost ? Math.min(sav26Raw, annualCost * 0.88) : sav26Raw);
-  const houseShare = S.hasEV ? Math.max(0, (kwh - evKwhHome) / kwh) : 1.0;
+  const houseShare = (S.hasEV || S.hasEV2 || S.hasHybrid) ? Math.max(0, (kwh - evKwhHome) / kwh) : 1.0;
   const afgift     = Math.round(selfCons * houseShare * 0.76);
   const sav28      = sav26 + afgift;
 
@@ -2517,7 +2605,9 @@ function estimateRoofFromConsumption() {
   const kwh = S.annualKwh;
   if (!kwh) return;
   // Fratræk EV og varmepumpe-estimat
-  const evKwh  = S.hasEV  ? S.evKm * 0.20 * (S.evChargesHome ? 0.85 : 0.12) : 0;
+  const evKwh  = (S.hasEV  ? S.evKm  * 0.20 * (S.evChargesHome  ? 0.85 : 0.12) : 0)
+              + (S.hasEV2 ? S.ev2Km * 0.20 * (S.ev2ChargesHome ? 0.85 : 0.12) : 0)
+              + (S.hasHybrid ? S.hybridKwh : 0);
   const hpKwh  = S.hasHP  ? Math.min(kwh * 0.55, 12000) : 0;
   const netKwh = Math.max(1500, kwh - evKwh - hpKwh);
   // ~30 kWh/m² for husholdningsapparater + lys i dansk villa
@@ -2637,6 +2727,9 @@ function showResults() {
   const notes = [];
   if (S.hasEV && S.evChargesHome) notes.push(`Elbil (${S.evKm.toLocaleString('da-DK')} km/år · ~${Math.round(S.evKm * 0.20).toLocaleString('da-DK')} kWh/år): lad i dagstimerne om sommeren fra solenergi og om natten om vinteren på billig natarif.`);
   if (S.hasEV && !S.evChargesHome) notes.push(`Elbil (${S.evKm.toLocaleString('da-DK')} km/år): da du primært lader ude, bidrager elbilen minimalt til dit hjemmeforbrug — solanlægget er dimensioneret efter husforbruget.`);
+  if (S.hasEV2 && S.ev2ChargesHome) notes.push(`Elbil 2 (~${Math.round(S.ev2Km * 0.20).toLocaleString('da-DK')} kWh/år): medregnet i dimensioneringen — lad begge biler i dagstimer om sommeren.`);
+  if (S.hasEV2 && !S.ev2ChargesHome) notes.push(`Elbil 2 (${S.ev2Km.toLocaleString('da-DK')} km/år): primært ladning ude — minimal effekt på hjemmeforbruget.`);
+  if (S.hasHybrid) notes.push(`Plugin-hybrid (~${S.hybridKwh.toLocaleString('da-DK')} kWh/år til hjemmeladning): medregnet i solanlæggets dimensionering.`);
   if (S.hasHP)   notes.push('Varmepumpe: stor del af forbruget er om vinteren — sol hjælper primært maj–september.');
   if (!S.isOwner) notes.push('Husk at indhente udlejers tilladelse inden installation.');
   document.getElementById('rec-note').textContent = notes.join(' ');
