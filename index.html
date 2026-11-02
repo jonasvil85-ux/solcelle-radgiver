@@ -2288,8 +2288,10 @@ function estimateSolarCost(kWp) {
 }
 function estimateBatCost(batKwh) {
   if (!batKwh) return 0;
-  // excl. moms: 8 000 kr hybrid-inverter tilslutning + 3 000 kr/kWh; incl. 25% moms
-  return Math.round((8000 + batKwh * 3000) * 1.25 / 1000) * 1000;
+  // Degressiv pris: stor stordriftsfordel ved høj kapacitet
+  // 3.500 kr/kWh ved 5 kWh → 1.800 kr/kWh ved 80 kWh (gulv)
+  const kwhRate = Math.max(1800, 3500 - batKwh * 25);
+  return Math.round((10000 + batKwh * kwhRate) * 1.25 / 1000) * 1000;
 }
 
 /* ── RECOMMENDATION ENGINE ── */
