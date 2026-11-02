@@ -1273,8 +1273,8 @@ body {
 
     <!-- PAYBACK CHART -->
     <div class="chart-card">
-      <div class="chart-card-title">Hvornår har du tjent anlægget hjem?<span class="chart-info" data-tip="Kumulativ økonomi over 25 år. År 0 = din samlede investering (solcelle + batteri inkl. moms). Hvert år trækkes årsbesparelse fra: selvforbrug × elpris + eksport × 35 øre/kWh. Besparelsen begrænses til 88% af din nuværende elregning for at undgå overestimering.">i</span></div>
-      <div class="chart-card-sub">Kumulativ økonomi over 25 år · Grøn: med el-afgift 2028</div>
+      <div class="chart-card-title">Hvornår har du tjent anlægget hjem?<span class="chart-info" data-tip="Kumulativ økonomi over 30 år. År 0 = din samlede investering. Hvert år lægges årsbesparelse til med 4%/år elprisvækst. Boligværdistigning er ikke medregnet her — den vises separat i vurderingspanelet.">i</span></div>
+      <div class="chart-card-sub">Kumulativ økonomi over 30 år · 4 %/år elprisvækst · Boligværdi ikke inkluderet</div>
       <div class="chart-wrap" style="height:200px"><canvas id="paybackChart"></canvas></div>
     </div>
 
@@ -1492,7 +1492,7 @@ function calcVurdering(r) {
     lines.push(`Din planlagte ejertid på ${ejertid} år er kortere end tilbagebetalingstiden på ~${payback} år. Solceller øger dog typisk boligens salgsværdi med ca. ${fmt(husPris)} kr (60% af anlægsprisen), hvilket delvist opvejer dette.`);
   }
 
-  lines.push(`Over ${ejertid} år estimeres en samlet elbesparelse på ca. ${fmt(cumSav)} kr — baseret på din nuværende årsbesparelse på ${fmt(sav26)} kr og en forventet elprisstigning på 4%/år. Kombineret med boligværdistigningen giver det et estimeret nettoresultat på ${netResult >= 0 ? '+' : ''}${fmt(netResult)} kr efter fradrag af selve investeringen${S.financing==='loan' ? ` og låneomkostninger på ca. ${fmt(loanCost)} kr` : ''}.`);
+  lines.push(`Over ${ejertid} år estimeres en samlet elbesparelse på ca. ${fmt(cumSav)} kr (årsbesparelse ${fmt(sav26)} kr × 4%/år elprisvækst). Hertil kommer en anslået boligværdistigning på ca. ${fmt(husPris)} kr (60% af anlægsprisen, dansk markedsestimat). Fratrukket investeringen${S.financing==='loan' ? ` og låneomkostninger på ca. ${fmt(loanCost)} kr` : ''} giver det et estimeret nettoresultat på ${netResult >= 0 ? '+' : ''}${fmt(netResult)} kr.`);
 
   if (S.hasEV) {
     lines.push(`Din elbil styrker investeringen: selvom afgiftsrefusionen reducerer afgiftsbesparelsen en smule, lader du billigst om sommeren direkte fra solen og sparer på ladning fra nettet.`);
@@ -3056,14 +3056,15 @@ function buildPaybackChart(r, withAfgift) {
   const INV = r.total;
   const BASE26 = r.sav26;
   const BASE28 = r.sav28;
-  const DEG = 0.005; const N = 26;
+  const GROWTH = 0.04; const N = 31;
   const AFGIFT_YR = 3;
 
   function cumul(useAfgift) {
     const a = [-INV];
     for (let y=1; y<N; y++) {
-      const sav = useAfgift && y>=AFGIFT_YR ? BASE28 : BASE26;
-      a.push(Math.round(a[a.length-1] + sav * Math.pow(1-DEG, y-1)));
+      const base = useAfgift && y>=AFGIFT_YR ? BASE28 : BASE26;
+      const sav  = base * Math.pow(1 + GROWTH, y - 1);
+      a.push(Math.round(a[a.length-1] + sav));
     }
     return a;
   }
