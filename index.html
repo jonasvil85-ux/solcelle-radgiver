@@ -1054,14 +1054,9 @@ body {
         <!-- Batteri -->
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <div style="font-size:13px;font-weight:600;min-width:130px">🔋 Batteri</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <span class="toggle-opt" id="bat0"  onclick="onSliderBat(0)">Ingen</span>
-            <span class="toggle-opt" id="bat5"  onclick="onSliderBat(5)">5 kWh</span>
-            <span class="toggle-opt" id="bat10" onclick="onSliderBat(10)">10 kWh</span>
-            <span class="toggle-opt" id="bat15" onclick="onSliderBat(15)">15 kWh</span>
-            <span class="toggle-opt" id="bat20" onclick="onSliderBat(20)">20 kWh</span>
-            <span class="toggle-opt" id="bat30" onclick="onSliderBat(30)">30 kWh</span>
-            <span class="toggle-opt" id="bat40" onclick="onSliderBat(40)">40 kWh</span>
+          <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:160px">
+            <input type="range" id="sliderBat" min="0" max="80" step="5" style="flex:1;accent-color:#059669;cursor:pointer" oninput="onSliderBat(parseInt(this.value))">
+            <span id="sliderBatVal" style="font-size:13px;font-weight:700;color:var(--emerald);min-width:52px;text-align:right">—</span>
           </div>
         </div>
         <div id="batWarning" style="display:none;font-size:11.5px;line-height:1.6;padding:10px 13px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;color:var(--text-2);"></div>
@@ -2428,11 +2423,11 @@ function initSliders(r) {
   kwpEl.value = r.kWp;
   document.getElementById('sliderKwpVal').textContent = r.kWp + ' kWp';
 
-  // Batteri-knapper
-  [0,5,10,15,20].forEach(v => {
-    const el = document.getElementById('bat' + v);
-    if (el) el.className = 'toggle-opt' + (v === r.batKwh ? ' selected' : '');
-  });
+  // Batteri-slider
+  const batSlider = document.getElementById('sliderBat');
+  if (batSlider) batSlider.value = r.batKwh;
+  const batValEl = document.getElementById('sliderBatVal');
+  if (batValEl) batValEl.textContent = r.batKwh > 0 ? r.batKwh + ' kWh' : 'Ingen';
 
   // Estimerede priser som placeholders
   const estSolar = estimateSolarCost(r.kWp);
@@ -2469,10 +2464,8 @@ function onSliderKwp(v) {
 
 function onSliderBat(v) {
   S.overrideBatKwh = v;
-  [0,5,10,15,20,30,40].forEach(b => {
-    const el = document.getElementById('bat' + b);
-    if (el) el.className = 'toggle-opt' + (b === v ? ' selected' : '');
-  });
+  const batValEl = document.getElementById('sliderBatVal');
+  if (batValEl) batValEl.textContent = v > 0 ? v + ' kWh' : 'Ingen';
   rebuildAll();
   updateBatWarning(v);
 }
