@@ -1088,6 +1088,7 @@ body {
             💡 <strong>Hvorfor er forskellen så stor?</strong> Ved arbitrage betaler du stadig nettarif og PSO når du køber fra net om natten — den reelle prisgevinst er kun ca. 0,80 kr/kWh. Sol-el du gemmer og bruger selv sparer det fulde elpris (~3,50 kr/kWh) sammenlignet med afregningsprisen du ellers ville eksportere til (~0,80 kr/kWh). Det er 3× mere værd per kWh.<br>
             <span style="font-size:10px;opacity:0.7">* Forudsætter ca. 280 arbitragecykler/år og 90% round-trip-effektivitet. Solscenarie forudsætter ~200 cykler/år begrænset af solproduktion.</span>
           </div>
+          <div id="econ-oversize" style="display:none;margin-top:8px;padding:9px 12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;font-size:11.5px;color:var(--text-2);line-height:1.5;"></div>
         </div>
 
         <!-- Solcelle tilbudspris -->
@@ -2475,7 +2476,7 @@ function calcRec() {
   const total   = sysCost + batCost;
   const payback = +(total / sav26).toFixed(1);
 
-  return { kWp, batKwh, prod, selfCons, exported, selfPct, sav26, sav28, afgift, sysCost, batCost, total, payback, irr, orientFactor, monthlyProd, buyPrice };
+  return { kWp, batKwh, prod, selfCons, exported, selfPct, sav26, sav28, afgift, sysCost, batCost, total, payback, irr, orientFactor, monthlyProd, buyPrice, baseself, baseexp };
 }
 
 /* ── SLIDER PANEL ── */
@@ -2559,6 +2560,24 @@ function updateBatEconomyPanel(batKwh) {
   document.getElementById('econ-arb-years').textContent  = arbYears + ' år';
   document.getElementById('econ-sol-annual').textContent = solAnnual.toLocaleString('da-DK');
   document.getElementById('econ-sol-years').textContent  = solYears + ' år';
+
+  // Vis "oversized battery" advarsel baseret på faktisk solar+forbrug profil
+  const overEl = document.getElementById('econ-oversize');
+  const r = _lastRec;
+  if (overEl && r && r.baseexp !== undefined && r.baseself !== undefined) {
+    const annKwh = S.annualKwh || 5000;
+    // Cap 1: kan ikke flytte mere end 60% af eksporten
+    const capFromExport = (r.baseexp * 0.60) / (0.45 * 365);
+    // Cap 2: total selvforbrug kan ikke overstige 92% af årsforbruget
+    const capFromConsump = Math.max(0, (annKwh * 0.92 - r.baseself) / (0.45 * 365));
+    const optimalKwh = Math.ceil(Math.min(capFromExport, capFromConsump));
+    if (batKwh > optimalKwh * 1.2 && optimalKwh >= 1) {
+      overEl.style.display = 'block';
+      overEl.innerHTML = `📊 <strong>Dit anlæg kan max udnytte ~${optimalKwh} kWh batteri</strong> med din nuværende sol og dit forbrug — et ${batKwh} kWh batteri giver samme besparelse som et ${optimalKwh} kWh, fordi der ikke er mere soleksport at gemme. Et større batteri kan stadig give mening for <em>strøm ved netsvigt</em>, men ikke for økonomi.`;
+    } else {
+      overEl.style.display = 'none';
+    }
+  }
 }
 
 function updateBatWarning(batKwh) {
