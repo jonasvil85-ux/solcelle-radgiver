@@ -578,19 +578,19 @@ body {
   font-size:9px; font-weight:700; color:var(--text-3); cursor:help;
   position:relative; flex-shrink:0; user-select:none;
 }
-.chart-info::after {
-  content: attr(data-tip);
-  position:absolute; top:calc(100% + 8px); right:0; left:auto;
+#tipBox {
+  position:fixed;
   white-space:pre-wrap; width:270px;
-  background:var(--surface-2,#0f172a); color:var(--text-1);
+  background:#0f172a; color:#e2e8f0;
   font-size:11px; font-weight:400; line-height:1.55;
   padding:9px 11px; border-radius:9px;
-  box-shadow:0 4px 20px rgba(0,0,0,0.35);
-  pointer-events:none; opacity:0; transition:opacity 0.15s;
-  z-index:200; text-align:left; letter-spacing:0;
+  box-shadow:0 4px 24px rgba(0,0,0,0.55);
+  pointer-events:none;
+  opacity:0; transition:opacity 0.12s;
+  z-index:99999; text-align:left; letter-spacing:0;
+  font-family:'Inter',sans-serif;
 }
-.chart-info:hover::after,
-.chart-info:focus::after { opacity:1; }
+[data-theme="light"] #tipBox { background:#1e293b; color:#f1f5f9; }
 .chart-wrap { position: relative; }
 
 /* RESULT HEADER */
@@ -678,6 +678,7 @@ body {
 <body>
 <!-- SCROLL PROGRESS BAR -->
 <div id="scrollProgress" style="position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,#F59E0B 0%,#10B981 55%,#3B82F6 100%);z-index:9999;width:0%;transition:width 0.08s linear;pointer-events:none;opacity:0"></div>
+<div id="tipBox"></div>
 
 <div class="app">
 
@@ -1325,6 +1326,39 @@ let charts = {};
 let _lastRec = null;
 let _origRec = null;
 let _useAfgift = false;
+
+/* ── TOOLTIP ── */
+(function() {
+  const box = document.getElementById('tipBox');
+  let hideTimer;
+  document.addEventListener('mouseover', function(e) {
+    const el = e.target.closest('[data-tip]');
+    if (!el) return;
+    clearTimeout(hideTimer);
+    box.textContent = el.getAttribute('data-tip');
+    box.style.opacity = '1';
+    positionTip(e, el);
+  });
+  document.addEventListener('mousemove', function(e) {
+    if (!e.target.closest('[data-tip]')) return;
+    positionTip(e, e.target.closest('[data-tip]'));
+  });
+  document.addEventListener('mouseout', function(e) {
+    if (!e.target.closest('[data-tip]')) return;
+    hideTimer = setTimeout(() => { box.style.opacity = '0'; }, 80);
+  });
+  function positionTip(e, el) {
+    const margin = 10;
+    const bw = box.offsetWidth || 270;
+    const bh = box.offsetHeight || 100;
+    let x = e.clientX + margin;
+    let y = e.clientY + margin;
+    if (x + bw > window.innerWidth - margin) x = e.clientX - bw - margin;
+    if (y + bh > window.innerHeight - margin) y = e.clientY - bh - margin;
+    box.style.left = x + 'px';
+    box.style.top  = y + 'px';
+  }
+})();
 
 /* ── SCROLL PROGRESS BAR ── */
 window.addEventListener('scroll', function() {
