@@ -107,83 +107,91 @@ module.exports = async function (req, res) {
     const priceArea = (zipNum >= 1000 && zipNum <= 4999) ? 'DK2' : 'DK1';
     const dsoGLN   = dsoGLNFromMP || zipToGLN(zipNum);
 
+    // ── Fetch spot prices (required) ──────────────────────────────────────────
+    let spotRecords = [];
     try {
-      const [spotRes, nettarifRes] = await Promise.all([
-        fetch(
-          `https://api.energidataservice.dk/dataset/Elspotprice?start=${dateFrom}T00:00&end=${dateTo}T23:59` +
-          `&filter=%7B%22PriceArea%22%3A%22${priceArea}%22%7D&columns=HourUTC,SpotPriceDKK&limit=20000`,
-          { headers: { Accept: 'application/json' } }
-        ),
-        fetch(
-          `https://api.energidataservice.dk/dataset/DatahubPricelist` +
-          `?filter=%7B%22GLN_Number%22%3A%22${dsoGLN}%22%2C%22ChargeType%22%3A%22D03%22%2C%22ChargeTypeCode%22%3A%22CD%22%7D` +
-          `&columns=ValidFrom,ValidTo,Price1,Price2,Price3,Price4,Price5,Price6,Price7,Price8,Price9,Price10,Price11,Price12,Price13,Price14,Price15,Price16,Price17,Price18,Price19,Price20,Price21,Price22,Price23,Price24` +
-          `&limit=50`,
-          { headers: { Accept: 'application/json' } }
-        ),
-      ]);
+      const spotRes  = await fetch(
+        `https://api.energidataservice.dk/dataset/Elspotprice?start=${dateFrom}T00:00&end=${dateTo}T23:59` +
+        `&filter=%7B%22PriceArea%22%3A%22${priceArea}%22%7D&columns=HourUTC,SpotPriceDKK&limit=20000`,
+        { headers: { Accept: 'application/json' } }
+      );
+      spotRecords = (await spotRes.json()).records || [];
+    } catch (_) {}
 
-      const [spotJson, nettarifJson] = await Promise.all([spotRes.json(), nettarifRes.json()]);
-      const spotRecords     = spotJson.records    || [];
-      const nettarifRecords = nettarifJson.records || [];
+    const spotMap = {};
+    for (const r of spotRecords) {
+      const key = r.HourUTC ? r.HourUTC.slice(0, 13) : null;
+      if (key && r.SpotPriceDKK != null) spotMap[key] = r.SpotPriceDKK / 1000;
+    }
 
-      const spotMap = {};
-      for (const r of spotRecords) {
-        const key = r.HourUTC ? r.HourUTC.slice(0, 13) : null;
-        if (key && r.SpotPriceDKK != null) spotMap[key] = r.SpotPriceDKK / 1000;
-      }
-
-      function getNettarif(utcDate) {
-        const month = utcDate.getUTCMonth();
-        const isDST = month >= 2 && month <= 9;
-        const localHour = (utcDate.getUTCHours() + (isDST ? 2 : 1)) % 24;
-        const dateStr = utcDate.toISOString().split('T')[0];
-        for (const rec of nettarifRecords) {
-          const vf = rec.ValidFrom ? rec.ValidFrom.slice(0, 10) : '2000-01-01';
-          const vt = rec.ValidTo   ? rec.ValidTo.slice(0, 10)   : '2099-12-31';
-          if (dateStr >= vf && dateStr < vt) return rec[`Price${localHour + 1}`] || 0;
-        }
-        return 0;
-      }
-
-      const SYSTEMTARIF = 0.061;
-      let totalSpotCost = 0, totalNettarifCost = 0, totalKwh = 0;
+    // ── Fetch DSO nettarif — try specific ChargeTypeCode, then broad fallback ─
+    let nettarifRecords = [];
+    const ntCols = Array.from({length:24},(_,i)=>`Price${i+1}`).join(',');
+    const ntBase = `https://api.energidataservice.dk/dataset/DatahubPricelist` +
+      `?columns=ValidFrom,ValidTo,ChargeTypeCode,${ntCols}&limit=100`;
+    for (const filter of [
+      `%7B%22GLN_Number%22%3A%22${dsoGLN}%22%2C%22ChargeType%22%3A%22D03%22%2C%22ChargeTypeCode%22%3A%22CD%22%7D`,
+      `%7B%22GLN_Number%22%3A%22${dsoGLN}%22%2C%22ChargeType%22%3A%22D03%22%7D`,
+      `%7B%22GLN_Number%22%3A%22${dsoGLN}%22%7D`,
+    ]) {
       try {
-        const series = tsData.result[0].MyEnergyData_MarketDocument.TimeSeries;
-        for (const s of series) {
-          for (const period of s.Period) {
-            const periodStart = new Date(period.timeInterval.start);
-            for (const point of period.Point) {
-              const pos = parseInt(point.position) - 1;
-              const kwh = parseFloat(point['out_Quantity.quantity'] ?? point['in_Quantity.quantity'] ?? 0);
-              if (isNaN(kwh) || kwh < 0) continue;
-              const ts = new Date(periodStart.getTime() + pos * 3600000);
-              const key = ts.toISOString().slice(0, 13);
-              const spotKr = spotMap[key];
-              if (spotKr != null) {
-                totalSpotCost     += kwh * spotKr;
-                totalNettarifCost += kwh * getNettarif(ts);
-                totalKwh          += kwh;
-              }
+        const r = await fetch(`${ntBase}&filter=${filter}`, { headers: { Accept: 'application/json' } });
+        const recs = (await r.json()).records || [];
+        // Keep records that have 24 price columns (time-of-use tariff rows)
+        const touRecs = recs.filter(rec => rec.Price1 != null && rec.Price24 != null);
+        if (touRecs.length > 0) { nettarifRecords = touRecs; break; }
+      } catch (_) {}
+    }
+
+    function getNettarif(utcDate) {
+      const month = utcDate.getUTCMonth();
+      const isDST = month >= 2 && month <= 9;
+      const localHour = (utcDate.getUTCHours() + (isDST ? 2 : 1)) % 24;
+      const dateStr = utcDate.toISOString().split('T')[0];
+      for (const rec of nettarifRecords) {
+        const vf = rec.ValidFrom ? rec.ValidFrom.slice(0, 10) : '2000-01-01';
+        const vt = rec.ValidTo   ? rec.ValidTo.slice(0, 10)   : '2099-12-31';
+        if (dateStr >= vf && dateStr < vt) return parseFloat(rec[`Price${localHour + 1}`]) || 0;
+      }
+      return 0;
+    }
+
+    // ── Calculate actual consumption-weighted prices ────────────────────────
+    const SYSTEMTARIF = 0.061;
+    let totalSpotCost = 0, totalNettarifCost = 0, totalKwh = 0;
+    try {
+      const series = tsData.result[0].MyEnergyData_MarketDocument.TimeSeries;
+      for (const s of series) {
+        for (const period of s.Period) {
+          const periodStart = new Date(period.timeInterval.start);
+          for (const point of period.Point) {
+            const pos = parseInt(point.position) - 1;
+            const kwh = parseFloat(point['out_Quantity.quantity'] ?? point['in_Quantity.quantity'] ?? 0);
+            if (isNaN(kwh) || kwh < 0) continue;
+            const ts  = new Date(periodStart.getTime() + pos * 3600000);
+            const key = ts.toISOString().slice(0, 13);
+            const spotKr = spotMap[key];
+            if (spotKr != null) {
+              totalSpotCost     += kwh * spotKr;
+              totalNettarifCost += kwh * getNettarif(ts);
+              totalKwh          += kwh;
             }
           }
         }
-      } catch (_) {}
-
-      if (totalKwh > 0) {
-        const avgSpot     = totalSpotCost / totalKwh;
-        const avgNettarif = totalNettarifCost / totalKwh;
-        effectiveKwhPrice = +((avgSpot + spotSurcharge + avgNettarif + SYSTEMTARIF) * 1.25).toFixed(3);
-        processed.spotAvg              = +avgSpot.toFixed(4);
-        processed.nettarifAvg          = +avgNettarif.toFixed(4);
-        processed.priceArea            = priceArea;
-        processed.dsoGLN               = dsoGLN;
-        processed.actualSpotCost       = Math.round(totalSpotCost * 1.25);
-        processed.actualNettarif       = Math.round(totalNettarifCost * 1.25);
-        processed.calculatedAnnualCost = Math.round(processed.annualKwh * effectiveKwhPrice);
       }
-    } catch (_) {
-      effectiveKwhPrice = 1.35; // safe fallback (not 2.70)
+    } catch (_) {}
+
+    if (totalKwh > 0) {
+      const avgSpot     = totalSpotCost / totalKwh;
+      const avgNettarif = totalNettarifCost / totalKwh;
+      effectiveKwhPrice = +((avgSpot + spotSurcharge + avgNettarif + SYSTEMTARIF) * 1.25).toFixed(3);
+      processed.spotAvg              = +avgSpot.toFixed(4);
+      processed.nettarifAvg          = +avgNettarif.toFixed(4);
+      processed.priceArea            = priceArea;
+      processed.dsoGLN               = dsoGLN;
+      processed.actualSpotCost       = Math.round(totalSpotCost * 1.25);
+      processed.actualNettarif       = Math.round(totalNettarifCost * 1.25);
+      processed.calculatedAnnualCost = Math.round(processed.annualKwh * effectiveKwhPrice);
     }
   }
 
