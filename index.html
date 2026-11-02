@@ -1131,25 +1131,29 @@ body {
       <!-- Sektion: Nuværende situation -->
       <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:10px;padding-left:2px">Nuværende situation</div>
       <div class="kpi-grid" style="margin-bottom:14px">
-        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px;position:relative">
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Din gennemsnitlige elpris inkl. alle afgifter og moms.&#10;&#10;Med Eloverblik-data: beregnet time for time som (spotpris + nettarif + systemtarif) × 1,25 vægtet af dit faktiske forbrug.&#10;&#10;Med årsregning: din regning ÷ dit forbrug.&#10;&#10;Estimeret (default): spotpris ~0,65 + DK1-nettarif ~0,23 + systemtarif 0,06 kr/kWh × 1,25 ≈ 1,17 kr/kWh.">i</span>
           <div style="font-size:2rem;line-height:1;margin-bottom:8px">⚡</div>
           <div class="kpi-value" id="sit-price">—</div>
           <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Din elpris</div>
           <div class="kpi-sub" id="sit-price-sub">kr/kWh</div>
         </div>
-        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px;position:relative">
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Totalt elforbrug de seneste 12 måneder.&#10;&#10;Med Eloverblik-token: summen af alle timeaflæsninger fra din måler.&#10;&#10;Uden Eloverblik: estimeret fra din husstørrelse eller manuel indtastning.&#10;&#10;Bruges som grundlag for alle besparelsesberegninger.">i</span>
           <div style="font-size:2rem;line-height:1;margin-bottom:8px">🏠</div>
           <div class="kpi-value" id="sit-kwh">—</div>
           <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Dit forbrug</div>
           <div class="kpi-sub">kWh/år</div>
         </div>
-        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px;position:relative">
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Estimeret samlet elregning pr. år uden solceller.&#10;&#10;Beregnet som: dit forbrug (kWh) × din gennemsnitlige elpris (kr/kWh).&#10;&#10;Bruges som udgangspunkt til at beregne din besparelse og ny elregning med sol.">i</span>
           <div style="font-size:2rem;line-height:1;margin-bottom:8px">💸</div>
           <div class="kpi-value" id="sit-bill">—</div>
           <div class="kpi-label" style="margin-top:5px;margin-bottom:0">El-udgift nu</div>
           <div class="kpi-sub">kr/år</div>
         </div>
-        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px;position:relative">
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Dit nuværende CO₂-aftryk fra elforbrug.&#10;&#10;Beregnet som: dit forbrug × 130 g CO₂/kWh (dansk elnet gennemsnit 2024).&#10;&#10;Sammenlign med 'CO₂-besparelse' nedenfor for at se din grønne effekt.">i</span>
           <div style="font-size:2rem;line-height:1;margin-bottom:8px">🌍</div>
           <div class="kpi-value" id="kpi-co2-now">—</div>
           <div class="kpi-label" style="margin-top:5px;margin-bottom:0">CO₂-aftryk nu</div>
@@ -1160,7 +1164,8 @@ body {
       <!-- Sektion: Med solceller -->
       <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--emerald);margin-bottom:10px;padding-left:2px">Med solceller</div>
       <div class="kpi-grid" style="margin-bottom:0">
-        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px;position:relative">
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Anlægsstørrelsen valgt ved at afprøve alle kombinationer af kWp (3–20) og batteri (0, 5, 10 kWh).&#10;&#10;Den kombination vælges, som giver størst nettogevinst:&#10;Kumulativ besparelse med 4%/år elprisvækst over din ejertid − total investering.&#10;&#10;Justér selv med slideren for at se andre scenarier.">i</span>
           <div style="font-size:2rem;line-height:1;margin-bottom:8px">☀️</div>
           <div class="kpi-value emerald" id="kpi-kwp">—</div>
           <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Anbefalet anlæg</div>
@@ -1169,7 +1174,8 @@ body {
             Valgt: <span id="kpi-kwp-override-val" style="font-weight:600;color:var(--text-2)"></span>
           </div>
         </div>
-        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px;position:relative">
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Batteri anbefales når det øger nettogevinsten over din ejertid.&#10;&#10;Beregnet ved at sammenligne tre scenarier: 0, 5 og 10 kWh batteri. Batteriet gemmer soloverskud fra dagen til aftenforbruget, så du køber mindre fra nettet.&#10;&#10;Anbefales ikke hvis batteripris > ekstra besparelse over ejertid.">i</span>
           <div style="font-size:2rem;line-height:1;margin-bottom:8px">🔋</div>
           <div class="kpi-value" id="kpi-bat">—</div>
           <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Batteri</div>
@@ -1178,7 +1184,8 @@ body {
             Valgt: <span id="kpi-bat-override-val" style="font-weight:600;color:var(--text-2)"></span>
           </div>
         </div>
-        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px;position:relative">
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Beregnet time for time for hver måned:&#10;• Solenergi brugt direkte × din elpris&#10;• Eksporteret overskud × salgspris (~0,35 kr/kWh)&#10;• Batteri: soloverskud forskudt til aftentimer&#10;&#10;Vises uden el-afgift (suspenderet 2026). 'Med afgift' viser besparelsen inkl. den forventede afgift fra 2028.">i</span>
           <div style="font-size:2rem;line-height:1;margin-bottom:8px">💰</div>
           <div class="kpi-value emerald" id="kpi-savings">—</div>
           <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Årsbesparelse</div>
@@ -1189,25 +1196,29 @@ body {
           </div>
           <div style="font-size:9.5px;color:var(--text-3);margin-top:3px">El-afgift forventes genindført 2028</div>
         </div>
-        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px;position:relative">
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Antal år til din investering er tilbagebetalt af løbende besparelser.&#10;&#10;Beregnet med 4%/år elprisvækst (lukket formel):&#10;ln(1 + 4% × investering ÷ årsbesparelse) ÷ ln(1,04)&#10;&#10;Fladt break-even ville give et højere tal — elprisvæksten fremrykker tilbagebetalingen.">i</span>
           <div style="font-size:2rem;line-height:1;margin-bottom:8px">⏱️</div>
           <div class="kpi-value" id="kpi-payback">—</div>
           <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Break-even</div>
           <div class="kpi-sub">år</div>
         </div>
-        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px;position:relative">
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Solenergi du producerer ud over dit eget forbrug og sælger til elnettet.&#10;&#10;Beregnet som: total solproduktion − selvforbrugt energi, time for time.&#10;&#10;Afregningspris er typisk ~0,35 kr/kWh (nettarifdelen). Jo bedre dit forbrugsmønster matcher solprofilen, jo mindre eksporteres.">i</span>
           <div style="font-size:2rem;line-height:1;margin-bottom:8px">📤</div>
           <div class="kpi-value" id="sit-export">—</div>
           <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Salg til net</div>
           <div class="kpi-sub">kWh/år · ~35 øre/kWh</div>
         </div>
-        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px;position:relative">
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Din forventede elregning efter solceller er installeret.&#10;&#10;Beregnet som: nuværende el-udgift − årsbesparelse.&#10;&#10;Du betaler stadig for den strøm du køber fra nettet — om natten og på overskyede dage. Solcellerne dækker ikke hele regningen, men reducerer den markant.">i</span>
           <div style="font-size:2rem;line-height:1;margin-bottom:8px">🏡</div>
           <div class="kpi-value" id="kpi-new-bill">—</div>
           <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Ny elregning</div>
           <div class="kpi-sub">kr/år efter sol</div>
         </div>
-        <div class="kpi-tile" style="text-align:center;padding:16px 12px">
+        <div class="kpi-tile" style="text-align:center;padding:16px 12px;position:relative">
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="CO₂ du undgår at udlede ved at bruge din egen solstrøm direkte.&#10;&#10;Beregnet som: selvforbrugt solenergi × 130 g CO₂/kWh (dansk elnet gennemsnit).&#10;&#10;Kun direkte selvforbrug tæller — eksporteret overskud erstatter fossil energi på nettet, men medregnes konservativt ikke her.">i</span>
           <div style="font-size:2rem;line-height:1;margin-bottom:8px">🌱</div>
           <div class="kpi-value" id="kpi-co2">—</div>
           <div class="kpi-label" style="margin-top:5px;margin-bottom:0">CO₂-besparelse</div>
