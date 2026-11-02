@@ -2333,8 +2333,17 @@ function calcRec() {
                    + (S.hasEV2 ? S.ev2Km * 0.20 * (S.ev2ChargesHome ? 0.85 : 0.12) : 0)
                    + (S.hasHybrid ? S.hybridKwh : 0);
 
+  // Realistic Danish household profile: low night, morning ramp 06-09, low daytime, evening peak 16-22
+  const DANISH_DEFAULT_PROFILE = [
+    0.18, 0.13, 0.11, 0.10, 0.11, 0.18,  // 00-05: night
+    0.45, 0.90, 0.95,                     // 06-08: morning ramp
+    0.65, 0.52, 0.45, 0.42, 0.42, 0.48, 0.58, // 09-15: low daytime
+    0.90, 1.42, 1.55, 1.48, 1.35, 1.20,  // 16-21: evening peak
+    0.80, 0.50,                           // 22-23: wind-down
+  ];
+
   // Hourly consumption fractions (normalized — works whether profile is daily or annual totals)
-  const profRaw  = S.hourlyProfile || new Array(24).fill(1);
+  const profRaw  = S.hourlyProfile || DANISH_DEFAULT_PROFILE;
   const profSum  = profRaw.reduce((a,b)=>a+b,0) || 24;
   const profFrac = profRaw.map(v => v / profSum); // sums to 1
 
@@ -2368,18 +2377,23 @@ function calcRec() {
     ? S.spotAvg
     : Math.max(0.40, (buyPrice / 1.25) - ELAGIFT - (S.spotSurcharge||0) - nettarifAnnAvg);
 
-  // System sizing — sweep all candidate sizes and pick the one with best payback.
-  // Non-linear pricing (fixed base + variable/kWp) means optimal kWp ≠ "just enough".
+  // System sizing — joint sweep over (kWp × batteri) to maximise net return over ejertid.
+  // Metric: annualSav * growFactor − totalCost  (NPV-approx at 4 %/år price growth)
   const sizes      = [5,6,7,8,9,10,12,15];
   const maxKwpRoof = S.roofAreaM2 ? Math.max(3, Math.floor(S.roofAreaM2 / 6)) : Infinity;
-  let kWp;
+  const ejertid    = S.ejertidYr || 15;
+  const growFactor = ((1.04 ** ejertid) - 1) / 0.04;
+  const annCostEst = S.annualBill || (kwh * buyPrice);
+
+  let kWp, autoRecBat;
   if (S.overrideKwp !== null) {
     kWp = S.overrideKwp;
+    autoRecBat = null; // evaluated after baseself/baseexp known below
   } else {
-    const annualCostEst = S.annualBill || (kwh * buyPrice);
     const candidates = sizes.filter(s => s <= maxKwpRoof);
     if (candidates.length === 0) candidates.push(Math.max(3, Math.min(5, maxKwpRoof)));
-    let bestKwp = candidates[0], bestPb = 999;
+    let bestKwp = candidates[0], bestReturn = -Infinity;
+    autoRecBat = 0;
     for (const sz of candidates) {
       let szAnnSelf = 0, szAnnSavSelf = 0;
       for (let m = 0; m < 12; m++) {
@@ -2396,16 +2410,19 @@ function calcRec() {
       const szBaseself = Math.min(Math.round(szAnnSelf), Math.round(kwh * 0.92));
       const szProd     = Math.round(sz * irr * orientFactor);
       const szExp      = szProd - szBaseself;
-      const szSavRaw   = szAnnSavSelf + szExp * 0.35;
-      const szSav      = Math.round(annualCostEst ? Math.min(szSavRaw, annualCostEst * 0.88) : szSavRaw);
-      const szPb       = szSav > 0 ? estimateSolarCost(sz) / szSav : 999;
-      if (szPb < bestPb) { bestPb = szPb; bestKwp = sz; }
+      for (const bKwh of [0, 5, 10]) {
+        const bShift   = bKwh > 0 ? Math.round(Math.min(bKwh * 0.45 * 365, szExp * 0.60)) : 0;
+        const szSelf   = Math.min(szBaseself + bShift, Math.round(kwh * 0.92));
+        const szExport = szProd - szSelf;
+        const szSavVal = szBaseself > 0 ? szAnnSavSelf * (szSelf / szBaseself) : szSelf * buyPrice;
+        const szSavRaw = szSavVal + szExport * 0.35;
+        const szSav    = Math.round(annCostEst ? Math.min(szSavRaw, annCostEst * 0.88) : szSavRaw);
+        const netRet   = szSav * growFactor - (estimateSolarCost(sz) + estimateBatCost(bKwh));
+        if (netRet > bestReturn) { bestReturn = netRet; bestKwp = sz; autoRecBat = bKwh; }
+      }
     }
     kWp = bestKwp;
   }
-
-  const wantsBat    = kWp >= 6 && (evenKwh > 2.5 || (S.hasEV && S.evChargesHome));
-  const tentativeBat = S.overrideBatKwh !== null ? S.overrideBatKwh : (!wantsBat ? 0 : evenKwh > 5 ? 10 : 5);
 
   const prod = Math.round(kWp * irr * orientFactor);
 
@@ -2436,8 +2453,7 @@ function calcRec() {
   const baseself = Math.min(Math.round(annSelf), Math.round(kwh * 0.92));
   const baseexp  = prod - baseself;
 
-  // Economic viability check: only recommend battery if marginal payback ≤ 15 years.
-  // Use full savings formula (same as below) so the annualCost cap is correctly accounted for.
+  // annSav26: total annual savings for a given batShift — used by battery evaluation below.
   function annSav26(bShift) {
     const sc = Math.min(baseself + bShift, Math.round(kwh * 0.92));
     const ex = prod - sc;
@@ -2446,13 +2462,21 @@ function calcRec() {
     const annualCostEst = S.annualBill || (kwh * buyPrice);
     return Math.round(annualCostEst ? Math.min(raw, annualCostEst * 0.88) : raw);
   }
-  let batKwh = tentativeBat;
-  if (tentativeBat > 0 && S.overrideBatKwh === null) {
-    const tentBatCost     = estimateBatCost(tentativeBat);
-    const tentBatShift    = Math.round(Math.min(tentativeBat * 0.45 * 365, baseexp * 0.60));
-    const margSaving      = annSav26(tentBatShift) - annSav26(0);
-    const tentBatPayback  = margSaving > 0 ? tentBatCost / margSaving : 999;
-    if (tentBatPayback > 15) batKwh = 0;
+  let batKwh;
+  if (S.overrideBatKwh !== null) {
+    batKwh = S.overrideBatKwh;
+  } else if (autoRecBat !== null) {
+    batKwh = autoRecBat; // chosen by joint kWp×battery sweep above
+  } else {
+    // Manual kWp: find best battery size by net return over ejertid
+    let bestBatRet = -Infinity;
+    batKwh = 0;
+    for (const bKwh of [0, 5, 10]) {
+      const bShift = bKwh > 0 ? Math.round(Math.min(bKwh * 0.45 * 365, baseexp * 0.60)) : 0;
+      const bSav   = annSav26(bShift);
+      const netRet = bSav * growFactor - (estimateSolarCost(kWp) + estimateBatCost(bKwh));
+      if (netRet > bestBatRet) { bestBatRet = netRet; batKwh = bKwh; }
+    }
   }
 
   const batShift = batKwh > 0 ? Math.round(Math.min(batKwh * 0.45 * 365, baseexp * 0.60)) : 0;
