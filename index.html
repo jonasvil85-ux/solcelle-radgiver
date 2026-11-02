@@ -1168,7 +1168,7 @@ body {
           </div>
         </div>
         <div class="kpi-tile" style="text-align:center;padding:16px 12px;position:relative">
-          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Gennemsnitlig årlig besparelse over din ejertid (total / antal år).&#10;&#10;Beregnet time for time:&#10;• Solenergi brugt direkte × din elpris&#10;• Eksporteret overskud × salgspris (~0,35 kr/kWh)&#10;• Batteri: soloverskud forskudt til aftentimer&#10;• 4% elprisvækst/år indregnet&#10;&#10;2026–2027: El-afgiften er suspenderet — ingen afgift.&#10;Fra jan. 2028: El-afgift (~0,76 kr/kWh inkl. moms) genindføres og øger besparelsen.&#10;&#10;Elbil er undtaget — ladning til bil har refusion og medregnes ikke.">i</span>
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Simpelt gennemsnit af din årlige besparelse over ejertiden:&#10;• Første 2 år (2026–2027): uden el-afgift&#10;• Resterende år (fra 2028): med el-afgift (~0,76 kr/kWh inkl. moms)&#10;&#10;Beregnet time for time:&#10;• Solenergi brugt direkte × din elpris&#10;• Eksporteret overskud × salgspris (~0,35 kr/kWh)&#10;• Batteri: soloverskud forskudt til aftentimer&#10;&#10;Elprisvækst (4%/år) indgår ikke i dette gennemsnit — men er inkluderet i break-even og payback-kurven.&#10;&#10;Elbil er undtaget — ladning til bil har refusion og medregnes ikke.">i</span>
           <div style="font-size:2rem;line-height:1;margin-bottom:8px">💰</div>
           <div class="kpi-value emerald" id="kpi-savings">—</div>
           <div class="kpi-label" style="margin-top:5px;margin-bottom:0">Årsbesparelse</div>
@@ -2537,8 +2537,10 @@ function calcRec() {
   const houseShare = (S.hasEV || S.hasEV2 || S.hasHybrid) ? Math.max(0, (kwh - evKwhHome) / kwh) : 1.0;
   const afgift     = Math.round(selfCons * houseShare * 0.76);
   const sav28      = sav26 + afgift;
-  // Average annual saving over ownership period: yr1-2 at sav26, yr3+ at sav28, 4%/yr growth
-  const avgAnnualSav = ejertid > 0 ? Math.round((sav26 * gf2 + sav28 * gf28) / ejertid) : sav26;
+  // Average annual saving: simple mean over ejertid (yr1-2 at sav26, yr3+ at sav28, no compounding)
+  const avgAnnualSav = ejertid > 0
+    ? Math.round((sav26 * Math.min(2, ejertid) + sav28 * Math.max(0, ejertid - 2)) / ejertid)
+    : sav26;
 
   const sysCost = S.overrideSolarCost !== null ? S.overrideSolarCost : estimateSolarCost(kWp);
   const batCost = S.overrideBatCost  !== null ? S.overrideBatCost  : estimateBatCost(batKwh);
