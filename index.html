@@ -722,6 +722,14 @@ body {
 }
 .auth-box input[type="email"],.auth-box input[type="password"] {
   -webkit-appearance:none;appearance:none;
+  width:100%;box-sizing:border-box;
+  padding:10px 14px;font-size:14px;
+  border:1.5px solid var(--border);border-radius:9px;
+  background:var(--surface);color:var(--text-1);
+  outline:none;font-family:inherit;
+}
+.auth-box input[type="email"]:focus,.auth-box input[type="password"]:focus {
+  border-color:var(--sol);box-shadow:0 0 0 3px rgba(245,158,11,0.14);
 }
 .auth-title { font-size:21px;font-weight:800;letter-spacing:-0.03em;margin-bottom:4px; }
 .auth-sub { font-size:13.5px;color:var(--text-3);margin-bottom:22px;line-height:1.5; }
@@ -4099,7 +4107,6 @@ restoreState();
   <div class="auth-backdrop"></div>
   <div class="auth-box">
     <div class="auth-title">Se din anbefaling</div>
-    <div class="auth-sub">Opret en gratis konto for at gemme og se dit resultat. Ingen email-bekræftelse krævet.</div>
     <div class="auth-tabs">
       <button id="authTabSignup" class="auth-tab active" onclick="switchAuthTab('signup')">Opret konto</button>
       <button id="authTabLogin"  class="auth-tab"        onclick="switchAuthTab('login')">Log ind</button>
