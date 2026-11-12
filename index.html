@@ -2456,10 +2456,10 @@ function openEloverblikPopup() {
     window.open(url, '_blank');
   } else {
     const sw = screen.width, sh = screen.height;
-    const pw = Math.max(Math.floor(sw / 2) - 350, 420);
-    const left = sw - pw;
+    const pw = 500;
+    const left = sw - pw - 10;
     window.open(url, 'eloverblik',
-      `width=${pw},height=${sh},left=${left},top=0,resizable=yes,scrollbars=yes`);
+      `popup=yes,width=${pw},height=${sh},left=${left},top=0`);
   }
   _eloverblikOpened = true;
 }
