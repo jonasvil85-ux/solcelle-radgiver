@@ -8,6 +8,7 @@
 <script defer src="/_vercel/insights/script.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root {
   /* LIGHT – default */
@@ -709,6 +710,25 @@ body {
 }
 .cdir small { display: block; font-size: 10px; font-weight: 400; color: var(--text-4); }
 .cdir.sel small { color: var(--sol-dk); opacity: 0.8; }
+
+/* ── AUTH MODAL ── */
+.auth-modal { position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center; }
+.auth-modal.hidden { display:none; }
+.auth-backdrop { position:absolute;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px); }
+.auth-box {
+  position:relative;background:var(--card-bg);border-radius:18px;
+  padding:36px 32px;width:min(400px,92vw);
+  box-shadow:0 24px 64px rgba(0,0,0,0.28);
+}
+.auth-title { font-size:21px;font-weight:800;letter-spacing:-0.03em;margin-bottom:4px; }
+.auth-sub { font-size:13.5px;color:var(--text-3);margin-bottom:22px;line-height:1.5; }
+.auth-tabs { display:flex;gap:3px;margin-bottom:20px;background:var(--surface-2);border-radius:9px;padding:3px; }
+.auth-tab { flex:1;padding:8px;border:none;background:transparent;border-radius:7px;font-size:13px;font-weight:600;color:var(--text-3);cursor:pointer;transition:all 0.15s; }
+.auth-tab.active { background:var(--card-bg);color:var(--text-1);box-shadow:0 1px 4px rgba(0,0,0,0.10); }
+.user-badge { display:flex;align-items:center;gap:10px; }
+.user-badge-email { font-size:12px;color:var(--text-3);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.signout-btn { padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text-3);font-size:11.5px;cursor:pointer;transition:all 0.15s;white-space:nowrap; }
+.signout-btn:hover { border-color:var(--sol);color:var(--sol); }
 </style>
 </head>
 <body>
@@ -745,6 +765,10 @@ body {
       </div>
     </div>
     <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">Mørk tilstand</button>
+    <div id="userBadge" class="user-badge" style="display:none">
+      <span id="userEmailEl" class="user-badge-email"></span>
+      <button class="signout-btn" onclick="signOut()">Log ud</button>
+    </div>
   </div>
 
   <!-- PROGRESS -->
@@ -1467,6 +1491,101 @@ body {
 </div>
 
 <script>
+/* ── SUPABASE AUTH ── */
+const SUPA_URL = 'https://fezwaflzzethkkvkrlsy.supabase.co';
+const SUPA_KEY = 'sb_publishable_h65hSiqINOZyHxPwRGeBWg_krfBefq_';
+const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true }
+});
+
+let _authCallback = null;
+let _pendingToken  = null;
+let _authMode      = 'signup';
+
+sb.auth.onAuthStateChange(async (event, session) => {
+  updateUserUI(session);
+  if (event === 'SIGNED_IN' && _authCallback) {
+    if (_pendingToken) {
+      await sb.auth.updateUser({ data: { eloverblik_token: _pendingToken } });
+      _pendingToken = null;
+    }
+    const saved = session.user?.user_metadata?.eloverblik_token;
+    if (saved) { const inp = document.getElementById('tokenInput'); if (inp && !inp.value) inp.value = saved; }
+    hide('authModal');
+    const cb = _authCallback; _authCallback = null; cb();
+  }
+});
+
+// On load: restore session + pre-fill token
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  updateUserUI(session);
+  if (session?.user?.user_metadata?.eloverblik_token) {
+    const inp = document.getElementById('tokenInput');
+    if (inp) inp.value = session.user.user_metadata.eloverblik_token;
+  }
+})();
+
+function updateUserUI(session) {
+  const badge = document.getElementById('userBadge');
+  const emailEl = document.getElementById('userEmailEl');
+  if (session?.user) {
+    if (badge) badge.style.display = 'flex';
+    if (emailEl) emailEl.textContent = session.user.email;
+  } else {
+    if (badge) badge.style.display = 'none';
+  }
+}
+
+async function requireAuth(cb) {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    if (_pendingToken) {
+      await sb.auth.updateUser({ data: { eloverblik_token: _pendingToken } });
+      _pendingToken = null;
+    }
+    cb(); return;
+  }
+  _authCallback = cb;
+  show('authModal');
+  setTimeout(() => document.getElementById('authEmail')?.focus(), 150);
+}
+
+function switchAuthTab(mode) {
+  _authMode = mode;
+  document.getElementById('authTabSignup').className = 'auth-tab' + (mode === 'signup' ? ' active' : '');
+  document.getElementById('authTabLogin').className  = 'auth-tab' + (mode === 'login'  ? ' active' : '');
+  document.getElementById('authSubmitBtn').textContent = mode === 'signup' ? 'Opret konto' : 'Log ind';
+  showErr('authErr', '');
+}
+
+async function submitAuth() {
+  const email    = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  if (!email || password.length < 6) { showErr('authErr', 'Udfyld email og mindst 6-tegns adgangskode'); return; }
+  const btn = document.getElementById('authSubmitBtn');
+  btn.textContent = '…'; btn.disabled = true;
+  let error;
+  if (_authMode === 'login') {
+    ({ error } = await sb.auth.signInWithPassword({ email, password }));
+  } else {
+    ({ error } = await sb.auth.signUp({ email, password }));
+  }
+  btn.disabled = false;
+  if (error) {
+    const msg = error.message.includes('Invalid login') ? 'Forkert email eller adgangskode'
+              : error.message.includes('already registered') ? 'Email allerede registreret — prøv at logge ind'
+              : error.message;
+    showErr('authErr', msg);
+    btn.textContent = _authMode === 'signup' ? 'Opret konto' : 'Log ind';
+  }
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  updateUserUI(null);
+}
+
 /* ── SÆSONBESTEMTE NETTARIFFER ──
    Kilde: N1 2025 (DK1/Jylland) og Radius 2026 (DK2/Sjælland), officielle takstblade.
    Alle værdier: kr/kWh EKS. MOMS, inkl. Energinets systemtarif (~0,043 kr/kWh).
@@ -2249,7 +2368,7 @@ function goStep2() {
     show('stepLoading');
     setProgress(3);
     document.getElementById('loadingLabel').textContent = 'Beregner din solcelleanbefaling…';
-    setTimeout(() => { hide('stepLoading'); showResults(); }, 400);
+    setTimeout(() => requireAuth(() => { hide('stepLoading'); showResults(); }), 400);
     return;
   }
   hide('step1'); show('step2'); setProgress(2);
@@ -2436,8 +2555,8 @@ async function fetchData() {
       geocodeAndShowAddress(data.address);
     }
 
-    hide('stepLoading');
-    showResults();
+    _pendingToken = document.getElementById('tokenInput')?.value.trim() || null;
+    requireAuth(() => { hide('stepLoading'); showResults(); });
 
   } catch (err) {
     hide('stepLoading');
@@ -2537,11 +2656,7 @@ function useManualData() {
   setProgress(3);
   document.getElementById('loadingLabel').textContent = 'Beregner din solcelleanbefaling…';
 
-  // Small delay so spinner shows, then calculate
-  setTimeout(() => {
-    hide('stepLoading');
-    showResults();
-  }, 600);
+  setTimeout(() => requireAuth(() => { hide('stepLoading'); showResults(); }), 600);
 }
 
 /* ── IRRADIANCE BY ZIP ── */
@@ -3874,5 +3989,30 @@ function buildEVHeatmap(r) {
   wrap.appendChild(legend);
 }
 </script>
+
+<!-- ── AUTH MODAL ── -->
+<div id="authModal" class="auth-modal hidden">
+  <div class="auth-backdrop"></div>
+  <div class="auth-box">
+    <div class="auth-title">Se din anbefaling</div>
+    <div class="auth-sub">Opret en gratis konto for at gemme og se dit resultat. Ingen email-bekræftelse krævet.</div>
+    <div class="auth-tabs">
+      <button id="authTabSignup" class="auth-tab active" onclick="switchAuthTab('signup')">Opret konto</button>
+      <button id="authTabLogin"  class="auth-tab"        onclick="switchAuthTab('login')">Log ind</button>
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="authEmail" placeholder="din@email.dk" autocomplete="email"
+             onkeydown="if(event.key==='Enter')submitAuth()">
+    </div>
+    <div class="field">
+      <label>Adgangskode</label>
+      <input type="password" id="authPassword" placeholder="Mindst 6 tegn" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter')submitAuth()">
+    </div>
+    <div class="error-box" id="authErr"></div>
+    <button class="btn btn-primary" id="authSubmitBtn" onclick="submitAuth()" style="width:100%;margin-top:4px">Opret konto</button>
+  </div>
+</div>
 </body>
 </html>
