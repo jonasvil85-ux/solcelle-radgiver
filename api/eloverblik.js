@@ -1,4 +1,6 @@
-// Vercel API route — same logic as netlify/functions/eloverblik.js
+// Vercel API route
+const edsCache = new Map();
+
 module.exports = async function (req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -108,10 +110,19 @@ module.exports = async function (req, res) {
     const priceArea = (zipNum >= 1000 && zipNum <= 4999) ? 'DK2' : 'DK1';
     const dsoGLN   = dsoGLNFromMP || zipToGLN(zipNum);
     const areaFilter = encodeURIComponent(JSON.stringify({ PriceArea: priceArea }));
+    // Markedsdata er ens for alle brugere i samme prisområde og dag — genbrug dem, så vi
+    // ikke rammer Energi Data Services rate limit (HTTP 429) ved flere beregninger i træk
     const edsRecords = async url => {
+      const hit = edsCache.get(url);
+      if (hit && Date.now() - hit.t < 6 * 3600000) return hit.v;
       try {
         const r = await fetch(url, { headers: { Accept: 'application/json' } });
-        return r.ok ? ((await r.json()).records || []) : [];
+        const recs = r.ok ? ((await r.json()).records || []) : [];
+        if (recs.length) {
+          if (edsCache.size >= 12) edsCache.delete(edsCache.keys().next().value);
+          edsCache.set(url, { t: Date.now(), v: recs });
+        }
+        return recs;
       } catch (_) { return []; }
     };
 
