@@ -86,7 +86,7 @@ body {
 [data-theme="dark"] .app::before {
   background:
     radial-gradient(ellipse at 30% 20%, rgba(245,158,11,0.07) 0%, transparent 50%),
-    radial-gradient(ellipse at 70% 60%, rgba(16,185,129,0.05) 0%, transparent 50%);
+    radial-gradient(ellipse at 70% 60%, rgba(245,158,11,0.04) 0%, transparent 50%);
 }
 
 /* HEADER */
@@ -177,17 +177,17 @@ body {
   box-shadow: 0 0 0 3px rgba(245,158,11,0.10);
 }
 .prog-dot.done {
-  border-color: var(--emerald);
-  background: var(--emerald);
-  color: #000; font-weight: 800;
+  border-color: var(--sol-dk);
+  background: var(--sol);
+  color: #fff; font-weight: 800;
   cursor: pointer;
 }
-.prog-dot.done:hover { opacity: 0.75; transform: scale(1.12); }
+.prog-dot.done:hover { opacity: 0.78; transform: scale(1.12); }
 .prog-label.done { cursor: pointer; }
 .prog-label { font-size: 11px; color: var(--text-3); white-space: nowrap; font-weight: 500; letter-spacing: 0.02em; }
 .prog-label.active { color: var(--text-1); font-weight: 600; }
 .prog-line { flex: 1; height: 1px; background: var(--border); margin: 0 10px; }
-.prog-line.done { background: var(--emerald); opacity: 0.4; }
+.prog-line.done { background: var(--sol); opacity: 0.45; }
 
 /* CARD */
 .card {
@@ -217,7 +217,7 @@ body {
   box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
 }
 [data-theme="dark"] .card::before {
-  background: linear-gradient(90deg, transparent 0%, rgba(245,158,11,0.5) 40%, rgba(16,185,129,0.3) 70%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(245,158,11,0.5) 40%, rgba(217,119,6,0.25) 70%, transparent 100%);
 }
 [data-theme="light"] .card {
   background: rgba(255,255,255,0.95);
@@ -227,7 +227,7 @@ body {
   box-shadow: 0 4px 24px rgba(0,0,0,0.10);
 }
 [data-theme="light"] .card::before {
-  background: linear-gradient(90deg, transparent 0%, rgba(245,158,11,0.3) 40%, rgba(16,185,129,0.2) 70%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(245,158,11,0.3) 40%, rgba(217,119,6,0.15) 70%, transparent 100%);
 }
 .card-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.04em; color: var(--text-1); }
 .card-sub { font-size: 13px; color: var(--text-2); margin-bottom: 28px; }
@@ -287,24 +287,24 @@ body {
 }
 [data-theme="dark"] .toggle-opt { background: var(--surface-2); color: var(--text-3); }
 [data-theme="dark"] .toggle-opt.selected {
-  border-color: var(--emerald);
-  color: var(--emerald-dk);
-  background: rgba(16,185,129,0.08);
-  box-shadow: none;
+  border-color: var(--sol);
+  color: var(--sol-dk);
+  background: rgba(245,158,11,0.10);
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.10);
 }
 
 /* CHECKBOX ROW */
 .check-row { display: flex; flex-direction: column; gap: 10px; }
 .ev-details {
-  background: rgba(16,185,129,0.04);
-  border: 1.5px solid rgba(16,185,129,0.18);
+  background: rgba(217,119,6,0.04);
+  border: 1.5px solid rgba(217,119,6,0.18);
   border-top: none;
   border-radius: 0 0 9px 9px;
   padding: 12px 14px 10px;
   margin-top: -10px;
 }
 .ev-details .field { margin-bottom: 8px; }
-.ev-est { font-size: 11.5px; color: var(--emerald); margin-top: 2px; }
+.ev-est { font-size: 11.5px; color: var(--sol); margin-top: 2px; }
 .check-item {
   display: flex;
   align-items: center;
@@ -318,7 +318,7 @@ body {
 }
 .check-item:hover { border-color: var(--sol); background: var(--surface); }
 .check-item.checked { border-color: var(--sol); background: rgba(217,119,6,0.06); }
-[data-theme="dark"] .check-item.checked { border-color: var(--emerald); background: rgba(16,185,129,0.05); }
+[data-theme="dark"] .check-item.checked { border-color: var(--sol); background: rgba(245,158,11,0.07); }
 .check-item input { display: none; }
 .check-box {
   width: 18px;
@@ -332,7 +332,7 @@ body {
   transition: all 0.15s;
 }
 .check-item.checked .check-box { background: var(--sol); border-color: var(--sol); }
-[data-theme="dark"] .check-item.checked .check-box { background: var(--emerald); border-color: var(--emerald); }
+[data-theme="dark"] .check-item.checked .check-box { background: var(--sol); border-color: var(--sol); }
 .check-box svg { display: none; }
 .check-item.checked .check-box svg { display: block; }
 .check-label { flex: 1; }
@@ -545,7 +545,7 @@ body {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(16,185,129,0.6) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(245,158,11,0.55) 50%, transparent 100%);
   pointer-events: none;
 }
 [data-theme="light"] .rec-card {
