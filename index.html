@@ -1594,7 +1594,7 @@ async function signOut() {
 }
 
 function scheduleAuthCheck() {
-  setTimeout(async () => {
+  (async () => {
     const { data: { session } } = await sb.auth.getSession();
     if (session) {
       if (_pendingToken) {
@@ -1602,14 +1602,24 @@ function scheduleAuthCheck() {
         if (shouldSave) await sb.auth.updateUser({ data: { eloverblik_token: _pendingToken } });
         _pendingToken = null;
       }
-    } else {
-      _authCallback = () => {};
-      const saveRow = document.getElementById('saveTokenRow');
-      if (saveRow) saveRow.style.display = _pendingToken ? 'flex' : 'none';
-      show('authModal');
-      setTimeout(() => document.getElementById('authEmail')?.focus(), 150);
+      return;
     }
-  }, 1200);
+    // Not logged in: show auth modal when user scrolls near the recommendation card
+    const target = document.getElementById('vurdering-card');
+    if (!target) { _showAuthGate(); return; }
+    const obs = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) { obs.disconnect(); _showAuthGate(); }
+    }, { rootMargin: '0px 0px 180px 0px', threshold: 0 });
+    obs.observe(target);
+  })();
+}
+
+function _showAuthGate() {
+  _authCallback = () => {};
+  const saveRow = document.getElementById('saveTokenRow');
+  if (saveRow) saveRow.style.display = _pendingToken ? 'flex' : 'none';
+  show('authModal');
+  setTimeout(() => document.getElementById('authEmail')?.focus(), 150);
 }
 
 /* ── FORM STATE PERSISTENCE ── */
