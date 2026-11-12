@@ -269,17 +269,25 @@ body {
   cursor: pointer;
   font-size: 12.5px;
   font-weight: 500;
-  color: var(--text-3);
+  color: var(--text-2);
   transition: all 0.15s;
   user-select: none;
-  background: var(--surface-2);
+  background: var(--surface);
 }
-.toggle-opt:hover { border-color: var(--text-4); color: var(--text-2); background: var(--surface); }
+.toggle-opt:hover { border-color: var(--sol); color: var(--text-1); background: var(--surface); }
 .toggle-opt.selected {
+  border-color: var(--sol);
+  color: var(--sol-dk);
+  background: rgba(217,119,6,0.09);
+  font-weight: 600;
+  box-shadow: 0 0 0 3px rgba(217,119,6,0.10);
+}
+[data-theme="dark"] .toggle-opt { background: var(--surface-2); color: var(--text-3); }
+[data-theme="dark"] .toggle-opt.selected {
   border-color: var(--emerald);
   color: var(--emerald-dk);
   background: rgba(16,185,129,0.08);
-  font-weight: 600;
+  box-shadow: none;
 }
 
 /* CHECKBOX ROW */
@@ -305,8 +313,9 @@ body {
   transition: all 0.15s;
   background: var(--surface-2);
 }
-.check-item:hover { border-color: var(--text-4); background: var(--surface); }
-.check-item.checked { border-color: var(--emerald); background: rgba(16,185,129,0.05); }
+.check-item:hover { border-color: var(--sol); background: var(--surface); }
+.check-item.checked { border-color: var(--sol); background: rgba(217,119,6,0.06); }
+[data-theme="dark"] .check-item.checked { border-color: var(--emerald); background: rgba(16,185,129,0.05); }
 .check-item input { display: none; }
 .check-box {
   width: 18px;
@@ -319,7 +328,8 @@ body {
   flex-shrink: 0;
   transition: all 0.15s;
 }
-.check-item.checked .check-box { background: var(--emerald); border-color: var(--emerald); }
+.check-item.checked .check-box { background: var(--sol); border-color: var(--sol); }
+[data-theme="dark"] .check-item.checked .check-box { background: var(--emerald); border-color: var(--emerald); }
 .check-box svg { display: none; }
 .check-item.checked .check-box svg { display: block; }
 .check-label { flex: 1; }
@@ -351,10 +361,14 @@ body {
   box-shadow: 0 6px 24px rgba(255,255,255,0.10);
 }
 [data-theme="light"] .btn-primary {
-  background: #111111;
-  color: #FFFFFF;
+  background: linear-gradient(135deg, #F59E0B, #D97706);
+  color: #000000;
+  box-shadow: 0 4px 18px rgba(217,119,6,0.30);
 }
-[data-theme="light"] .btn-primary:hover { background: #222222; }
+[data-theme="light"] .btn-primary:hover {
+  background: linear-gradient(135deg, #FBBF24, #F59E0B);
+  box-shadow: 0 6px 24px rgba(217,119,6,0.40);
+}
 .btn-secondary {
   background: transparent;
   border: 1px solid var(--border);
