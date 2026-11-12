@@ -939,7 +939,7 @@ body {
       <div class="card-sub">Vi bruger dit rigtige forbrug til at give en præcis anbefaling</div>
 
       <div style="font-size:12.5px;color:var(--text-3);background:var(--surface-2);border-radius:8px;padding:10px 13px;margin-bottom:18px;line-height:1.5">
-        <strong style="color:var(--text-2)">Eloverblik</strong> er Energinets officielle platform, hvor alle danske elforbrugere kan se deres forbrug. Du logger ind med <strong style="color:var(--text-2)">MitID</strong> direkte på Energinets sikre side — vi ser hverken din adgangskode eller dit MitID. Det eneste vi modtager er det token, du selv vælger at kopiere herunder.
+        <strong style="color:var(--text-2)">Eloverblik</strong> er Energinets officielle platform, hvor alle danske elforbrugere kan se deres forbrug. Du logger ind med <strong style="color:var(--text-2)">MitID</strong> direkte på Energinets side.
       </div>
 
       <!-- Trin-guide -->
@@ -2457,7 +2457,7 @@ function openEloverblikPopup() {
     window.open(url, '_blank');
   } else {
     const sw = screen.width, sh = screen.height;
-    const pw = Math.max(Math.floor(sw / 2) - 190, 460);
+    const pw = Math.max(Math.floor(sw / 2) - 350, 420);
     const left = sw - pw;
     window.open(url, 'eloverblik',
       `width=${pw},height=${sh},left=${left},top=0,resizable=yes,scrollbars=yes`);
