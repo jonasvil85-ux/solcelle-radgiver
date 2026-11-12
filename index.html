@@ -180,7 +180,10 @@ body {
   border-color: var(--emerald);
   background: var(--emerald);
   color: #000; font-weight: 800;
+  cursor: pointer;
 }
+.prog-dot.done:hover { opacity: 0.75; transform: scale(1.12); }
+.prog-label.done { cursor: pointer; }
 .prog-label { font-size: 11px; color: var(--text-3); white-space: nowrap; font-weight: 500; letter-spacing: 0.02em; }
 .prog-label.active { color: var(--text-1); font-weight: 600; }
 .prog-line { flex: 1; height: 1px; background: var(--border); margin: 0 10px; }
@@ -1560,14 +1563,18 @@ function toggleTheme() {
 
 /* ── PROGRESS ── */
 function setProgress(step) {
+  const navFns = [null, goStep1, goStep2Back];
   [1,2,3].forEach(i => {
     const dot = document.getElementById('dot'+i);
     const lbl = document.getElementById('lbl'+i);
-    dot.className = 'prog-dot' + (i < step ? ' done' : i === step ? ' active' : '');
-    lbl.className = 'prog-label' + (i === step ? ' active' : '');
+    const isDone = i < step;
+    dot.className = 'prog-dot' + (isDone ? ' done' : i === step ? ' active' : '');
+    lbl.className = 'prog-label' + (i === step ? ' active' : '') + (isDone ? ' done' : '');
+    dot.onclick = isDone && navFns[i] ? navFns[i] : null;
+    lbl.onclick = isDone && navFns[i] ? navFns[i] : null;
     if (i < 3) {
       const line = document.getElementById('line'+i);
-      line.className = 'prog-line' + (i < step ? ' done' : '');
+      line.className = 'prog-line' + (isDone ? ' done' : '');
     }
   });
 }
@@ -2196,7 +2203,8 @@ if (_compassGrid) _compassGrid.addEventListener('click', function (e) {
   S.roofOrientation = btn.dataset.dir;
 });
 
-function goStep1() { hide('step2'); show('step1'); setProgress(1); }
+function goStep1() { hide('step2'); hide('step3'); show('step1'); setProgress(1); }
+function goStep2Back() { hide('step3'); show('step2'); setProgress(2); }
 
 // Eloverblik: åbn i popup i højre halvdel af skærmen
 let _eloverblikOpened = false;
