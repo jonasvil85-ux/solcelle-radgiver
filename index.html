@@ -1275,7 +1275,7 @@ body {
       </div>
       <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:5px 14px;align-items:baseline">
         <div></div>
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3)">Uden batteri</div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3)">Uden batteri (<span id="bcp-orig-kwp">?</span> kWp)</div>
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3)">Med <span id="bcp-kwh">?</span> kWh (dit valg)</div>
         <div style="color:var(--text-3);white-space:nowrap">Investering</div>
         <div id="bcp-orig-invest" style="font-weight:600;color:var(--text-1)"></div>
@@ -2980,21 +2980,34 @@ function rebuildAll() {
   if (bcpPanel) {
     if (batDiff && orig.batKwh === 0 && r.batKwh > 0) {
       const ej = S.ejertidYr || 15;
-      const origNet = Math.round(orig.grossSav + orig.sysCost * 0.60 - orig.total);
-      const curNet  = Math.round(r.grossSav   + r.sysCost   * 0.60 - r.total);
-      const extraCost = r.total - orig.total;
-      const extraSav1 = r.sav26 - orig.sav26;
+      // Compare same kWp WITH vs WITHOUT battery — not the optimizer recommendation
+      const nbSav26 = r.sav26NoBat || 0;
+      const nbSav28 = r.sav28NoBat || 0;
+      const gf2_b  = 1 + 1.04;
+      const gf28_b = ej > 2 ? 1.04 ** 2 * ((1.04 ** (ej - 2) - 1) / 0.04) : 0;
+      const noBatGross = Math.round(nbSav26 * gf2_b + nbSav28 * gf28_b);
+      // No-battery payback: year when cumulative savings >= solar cost
+      let noBatCum = 0, noBatPb = 99;
+      for (let _y = 1; _y <= 35; _y++) {
+        noBatCum += (_y <= 2 ? nbSav26 : nbSav28) * Math.pow(1.04, _y - 1);
+        if (noBatCum >= r.sysCost && noBatPb === 99) { noBatPb = _y; break; }
+      }
+      const origNet = Math.round(noBatGross + r.sysCost * 0.60 - r.sysCost);
+      const curNet  = Math.round(r.grossSav + r.sysCost * 0.60 - r.total);
+      const extraCost = r.batCost;
+      const extraSav1 = r.sav26 - nbSav26;
       const batPayback = extraSav1 > 0 ? Math.round(extraCost / extraSav1) : 99;
       const netDiff   = curNet - origNet;
       const fmtN = n => Math.round(Math.abs(n)).toLocaleString('da-DK');
-      document.getElementById('bcp-kwh').textContent      = r.batKwh;
-      document.getElementById('bcp-ejertid').textContent  = ej;
-      document.getElementById('bcp-orig-invest').textContent = fmtN(orig.total) + ' kr';
-      document.getElementById('bcp-cur-invest').textContent  = fmtN(r.total)    + ' kr  (+' + fmtN(extraCost) + ')';
-      document.getElementById('bcp-orig-sav').textContent = fmtN(orig.sav26) + ' kr/år';
-      document.getElementById('bcp-cur-sav').textContent  = fmtN(r.sav26)   + ' kr/år  (+' + fmtN(extraSav1) + ')';
-      document.getElementById('bcp-orig-payback').textContent = '~' + orig.payback + ' år';
-      document.getElementById('bcp-cur-payback').textContent  = '~' + r.payback    + ' år';
+      document.getElementById('bcp-kwh').textContent       = r.batKwh;
+      document.getElementById('bcp-orig-kwp').textContent  = r.kWp;
+      document.getElementById('bcp-ejertid').textContent   = ej;
+      document.getElementById('bcp-orig-invest').textContent = fmtN(r.sysCost) + ' kr';
+      document.getElementById('bcp-cur-invest').textContent  = fmtN(r.total)   + ' kr  (+' + fmtN(extraCost) + ')';
+      document.getElementById('bcp-orig-sav').textContent = fmtN(nbSav26) + ' kr/år';
+      document.getElementById('bcp-cur-sav').textContent  = fmtN(r.sav26) + ' kr/år  (+' + fmtN(extraSav1) + ')';
+      document.getElementById('bcp-orig-payback').textContent = '~' + noBatPb + ' år';
+      document.getElementById('bcp-cur-payback').textContent  = '~' + r.payback + ' år';
       document.getElementById('bcp-orig-net').textContent = (origNet >= 0 ? '+' : '−') + fmtN(origNet) + ' kr';
       document.getElementById('bcp-cur-net').textContent  = (curNet  >= 0 ? '+' : '−') + fmtN(curNet)  + ' kr';
       const noteEl = document.getElementById('bcp-note');
@@ -3005,7 +3018,7 @@ function rebuildAll() {
         noteEl.innerHTML =
           `Batteriet koster <strong>+${fmtN(extraCost)} kr ekstra</strong>, men øger kun årsbesparelsen med <strong>+${fmtN(extraSav1)} kr/år</strong>. ` +
           `Batteriet har alene en tilbagebetalingstid på <strong>~${batPayback} år</strong>. ` +
-          `Over ${ej} år ${batVerdict} sammenlignet med ingen batteri.`;
+          `Over ${ej} år ${batVerdict} sammenlignet med ${r.kWp} kWp uden batteri.`;
       }
       bcpPanel.style.display = '';
     } else {
