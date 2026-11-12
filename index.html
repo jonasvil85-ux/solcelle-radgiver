@@ -1782,13 +1782,17 @@ function setProgress(step) {
     const dot = document.getElementById('dot'+i);
     const lbl = document.getElementById('lbl'+i);
     const isDone = i < step;
-    dot.className = 'prog-dot' + (isDone ? ' done' : i === step ? ' active' : '');
-    lbl.className = 'prog-label' + (i === step ? ' active' : '') + (isDone ? ' done' : '');
-    dot.onclick = isDone && navFns[i] ? navFns[i] : null;
-    lbl.onclick = isDone && navFns[i] ? navFns[i] : null;
+    // Step 3 is also "clickable" from step 1 when results already exist
+    const hasResults = i === 3 && step === 1 && S.annualKwh;
+    const showDone = isDone || hasResults;
+    dot.className = 'prog-dot' + (showDone ? ' done' : i === step ? ' active' : '');
+    lbl.className = 'prog-label' + (i === step ? ' active' : '') + (showDone ? ' done' : '');
+    const fn = isDone && navFns[i] ? navFns[i] : hasResults ? goStep2 : null;
+    dot.onclick = fn;
+    lbl.onclick = fn;
     if (i < 3) {
       const line = document.getElementById('line'+i);
-      line.className = 'prog-line' + (isDone ? ' done' : '');
+      line.className = 'prog-line' + (showDone ? ' done' : '');
     }
   });
 }
@@ -2465,7 +2469,7 @@ async function goStep2() {
   if (S.annualKwh) {
     hide('step1'); show('stepLoading'); setProgress(3);
     document.getElementById('loadingLabel').textContent = 'Beregner din solcelleanbefaling…';
-    setTimeout(() => { hide('stepLoading'); showResults(); }, 400);
+    setTimeout(() => { hide('stepLoading'); destroyCharts(); showResults(); }, 400);
     return;
   }
   // If logged in with saved token: auto-fetch without showing step 2
