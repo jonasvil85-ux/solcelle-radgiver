@@ -731,7 +731,8 @@ body {
         <span class="w2">beregner</span>
       </div>
     </div>
-<div id="userBadge" class="user-badge" style="display:none">
+<button id="loginBtn" class="signout-btn" onclick="_showAuthGate()" style="display:none">Log ind</button>
+    <div id="userBadge" class="user-badge" style="display:none">
       <span id="userEmailEl" class="user-badge-email"></span>
       <button class="signout-btn" onclick="signOut()">Log ud</button>
     </div>
@@ -1496,11 +1497,14 @@ sb.auth.onAuthStateChange(async (event, session) => {
 function updateUserUI(session) {
   const badge = document.getElementById('userBadge');
   const emailEl = document.getElementById('userEmailEl');
+  const loginBtn = document.getElementById('loginBtn');
   if (session?.user) {
     if (badge) badge.style.display = 'flex';
     if (emailEl) emailEl.textContent = session.user.email;
+    if (loginBtn) loginBtn.style.display = 'none';
   } else {
     if (badge) badge.style.display = 'none';
+    if (loginBtn) loginBtn.style.display = 'block';
   }
 }
 
