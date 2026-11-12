@@ -1367,8 +1367,8 @@ body {
       <img src="/images/solceller-tag.jpg" loading="lazy" alt="Solceller på tag" style="width:100%;height:100%;object-fit:cover;object-position:center 40%;display:block;filter:saturate(1.15) brightness(1.05)">
       <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,var(--bg) 100%)"></div>
       <div style="position:absolute;top:14px;right:16px;background:rgba(0,0,0,0.40);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.18);border-radius:12px;padding:10px 16px;text-align:right">
-        <div style="font-size:22px;font-weight:800;color:#F59E0B;line-height:1">1.100</div>
-        <div style="font-size:10px;color:rgba(255,255,255,0.80);margin-top:2px;letter-spacing:0.04em">solskinstimer/år i DK</div>
+        <div style="font-size:22px;font-weight:800;color:#F59E0B;line-height:1">1.669</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.80);margin-top:2px;letter-spacing:0.04em">solskinstimer/år i DK · DMI-normal 1991–2020</div>
       </div>
     </div>
 
@@ -1401,8 +1401,8 @@ body {
       <img src="/images/hus-solceller.jpg" loading="lazy" alt="Moderne hus med solceller" style="width:100%;height:100%;object-fit:cover;object-position:center 50%;display:block;filter:saturate(1.1) brightness(1.0)">
       <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,var(--bg) 100%)"></div>
       <div style="position:absolute;top:14px;right:16px;background:rgba(0,0,0,0.40);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.18);border-radius:12px;padding:10px 16px;text-align:right">
-        <div style="font-size:22px;font-weight:800;color:#3B82F6;line-height:1">8–12 år</div>
-        <div style="font-size:10px;color:rgba(255,255,255,0.80);margin-top:2px;letter-spacing:0.04em">typisk tilbagebetaling</div>
+        <div style="font-size:22px;font-weight:800;color:#3B82F6;line-height:1" id="paybackBadgeNum">—</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.80);margin-top:2px;letter-spacing:0.04em">din tilbagebetalingstid</div>
       </div>
     </div>
 
@@ -1426,14 +1426,14 @@ body {
 
     <!-- CHART 3: SUMMER FLOW -->
     <div class="chart-card">
-      <div class="chart-card-title">Sommerdag — Energiflow<span class="chart-info" data-tip="Simuleret typisk julidag (høj solindstråling). Solproduktionen skaleres til din placering og kWp. Et batteri oplades af soloverskuddet i dagtimerne og aflades, når forbruget overstiger solproduktionen — typisk aften og nat. Det er samme logik som i besparelsesberegningen; opladning fra elnettet er ikke medregnet.">i</span></div>
+      <div class="chart-card-title">Sommerdag — Energiflow<span class="chart-info" data-tip="Gennemsnitlig julidag. Med Eloverblik-data vises dit faktiske gennemsnitsforbrug i juli time for time og den faktiske solprofil for måneden; ellers en typisk sommerdag. Solproduktionen er beregnet for dit anlæg, din placering og tagretning. Et batteri oplades af soloverskuddet i dagtimerne og aflades, når forbruget overstiger solproduktionen — typisk aften og nat. Det er samme logik som i besparelsesberegningen; opladning fra elnettet er ikke medregnet.">i</span></div>
       <div class="chart-card-sub" id="summerFlowSub">Typisk sommerdag · <span style="color:#059669">■</span> Sol direkte · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion</div>
       <div class="chart-wrap" style="height:220px"><canvas id="summerFlowChart"></canvas></div>
     </div>
 
     <!-- CHART 4: WINTER FLOW -->
     <div class="chart-card">
-      <div class="chart-card-title">Vinterdag — Energiflow<span class="chart-info" data-tip="Simuleret typisk decemberdag. Solproduktionen er lav, så der er kun lidt eller intet overskud at gemme. Et batteri oplades kun af soloverskud og står derfor ofte næsten ubrugt om vinteren. Teal søjler = batteri aflader. Opladning fra elnettet er ikke medregnet.">i</span></div>
+      <div class="chart-card-title">Vinterdag — Energiflow<span class="chart-info" data-tip="Gennemsnitlig decemberdag. Med Eloverblik-data vises dit faktiske gennemsnitsforbrug i december; ellers en typisk vinterdag. Solproduktionen er lav, så der er kun lidt eller intet overskud at gemme. Et batteri oplades kun af soloverskud og står derfor ofte næsten ubrugt om vinteren. Teal søjler = batteri aflader. Opladning fra elnettet er ikke medregnet.">i</span></div>
       <div class="chart-card-sub" id="winterFlowSub">Typisk vinterdag · <span style="color:#059669">■</span> Sol direkte · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion</div>
       <div class="chart-wrap" style="height:220px"><canvas id="winterFlowChart"></canvas></div>
     </div>
@@ -1899,6 +1899,8 @@ function calcVurdering(r) {
 }
 
 function renderVurdering(r) {
+  const pbBadge = document.getElementById('paybackBadgeNum');
+  if (pbBadge) pbBadge.textContent = r.payback < 100 ? String(r.payback).replace('.', ',') + ' år' : 'Over 40 år';
   const v = calcVurdering(r);
   const card = document.getElementById('vurdering-card');
   if (!card) return;
@@ -3936,9 +3938,28 @@ function buildFlowChart(r, season) {
   const baseTotal = base.reduce((a,v) => a+v, 0);
   const targetDayProd = r.monthlyProd[monthIdx] / mDaysSF[monthIdx];
   const calibFactor = baseTotal > 0 ? targetDayProd / baseTotal : 1;
-  const solar = base.map(v => Math.max(0, +(v * calibFactor).toFixed(3)));
+  // Energinets data viser, at solproduktionen topper ca. kl. 13 i sommertid, så sommerkurven forskydes en halv time
+  let solar = base.map((_, h) => season === 'summer' ? (base[h] + base[(h + 23) % 24]) / 2 : base[h])
+                  .map(v => Math.max(0, +(v * calibFactor).toFixed(3)));
+  let dayProfile = profile || new Array(24).fill(0.2);
 
-  const { direct, batCharge, gridExport, batDischarge, fromGrid } = runBatterySim(solar, profile || new Array(24).fill(0.2), r.batKwh || 0);
+  // Med timedata: faktisk gennemsnitsdøgn for måneden (forbrug og solprofil for juli / december)
+  const H = S.hourly, shape = H ? solarShape(H) : null;
+  if (shape) {
+    const sol = new Array(24).fill(0), con = new Array(24).fill(0), cnt = new Array(24).fill(0);
+    let cSum = 0; for (let i = 0; i < H.c.length; i++) cSum += H.c[i];
+    const consScale = cSum > 0 ? S.annualKwh / cSum : 1;
+    for (let i = 0; i < H.c.length; i++) {
+      if (H.m[i] !== monthIdx) continue;
+      sol[H.h[i]] += r.prod * shape[i]; con[H.h[i]] += H.c[i] * consScale; cnt[H.h[i]]++;
+    }
+    if (cnt.every(c => c > 0)) {
+      solar = sol.map((v, h) => +(v / cnt[h]).toFixed(3));
+      dayProfile = con.map((v, h) => +(v / cnt[h]).toFixed(3));
+    }
+  }
+
+  const { direct, batCharge, gridExport, batDischarge, fromGrid } = runBatterySim(solar, dayProfile, r.batKwh || 0);
 
   if (charts[chartKey]) { charts[chartKey].destroy(); delete charts[chartKey]; }
 
@@ -3950,7 +3971,7 @@ function buildFlowChart(r, season) {
   // Opdatér undertekst-legende med/uden batteri-entries
   const subId = season === 'summer' ? 'summerFlowSub' : 'winterFlowSub';
   const subEl = document.getElementById(subId);
-  const season_dk = season === 'summer' ? 'Typisk sommerdag' : 'Typisk vinterdag';
+  const season_dk = shape ? (season === 'summer' ? 'Gennemsnitlig julidag' : 'Gennemsnitlig decemberdag') : (season === 'summer' ? 'Typisk sommerdag' : 'Typisk vinterdag');
   const batLegend = hasBat ? ` · <span style="display:inline-block;width:12px;height:12px;background:repeating-linear-gradient(45deg,rgba(148,163,184,0.55) 0px,rgba(148,163,184,0.55) 3.5px,rgba(124,58,237,0.65) 3.5px,rgba(124,58,237,0.65) 5px,rgba(148,163,184,0.55) 5px,rgba(148,163,184,0.55) 8px);vertical-align:middle;margin-right:2px"></span> Bat. oplader · <span style="color:#0891B2">■</span> Bat. aflader` : '';
   if (subEl) subEl.innerHTML = `${season_dk} · <span style="color:#059669">■</span> Sol direkte${batLegend} · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion`;
 
