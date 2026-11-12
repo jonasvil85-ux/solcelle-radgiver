@@ -1507,7 +1507,7 @@ let _authMode      = 'signup';
 
 sb.auth.onAuthStateChange(async (event, session) => {
   updateUserUI(session);
-  if (event === 'SIGNED_IN' && _authCallback) {
+  if (event === 'SIGNED_IN') {
     if (_pendingToken) {
       const shouldSave = document.getElementById('saveTokenCheck')?.checked !== false;
       if (shouldSave) await sb.auth.updateUser({ data: { eloverblik_token: _pendingToken } });
@@ -1516,7 +1516,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
     const saved = session.user?.user_metadata?.eloverblik_token;
     if (saved) { const inp = document.getElementById('tokenInput'); if (inp && !inp.value) inp.value = saved; }
     hide('authModal');
-    const cb = _authCallback; _authCallback = null; cb();
+    if (_authCallback) { const cb = _authCallback; _authCallback = null; cb(); }
   }
 });
 
@@ -1591,6 +1591,25 @@ async function submitAuth() {
 async function signOut() {
   await sb.auth.signOut();
   updateUserUI(null);
+}
+
+function scheduleAuthCheck() {
+  setTimeout(async () => {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      if (_pendingToken) {
+        const shouldSave = document.getElementById('saveTokenCheck')?.checked !== false;
+        if (shouldSave) await sb.auth.updateUser({ data: { eloverblik_token: _pendingToken } });
+        _pendingToken = null;
+      }
+    } else {
+      _authCallback = () => {};
+      const saveRow = document.getElementById('saveTokenRow');
+      if (saveRow) saveRow.style.display = _pendingToken ? 'flex' : 'none';
+      show('authModal');
+      setTimeout(() => document.getElementById('authEmail')?.focus(), 150);
+    }
+  }, 1200);
 }
 
 /* ── FORM STATE PERSISTENCE ── */
@@ -2419,18 +2438,26 @@ window.addEventListener('focus', function onReturn() {
   if (inp)  setTimeout(() => inp.focus(), 200);
 });
 
-function goStep2() {
+async function goStep2() {
   showErr('err1','');
   S.persons = parseInt(document.getElementById('persons').value);
   S.fixedPrice = parseFloat(document.getElementById('fixedPrice').value) || 2.70;
   S.spotSurcharge = parseFloat(document.getElementById('spotSurcharge').value) || 0;
-  // Skip step 2 if consumption data already loaded — recalculate directly
+  // Skip step 2 if consumption data already loaded — recalculate directly (user already authed)
   if (S.annualKwh) {
-    hide('step1');
-    show('stepLoading');
-    setProgress(3);
+    hide('step1'); show('stepLoading'); setProgress(3);
     document.getElementById('loadingLabel').textContent = 'Beregner din solcelleanbefaling…';
-    setTimeout(() => requireAuth(() => { hide('stepLoading'); showResults(); }), 400);
+    setTimeout(() => { hide('stepLoading'); showResults(); }, 400);
+    return;
+  }
+  // If logged in with saved token: auto-fetch without showing step 2
+  const { data: { session } } = await sb.auth.getSession();
+  const savedToken = session?.user?.user_metadata?.eloverblik_token;
+  if (savedToken) {
+    const inp = document.getElementById('tokenInput');
+    if (inp) inp.value = savedToken;
+    hide('step1');
+    await fetchData();
     return;
   }
   hide('step1'); show('step2'); setProgress(2);
@@ -2618,7 +2645,9 @@ async function fetchData() {
     }
 
     _pendingToken = document.getElementById('tokenInput')?.value.trim() || null;
-    requireAuth(() => { hide('stepLoading'); showResults(); });
+    hide('stepLoading');
+    showResults();
+    scheduleAuthCheck();
 
   } catch (err) {
     hide('stepLoading');
@@ -2718,7 +2747,7 @@ function useManualData() {
   setProgress(3);
   document.getElementById('loadingLabel').textContent = 'Beregner din solcelleanbefaling…';
 
-  setTimeout(() => requireAuth(() => { hide('stepLoading'); showResults(); }), 600);
+  setTimeout(() => { hide('stepLoading'); showResults(); scheduleAuthCheck(); }, 600);
 }
 
 /* ── IRRADIANCE BY ZIP ── */
