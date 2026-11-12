@@ -1391,7 +1391,7 @@ body {
 
     <!-- MONTHLY CHART -->
     <div class="chart-card">
-      <div class="chart-card-title">Månedlig produktion vs. forbrug<span class="chart-info" data-tip="Månedlig solproduktion beregnes ud fra irradians og sæsonfaktorer (jan=15%, jun=100%). Selvforbrug simuleres time-for-time for hver måned vha. din faktiske timeprofil. Batteriets bidrag estimeres som et energiskift fra sol til aftentimer. Eksport = produktion − selvforbrug.">i</span></div>
+      <div class="chart-card-title">Månedlig produktion vs. forbrug<span class="chart-info" data-tip="Månedlig solproduktion beregnes ud fra irradians og sæsonfaktorer (jan=15%, jun=100%). Med Eloverblik-data er egetforbrug, salg og køb summeret måned for måned fra samme time-for-time-beregning som resten af siden, inkl. et eventuelt batteri. Ved manuelt indtastet forbrug bruges en typisk dag pr. måned.">i</span></div>
       <div class="chart-card-sub"><span style="color:#059669">■</span> Sol direkte · <span style="color:#F59E0B">■</span> Eksport til net · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion</div>
       <div class="chart-wrap" style="height:200px"><canvas id="monthlyChart"></canvas></div>
     </div>
@@ -1426,7 +1426,7 @@ body {
 
     <!-- CHART 3: SUMMER FLOW -->
     <div class="chart-card">
-      <div class="chart-card-title">Sommerdag — Energiflow<span class="chart-info" data-tip="Simuleret typisk junidag (maks. solindstråling). Solproduktionen skaleres til din placering og kWp. Et batteri oplades af soloverskuddet i dagtimerne og aflades, når forbruget overstiger solproduktionen — typisk aften og nat. Det er samme logik som i besparelsesberegningen; opladning fra elnettet er ikke medregnet.">i</span></div>
+      <div class="chart-card-title">Sommerdag — Energiflow<span class="chart-info" data-tip="Simuleret typisk julidag (høj solindstråling). Solproduktionen skaleres til din placering og kWp. Et batteri oplades af soloverskuddet i dagtimerne og aflades, når forbruget overstiger solproduktionen — typisk aften og nat. Det er samme logik som i besparelsesberegningen; opladning fra elnettet er ikke medregnet.">i</span></div>
       <div class="chart-card-sub" id="summerFlowSub">Typisk sommerdag · <span style="color:#059669">■</span> Sol direkte · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion</div>
       <div class="chart-wrap" style="height:220px"><canvas id="summerFlowChart"></canvas></div>
     </div>
@@ -2929,7 +2929,7 @@ function calcRec() {
 
   // evaluate(kWp, bat) → { self, exp, selfVal }: årligt egetforbrug (kWh), salg (kWh) og værdi af egetforbrug (kr, år 1)
   const evalCache = {};
-  let evalRaw, flowFn;
+  let evalRaw, flowFn, shiftFn;
   const shape = S.hourly ? solarShape(S.hourly) : null;
   if (shape) {
     // Time-for-time over hele året med faktisk forbrug, faktisk solprofil og faktiske timepriser
@@ -2949,11 +2949,11 @@ function calcRec() {
       buy[i] = ((H.p[i] != null ? H.p[i] : pAvg) + surcharge + ntH + SYSTEMTARIF + ELAGIFT) * 1.25;
     }
     const eta = Math.sqrt(BAT_ROUNDTRIP);
-    evalRaw = (sz, bat) => {
+    evalRaw = (sz, bat, cArr = H.c) => {
       const k = sz * irr * orientFor(sz), pMax = bat * BAT_C_RATE;
       let self = 0, exp = 0, selfVal = 0, soc = 0;
       for (let i = 0; i < n; i++) {
-        const p = k * shape[i], c = H.c[i] * consScale;
+        const p = k * shape[i], c = cArr[i] * consScale;
         if (p >= c) {
           self += c; selfVal += c * buy[i];
           const sur = p - c;
@@ -2973,23 +2973,42 @@ function calcRec() {
       const k = sz * irr * orientFor(sz), pMax = bat * BAT_C_RATE, days = n / 24;
       const f = { solar: [], direct: [], toBat: [], exp: [], fromBat: [], grid: [] };
       for (const key in f) f[key] = new Array(24).fill(0);
+      const mo = { prod: new Array(12).fill(0), self: new Array(12).fill(0), exp: new Array(12).fill(0), grid: new Array(12).fill(0) };
       let soc = 0;
       for (let i = 0; i < n; i++) {
-        const p = k * shape[i], c = H.c[i] * consScale, h = H.h[i];
-        f.solar[h] += p;
+        const p = k * shape[i], c = H.c[i] * consScale, h = H.h[i], m = H.m[i];
+        f.solar[h] += p; mo.prod[m] += p;
         if (p >= c) {
           const sur = p - c;
           const ch = bat > 0 ? Math.min(sur, pMax, (bat - soc) / eta) : 0;
           soc += ch * eta;
           f.direct[h] += c; f.toBat[h] += ch; f.exp[h] += sur - ch;
+          mo.self[m] += c; mo.exp[m] += sur - ch;
         } else {
           const dis = bat > 0 ? Math.min(c - p, pMax, soc * eta) : 0;
           soc -= dis / eta;
           f.direct[h] += p; f.fromBat[h] += dis; f.grid[h] += c - p - dis;
+          mo.self[m] += p + dis; mo.grid[m] += c - p - dis;
         }
       }
       for (const key in f) f[key] = f[key].map(v => +(v / days).toFixed(3));
+      for (const key in mo) mo[key] = mo[key].map(Math.round);
+      f.month = mo;
       return f;
+    };
+    // Ekstra egetforbrug, hvis 35 % af nat- og aftenforbruget (00–05, 21–23) flyttes til kl. 09–16 samme døgn
+    shiftFn = (sz, bat) => {
+      const c2 = Float64Array.from(H.c);
+      for (let d = H.h.indexOf(0); d >= 0 && d + 24 <= n; d += 24) {
+        let moved = 0; const sun = [];
+        for (let j = d; j < d + 24; j++) {
+          const h = H.h[j];
+          if (h <= 5 || h >= 21) { moved += H.c[j] * 0.35; c2[j] = H.c[j] * 0.65; }
+          else if (h >= 9 && h <= 16) sun.push(j);
+        }
+        for (const j of sun) c2[j] += moved / sun.length;
+      }
+      return Math.round(evalRaw(sz, bat, c2).self - evaluate(sz, bat).self);
     };
   } else {
     // Uden timedata: gennemsnitsdag pr. måned mod forbrugsprofil
@@ -3037,6 +3056,19 @@ function calcRec() {
       }
       for (const key in f) f[key] = f[key].map(v => +v.toFixed(3));
       return f;
+    };
+    shiftFn = (sz) => {
+      const moved = profFrac.reduce((a, v, h) => a + ((h <= 5 || h >= 21) ? v * 0.35 : 0), 0);
+      const p2 = profFrac.map((v, h) => (h <= 5 || h >= 21) ? v * 0.65 : (h >= 9 && h <= 16) ? v + moved / 8 : v);
+      let extra = 0;
+      for (let m = 0; m < 12; m++) {
+        const dayProd = sz * irr * orientFor(sz) * M_SCALES[m] / mNorm;
+        const dayCons = (S.monthlyProfile ? S.monthlyProfile[m] : kwh * M_DAYS[m] / 365) / M_DAYS[m];
+        for (let h = 0; h < 24; h++) {
+          extra += (Math.min(ssNorm[h] * dayProd, p2[h] * dayCons) - Math.min(ssNorm[h] * dayProd, profFrac[h] * dayCons)) * M_DAYS[m];
+        }
+      }
+      return Math.round(extra);
     };
   }
   const evaluate = (sz, bat) => evalCache[sz + '|' + bat] || (evalCache[sz + '|' + bat] = evalRaw(sz, bat));
@@ -3136,7 +3168,7 @@ function calcRec() {
 
   const husPris = houseValue(kWp);
 
-  return { dayFlow: flowFn(kWp, batKwh), husPris, kWp, batKwh, prod, selfCons, exported, selfPct, sav26, sav28, sav26NoBat, sav28NoBat, afgift, avgAnnualSav, grossSav, grossSavNoBat, maintCost, cum, payback, paybackNoBat, ejertid, sysCost, batCost, total, irr, orientFactor, monthlyProd, buyPrice, baseself, baseexp, BAT_LIFESPAN, hourlyBased: !!shape };
+  return { dayFlow: flowFn(kWp, batKwh), shiftExtraKwh: shiftFn(kWp, batKwh), husPris, kWp, batKwh, prod, selfCons, exported, selfPct, sav26, sav28, sav26NoBat, sav28NoBat, afgift, avgAnnualSav, grossSav, grossSavNoBat, maintCost, cum, payback, paybackNoBat, ejertid, sysCost, batCost, total, irr, orientFactor, monthlyProd, buyPrice, baseself, baseexp, BAT_LIFESPAN, hourlyBased: !!shape };
 }
 
 /* ── SLIDER PANEL ── */
@@ -3767,9 +3799,10 @@ function buildMonthlyChart(r) {
 
   // Scale to match calcRec() which already includes battery boost
   const boostRatio = annBaseSelf > 0 ? r.selfCons / annBaseSelf : 1;
-  const selfC    = selfC_base.map((s,m) => Math.min(Math.round(s * boostRatio), mp[m]));
-  const exported = prod.map((p,m) => Math.max(0, p - selfC[m]));
-  const bought   = mp.map((m,i) => Math.max(0, m - selfC[i]));
+  const mo = r.dayFlow.month; // findes når der er regnet time for time
+  const selfC    = mo ? mo.self : selfC_base.map((s,m) => Math.min(Math.round(s * boostRatio), mp[m]));
+  const exported = mo ? mo.exp  : prod.map((p,m) => Math.max(0, p - selfC[m]));
+  const bought   = mo ? mo.grid : mp.map((m,i) => Math.max(0, m - selfC[i]));
 
   if (charts.monthly) { charts.monthly.destroy(); delete charts.monthly; }
   const dark = isDark(), txt = dark?'#B8C5D0':'#6B7280', grid = dark?'rgba(148,163,184,0.12)':'rgba(107,114,128,0.10)';
@@ -3983,15 +4016,7 @@ function buildOptimalChart(r) {
     return Math.max(0, +v.toFixed(3));
   });
 
-  // Self-consumption improvement label — brug årsgennemsnit for korrekt skala
-  const mSc2 = [0.15,0.33,0.57,0.81,0.91,1.0,0.91,0.79,0.60,0.32,0.16,0.11];
-  const solarAvg = ss.map((v,h) => {
-    let w = 0; for (let m = 0; m < 12; m++) w += v * (r.kWp/10) * mSc2[m] * mD[m];
-    return Math.max(0, +(w / 365).toFixed(3));
-  });
-  const selfCurrent = current.reduce((s,v,h) => s + Math.min(v, solarAvg[h]), 0);
-  const selfOptimal  = profile.reduce((s,v,h)  => s + Math.min(v, solarAvg[h]), 0);
-  const extraKwh = Math.round((selfOptimal - selfCurrent) * 365);
+  const extraKwh = r.shiftExtraKwh;
   const extra = extraKwh > 0 ? `Ekstra selvforbrug: ~${extraKwh.toLocaleString('da-DK')} kWh/år` : '';
   document.getElementById('optimalExtra').textContent = extra;
 
