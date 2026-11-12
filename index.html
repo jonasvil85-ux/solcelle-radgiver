@@ -1154,7 +1154,7 @@ body {
         <!-- Solcelle tilbudspris -->
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <div style="font-size:13px;font-weight:600;min-width:130px;display:flex;align-items:center;gap:5px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><text x="12" y="16" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor" font-family="system-ui,sans-serif">kr</text></svg> Pris solceller
-            <span class="chart-info" data-tip="Estimeret pris inkluderer:&#10;• Solpaneler&#10;• Hybridinverter&#10;• Monteringssystem til tag&#10;• El-installation og tilmelding til net&#10;• Opstartsvejledning&#10;&#10;Estimatet er midten af danske prisguider (nov. 2026, inkl. moms og montering):&#10;6 kWp: 55.000–110.000 kr (estimat 85.000)&#10;10 kWp: 85.000–180.000 kr (estimat 125.000)&#10;&#10;Spændet er stort, og over 10 kWp er estimatet en fremskrivning — indtast dit eget tilbud for et præcist resultat.&#10;&#10;Hardware-only uden montering er billigere, men kræver separat autoriseret elektriker til montering og el-installation (typisk +20.000–35.000 kr).">i</span>
+            <span class="chart-info" data-tip="Estimeret pris inkluderer:&#10;• Solpaneler&#10;• Hybridinverter&#10;• Monteringssystem til tag&#10;• El-installation og tilmelding til net&#10;• Opstartsvejledning&#10;&#10;Estimatet ligger midt mellem to købsveje (nov. 2026, inkl. moms og montering):&#10;&#10;Pakke fra webshop + montør:&#10;6 kWp ca. 53.000 kr · 10 kWp ca. 75.000 kr · 15 kWp ca. 100.000 kr&#10;&#10;Nøglefærdigt fra installatør:&#10;6 kWp 55.000–110.000 kr · 10 kWp 80.000–180.000 kr&#10;&#10;Estimat: 6 kWp 64.000 kr · 10 kWp 92.000 kr · 15 kWp 120.000 kr. Over 10 kWp bygger det kun på webshop-priser.&#10;&#10;Stillads, ny eltavle og tagtyper som tegl kan koste ekstra. Indtast dit eget tilbud for et præcist resultat.">i</span>
           </div>
           <div style="display:flex;align-items:center;gap:6px">
             <input type="number" id="sliderSolarPrice" min="10000" max="400000" step="1000"
@@ -1168,7 +1168,7 @@ body {
         <!-- Batteri tilbudspris -->
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <div style="font-size:13px;font-weight:600;min-width:130px;display:flex;align-items:center;gap:5px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><text x="12" y="16" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor" font-family="system-ui,sans-serif">kr</text></svg> Pris batteri
-            <span class="chart-info" data-tip="Estimeret pris inkluderer:&#10;• Lithiumbatteri (typisk LFP)&#10;• Tilslutning til hybridinverter&#10;• El-installation og opsætning&#10;• Konfiguration og idriftsættelse&#10;&#10;Estimatet er midten af danske prisguider (nov. 2026, inkl. moms og installation, købt sammen med anlægget):&#10;5 kWh: 22.000–55.000 kr (estimat 35.000)&#10;10 kWh: 38.000–65.000 kr (estimat 52.000)&#10;15 kWh: 54.000–80.000 kr (estimat 69.000)&#10;&#10;Eftermontering på et eksisterende anlæg er typisk dyrere, fordi der ofte skal en ny hybridinverter til.&#10;&#10;Hardware-only koster mindre, men kræver separat montage og el-installation oveni.">i</span>
+            <span class="chart-info" data-tip="Estimeret pris inkluderer:&#10;• Lithiumbatteri (typisk LFP)&#10;• Tilslutning til hybridinverter&#10;• El-installation og opsætning&#10;• Konfiguration og idriftsættelse&#10;&#10;Estimatet gælder et batteri købt sammen med anlægget og ligger midt mellem to købsveje (nov. 2026, inkl. moms):&#10;&#10;Webshop, kun materialer:&#10;5,5 kWh ca. 12.000–15.000 kr · 8,6 kWh ca. 22.000–24.000 kr&#10;&#10;Nøglefærdigt, installeret:&#10;5 kWh 22.000–55.000 kr · 10 kWh 38.000–80.000 kr&#10;&#10;Estimat: 5 kWh 27.000 kr · 10 kWh 41.000 kr · 15 kWh 56.000 kr.&#10;&#10;Eftermontering på et eksisterende anlæg er typisk dyrere, fordi der ofte skal en ny hybridinverter til.">i</span>
           </div>
           <div style="display:flex;align-items:center;gap:6px">
             <input type="number" id="sliderBatPrice" min="0" max="400000" step="1000"
@@ -2805,17 +2805,20 @@ function getIrradiance(zip) {
 }
 
 /* ── PRICE ESTIMATES ── */
-// Midten af danske prisguider nov. 2026 (inkl. moms og montering): 6 kWp ca. 55–110.000 kr,
-// 10 kWp ca. 85–180.000 kr. Faste omkostninger (inverter, stillads, el-arbejde) gør små anlæg
-// dyrere pr. kWp. Over 10 kWp er prisen en fremskrivning — der findes få offentlige priser.
+// Inkl. moms og montering. Midt mellem to købsveje (nov. 2026):
+//  - webshop-pakke + montør: ca. 21.000 + 5.350 kr/kWp (Mikma-pakker; montage udledt af
+//    Mikmas og Solaroutlets priser med og uden montage)
+//  - nøglefærdigt fra installatør: prisguider, median ca. 75.000 kr (6 kWp) og 110.000 kr (10 kWp)
+// Over 10 kWp findes kun webshop-priser, så dér følger estimatet deres pris pr. ekstra kWp.
 function estimateSolarCost(kWp) {
-  return Math.round((25000 + kWp * 10000) / 1000) * 1000;
+  const cost = 22000 + Math.min(kWp, 10) * 7000 + Math.max(0, kWp - 10) * 5500;
+  return Math.round(cost / 1000) * 1000;
 }
-// Batteri købt sammen med anlægget, inkl. moms og installation: 5 kWh ca. 22–55.000 kr,
-// 10 kWh ca. 38–65.000 kr, 15 kWh ca. 54–80.000 kr
+// Batteri købt sammen med anlægget. Webshops: ca. 12–15.000 kr for 5,5 kWh og 22–24.000 kr
+// for 8,6 kWh i materialer; prisguider: 22–55.000 kr (5 kWh) og 38–80.000 kr (10 kWh) installeret.
 function estimateBatCost(batKwh) {
   if (!batKwh) return 0;
-  return Math.round((18000 + batKwh * 3400) / 1000) * 1000;
+  return Math.round((12000 + batKwh * 2900) / 1000) * 1000;
 }
 
 /* ── RECOMMENDATION ENGINE ── */
