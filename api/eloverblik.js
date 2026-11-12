@@ -100,53 +100,64 @@ module.exports = async function (req, res) {
   processed.address  = mpAddress;
   processed.postCode = mpPostCode;
 
-  // 4. Calculate effective electricity price
+  // 4. Market data (spot + solar shape) and effective electricity price
   let effectiveKwhPrice = fixedPrice;
-  if (priceType === 'spot') {
-    const zipNum   = parseInt(zipcode) || 0;
+  {
+    // Målepunktets postnummer afgør prisområdet; formularens postnummer er kun fallback
+    const zipNum   = parseInt(mpPostCode) || parseInt(zipcode) || 0;
     const priceArea = (zipNum >= 1000 && zipNum <= 4999) ? 'DK2' : 'DK1';
     const dsoGLN   = dsoGLNFromMP || zipToGLN(zipNum);
-
-    // ── Fetch spot prices (required) ──────────────────────────────────────────
-    let spotRecords = [];
-    try {
-      const spotRes  = await fetch(
-        `https://api.energidataservice.dk/dataset/Elspotprice?start=${dateFrom}T00:00&end=${dateTo}T23:59` +
-        `&filter=%7B%22PriceArea%22%3A%22${priceArea}%22%7D&columns=HourUTC,SpotPriceDKK&limit=20000`,
-        { headers: { Accept: 'application/json' } }
-      );
-      spotRecords = (await spotRes.json()).records || [];
-    } catch (_) {}
-
-    const spotMap = {};
-    for (const r of spotRecords) {
-      const key = r.HourUTC ? r.HourUTC.slice(0, 13) : null;
-      if (key && r.SpotPriceDKK != null) spotMap[key] = r.SpotPriceDKK / 1000;
-    }
-
-    // ── Fetch DSO nettarif — try specific ChargeTypeCode, then broad fallback ─
-    let nettarifRecords = [];
-    const ntCols = Array.from({length:24},(_,i)=>`Price${i+1}`).join(',');
-    const ntBase = `https://api.energidataservice.dk/dataset/DatahubPricelist` +
-      `?columns=ValidFrom,ValidTo,ChargeTypeCode,${ntCols}&limit=100`;
-    for (const filter of [
-      `%7B%22GLN_Number%22%3A%22${dsoGLN}%22%2C%22ChargeType%22%3A%22D03%22%2C%22ChargeTypeCode%22%3A%22CD%22%7D`,
-      `%7B%22GLN_Number%22%3A%22${dsoGLN}%22%2C%22ChargeType%22%3A%22D03%22%7D`,
-      `%7B%22GLN_Number%22%3A%22${dsoGLN}%22%7D`,
-    ]) {
+    const areaFilter = encodeURIComponent(JSON.stringify({ PriceArea: priceArea }));
+    const edsRecords = async url => {
       try {
-        const r = await fetch(`${ntBase}&filter=${filter}`, { headers: { Accept: 'application/json' } });
-        const recs = (await r.json()).records || [];
-        // Keep records that have 24 price columns (time-of-use tariff rows)
-        const touRecs = recs.filter(rec => rec.Price1 != null && rec.Price24 != null);
-        if (touRecs.length > 0) { nettarifRecords = touRecs; break; }
-      } catch (_) {}
+        const r = await fetch(url, { headers: { Accept: 'application/json' } });
+        return r.ok ? ((await r.json()).records || []) : [];
+      } catch (_) { return []; }
+    };
+
+    // DayAheadPrices har kvartersopløsning — midles til timepris
+    const [spotRecords, solarRecords] = await Promise.all([
+      edsRecords(`https://api.energidataservice.dk/dataset/DayAheadPrices?start=${dateFrom}T00:00&end=${dateTo}T23:59` +
+        `&filter=${areaFilter}&columns=TimeUTC,DayAheadPriceDKK&limit=40000`),
+      edsRecords(`https://api.energidataservice.dk/dataset/ProductionConsumptionSettlement?start=${dateFrom}T00:00&end=${dateTo}T23:59` +
+        `&filter=${areaFilter}&columns=HourUTC,SolarPowerLt10kW_MWh,SolarPowerGe10Lt40kW_MWh,SolarPowerGe40kW_MWh,SolarPowerSelfConMWh&limit=10000`),
+    ]);
+
+    const spotSum = {}, spotCnt = {};
+    for (const r of spotRecords) {
+      const key = r.TimeUTC ? r.TimeUTC.slice(0, 13) : null;
+      if (!key || r.DayAheadPriceDKK == null) continue;
+      spotSum[key] = (spotSum[key] || 0) + r.DayAheadPriceDKK / 1000;
+      spotCnt[key] = (spotCnt[key] || 0) + 1;
+    }
+    const spotMap = {};
+    for (const key in spotSum) spotMap[key] = spotSum[key] / spotCnt[key];
+
+    const solarMap = {};
+    for (const r of solarRecords) {
+      const key = r.HourUTC ? r.HourUTC.slice(0, 13) : null;
+      if (!key) continue;
+      solarMap[key] = (r.SolarPowerLt10kW_MWh || 0) + (r.SolarPowerGe10Lt40kW_MWh || 0)
+                    + (r.SolarPowerGe40kW_MWh || 0) + (r.SolarPowerSelfConMWh || 0);
     }
 
-    function getNettarif(utcDate) {
+    // ── Fetch DSO nettarif: husholdningstariffen hedder "Nettarif C" hos netselskaberne ─
+    // Ét kald — Energi Data Service afviser hurtigt flere kald i træk (HTTP 429)
+    const ntCols = Array.from({length:24},(_,i)=>`Price${i+1}`).join(',');
+    const ntFilter = encodeURIComponent(JSON.stringify({
+      GLN_Number: [dsoGLN], ChargeType: ['D03'], Note: ['Nettarif C', 'Nettarif C time'],
+    }));
+    const nettarifRecords = (await edsRecords(`https://api.energidataservice.dk/dataset/DatahubPricelist` +
+      `?columns=ValidFrom,ValidTo,ChargeTypeCode,${ntCols}&limit=100&sort=ValidFrom%20desc&filter=${ntFilter}`))
+      .filter(rec => rec.Price1 != null && rec.Price24 != null);
+
+    function localTime(utcDate) {
       const month = utcDate.getUTCMonth();
       const isDST = month >= 2 && month <= 9;
-      const localHour = (utcDate.getUTCHours() + (isDST ? 2 : 1)) % 24;
+      return new Date(utcDate.getTime() + (isDST ? 2 : 1) * 3600000);
+    }
+    function getNettarif(utcDate) {
+      const localHour = localTime(utcDate).getUTCHours();
       const dateStr = utcDate.toISOString().split('T')[0];
       for (const rec of nettarifRecords) {
         const vf = rec.ValidFrom ? rec.ValidFrom.slice(0, 10) : '2000-01-01';
@@ -156,9 +167,10 @@ module.exports = async function (req, res) {
       return 0;
     }
 
-    // ── Calculate actual consumption-weighted prices ────────────────────────
+    // ── Hourly rows + actual consumption-weighted prices ────────────────────
     const SYSTEMTARIF = 0.061;
     let totalSpotCost = 0, totalNettarifCost = 0, totalKwh = 0;
+    const rows = [];
     try {
       const series = tsData.result[0].MyEnergyData_MarketDocument.TimeSeries;
       for (const s of series) {
@@ -171,9 +183,13 @@ module.exports = async function (req, res) {
             const ts  = new Date(periodStart.getTime() + pos * 3600000);
             const key = ts.toISOString().slice(0, 13);
             const spotKr = spotMap[key];
+            const nt = getNettarif(ts);
+            const lt = localTime(ts);
+            rows.push({ t: ts.getTime(), c: kwh, p: spotKr ?? null, n: nt, s: solarMap[key] ?? null,
+                        m: lt.getUTCMonth(), h: lt.getUTCHours() });
             if (spotKr != null) {
               totalSpotCost     += kwh * spotKr;
-              totalNettarifCost += kwh * getNettarif(ts);
+              totalNettarifCost += kwh * nt;
               totalKwh          += kwh;
             }
           }
@@ -181,7 +197,23 @@ module.exports = async function (req, res) {
       }
     } catch (_) {}
 
-    if (totalKwh > 0) {
+    // Timeserie til time-for-time simulering i klienten (kræver solprofil for næsten hele året)
+    rows.sort((a, b) => a.t - b.t);
+    const solarHours = rows.filter(r => r.s != null).length;
+    if (rows.length >= 8000 && solarHours >= rows.length * 0.9) {
+      const r3 = v => Math.round(v * 1000) / 1000;
+      processed.hourly = {
+        c: rows.map(r => r3(r.c)),
+        p: rows.map(r => r.p == null ? null : r3(r.p)),
+        n: rows.map(r => r3(r.n)),
+        s: rows.map(r => r.s == null ? 0 : Math.round(r.s * 10) / 10),
+        m: rows.map(r => r.m),
+        h: rows.map(r => r.h),
+      };
+    }
+    processed.priceArea = priceArea;
+
+    if (priceType === 'spot' && totalKwh > 0) {
       const avgSpot     = totalSpotCost / totalKwh;
       const avgNettarif = totalNettarifCost / totalKwh;
       effectiveKwhPrice = +((avgSpot + spotSurcharge + avgNettarif + SYSTEMTARIF) * 1.25).toFixed(3);

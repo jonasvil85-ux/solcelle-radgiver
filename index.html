@@ -1214,25 +1214,25 @@ body {
           <div class="kpi-sub">kr inkl. moms</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
-          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Antal år til din investering er tilbagebetalt af løbende besparelser.&#10;&#10;Beregnet med 4%/år elprisvækst og el-afgift modellen:&#10;• År 1–2 (2026–2027): uden el-afgift&#10;• År 3+ (2028+): med el-afgift (~0,76 kr/kWh inkl. moms)&#10;&#10;Elbil-ladning er undtaget via refusionsordningen og medregnes ikke.">i</span>
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Antal år til din investering er tilbagebetalt af løbende besparelser.&#10;&#10;Beregnet med 2%/år elprisvækst, 0,5%/år paneltab, ny inverter efter 15 år og el-afgift modellen:&#10;• År 1–2 (2026–2027): uden el-afgift&#10;• År 3+ (2028+): med el-afgift (~0,76 kr/kWh inkl. moms)&#10;&#10;Elbil-ladning er undtaget via refusionsordningen og medregnes ikke.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M12 7V12L15 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
           <div class="kpi-value" id="kpi-payback">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Break-even</div>
           <div class="kpi-sub">år</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
-          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Solenergi du producerer ud over dit eget forbrug og sælger til elnettet.&#10;&#10;Beregnet som: total solproduktion − selvforbrugt energi, time for time.&#10;&#10;Afregningspris er typisk ~0,35 kr/kWh (nettarifdelen). Jo bedre dit forbrugsmønster matcher solprofilen, jo mindre eksporteres.">i</span>
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Solenergi du producerer ud over dit eget forbrug og sælger til elnettet.&#10;&#10;Beregnet som: total solproduktion − selvforbrugt energi, time for time.&#10;&#10;Solgt strøm er forsigtigt regnet til 0,35 kr/kWh uden årlig prisstigning. Jo bedre dit forbrugsmønster matcher solprofilen, jo mindre eksporteres.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3V15M7 8L12 3L17 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 16V19C20 20.1 19.1 21 18 21H6C4.9 21 4 20.1 4 19V16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
           <div class="kpi-value" id="sit-export">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Salg til net</div>
           <div class="kpi-sub">kWh/år · ~35 øre/kWh</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
-          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Samlet elbesparelse over ejertiden med 4%/år elprisvækst:&#10;• Første 2 år (2026–2027): årsbesparelse uden el-afgift&#10;• Resterende år (fra 2028): årsbesparelse med el-afgift (~0,76 kr/kWh inkl. moms)&#10;&#10;Samme beregningsmodel som break-even og anbefalingen. Inkluderer ikke boligværdistigning eller fratrukket investering — det vises i 'Kan det svare sig?' nedenfor.">i</span>
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Samlet elbesparelse over ejertiden med 2%/år elprisvækst og 0,5%/år paneltab:&#10;• Første 2 år (2026–2027): årsbesparelse uden el-afgift&#10;• Resterende år (fra 2028): årsbesparelse med el-afgift (~0,76 kr/kWh inkl. moms)&#10;&#10;Samme beregningsmodel som break-even og anbefalingen. Inkluderer ikke boligværdistigning eller fratrukket investering — det vises i 'Kan det svare sig?' nedenfor.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L15.1 8.3L22 9.3L17 14.1L18.2 21L12 17.8L5.8 21L7 14.1L2 9.3L8.9 8.3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="currentColor" fill-opacity="0.1"/></svg></div>
           <div class="kpi-value emerald" id="kpi-total-sav">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Samlet elbesparelse</div>
-          <div class="kpi-sub" id="kpi-total-sav-sub">kr inkl. 4%/år vækst</div>
+          <div class="kpi-sub" id="kpi-total-sav-sub">kr inkl. 2%/år vækst</div>
         </div>
       </div>
 
@@ -1240,7 +1240,7 @@ body {
       <div style="font-size:9.5px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:7px;padding-left:2px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><polygon points="9,1 3,9 8,9 7,15 13,7 8,7" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" fill="currentColor" opacity="0.7"/></svg>Anlæg & produktion</div>
       <div class="kpi-grid" style="margin-bottom:0;grid-template-columns:repeat(3,1fr);gap:8px">
         <div class="kpi-tile" style="text-align:center;position:relative">
-          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Anlægsstørrelsen valgt ved at afprøve alle kombinationer af kWp (3–20) og batteri (0, 5, 10 kWh).&#10;&#10;Den kombination vælges, som giver størst nettogevinst:&#10;Kumulativ besparelse med 4%/år elprisvækst over din ejertid − total investering.&#10;&#10;Justér selv med slideren for at se andre scenarier.">i</span>
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Anlægsstørrelsen valgt ved at afprøve alle kombinationer af kWp (3–20) og batteri (0, 5, 10 kWh).&#10;&#10;Den kombination vælges, som giver størst nettogevinst:&#10;Kumulativ besparelse med 2%/år elprisvækst over din ejertid − total investering.&#10;&#10;Justér selv med slideren for at se andre scenarier.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.5"/><path d="M12 2V4.5M12 19.5V22M2 12H4.5M19.5 12H22M5.6 5.6L7.4 7.4M16.6 16.6L18.4 18.4M5.6 18.4L7.4 16.6M16.6 7.4L18.4 5.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
           <div class="kpi-value emerald" id="kpi-kwp">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Anbefalet anlæg</div>
@@ -1408,8 +1408,8 @@ body {
 
     <!-- PAYBACK CHART -->
     <div class="chart-card">
-      <div class="chart-card-title">Hvornår har du tjent anlægget hjem?<span class="chart-info" data-tip="Kumulativ økonomi over 30 år. År 0 = din samlede investering. Hvert år lægges årsbesparelse til med 4%/år elprisvækst. Boligværdistigning er ikke medregnet her — den vises separat i vurderingspanelet.">i</span></div>
-      <div class="chart-card-sub">Kumulativ økonomi over 30 år · 4 %/år elprisvækst · Boligværdi ikke inkluderet</div>
+      <div class="chart-card-title">Hvornår har du tjent anlægget hjem?<span class="chart-info" data-tip="Kumulativ økonomi over 30 år. År 0 = din samlede investering. Hvert år lægges årsbesparelsen til med 2%/år elprisvækst og 0,5%/år paneltab. Batteriets bidrag ophører efter 12 år, og i år 15 fratrækkes en ny inverter. Boligværdistigning er ikke medregnet her — den vises separat i vurderingspanelet.">i</span></div>
+      <div class="chart-card-sub">Kumulativ økonomi over 30 år · 2 %/år elprisvækst · Boligværdi ikke inkluderet</div>
       <div class="chart-wrap" style="height:200px"><canvas id="paybackChart"></canvas></div>
     </div>
 
@@ -1842,12 +1842,11 @@ function calcVurdering(r) {
   const total    = r.total;
   const sav26    = r.sav26;
 
-  // Cumulative savings: use pre-computed grossSav (4%/yr growth, two-phase afgift model)
   const cumSav = r.grossSav;
 
-  // Boligværdistigning: ~60% af solcelleanlæggets pris (dokumenteret for solpaneler).
-  // Batterier har ingen dokumenteret effekt på boligpris og har 0 restværdi efter ~12 år.
-  const husPris = Math.round(r.sysCost * 0.60);
+  // Boligværdi: skøn på 60% af solcelleanlæggets pris, afskrevet efter anlæggets alder ved salg.
+  // Batterier regnes ikke med.
+  const husPris = houseValue(r.sysCost, ejertid);
 
   // Loan cost (simplified: avg outstanding = 60% of loan over term)
   let loanCost = 0;
@@ -1856,7 +1855,7 @@ function calcVurdering(r) {
     loanCost = Math.round(total * 0.60 * rate * ejertid);
   }
 
-  const netResult = cumSav + husPris - total - loanCost;
+  const netResult = cumSav + husPris - total - loanCost - r.maintCost;
   const payback   = r.payback;
 
   // Verdict
@@ -1876,10 +1875,17 @@ function calcVurdering(r) {
   if (ejertid >= payback) {
     lines.push(`Med en planlagt ejertid på ${ejertid} år når du tilbagebetalingstiden på ~${payback} år, inden du sælger — anlægget har betalt sig selv hjem, mens du bor der.`);
   } else {
-    lines.push(`Din planlagte ejertid på ${ejertid} år er kortere end tilbagebetalingstiden på ~${payback} år. Solceller øger dog typisk boligens salgsværdi med ca. ${fmt(husPris)} kr (60% af solcelleanlæggets pris), hvilket delvist opvejer dette.`);
+    lines.push(`Din planlagte ejertid på ${ejertid} år er kortere end tilbagebetalingstiden på ~${payback} år.${husPris > 0 ? ` Et nyere solcelleanlæg kan dog øge boligens salgsværdi — her anslået til ca. ${fmt(husPris)} kr — hvilket delvist opvejer dette.` : ''}`);
   }
 
-  lines.push(`Over ${ejertid} år estimeres en samlet elbesparelse på ca. ${fmt(cumSav)} kr (årsbesparelse ${fmt(sav26)} kr × 4%/år elprisvækst). Hertil kommer en anslået boligværdistigning på ca. ${fmt(husPris)} kr (60% af solcelleanlæggets pris — batterier øger ikke boligværdien dokumenteret). Fratrukket investeringen${S.financing==='loan' ? ` og låneomkostninger på ca. ${fmt(loanCost)} kr` : ''} giver det et estimerede nettoresultat på ${netResult >= 0 ? '+' : ''}${fmt(netResult)} kr.`);
+  const husTxt = husPris > 0
+    ? `Hertil kommer en anslået boligværdistigning på ca. ${fmt(husPris)} kr (skøn: 60% af solcelleanlæggets pris, afskrevet efter anlæggets alder ved salg — batterier regnes ikke med).`
+    : `Der er ikke regnet med boligværdistigning, da anlægget er ${ejertid} år gammelt ved salg.`;
+  const fradrag = [
+    r.maintCost > 0 ? `en ny inverter efter ca. ${INVERTER_YEAR} år (${fmt(r.maintCost)} kr)` : '',
+    S.financing === 'loan' ? `låneomkostninger på ca. ${fmt(loanCost)} kr` : '',
+  ].filter(Boolean);
+  lines.push(`Over ${ejertid} år estimeres en samlet elbesparelse på ca. ${fmt(cumSav)} kr (${fmt(sav26)} kr det første år, med 2%/år elprisvækst og el-afgift fra 2028). ${husTxt} Fratrukket investeringen${fradrag.length ? ', ' + fradrag.join(' og ') + ',' : ''} giver det et estimeret nettoresultat på ${netResult >= 0 ? '+' : ''}${fmt(netResult)} kr.`);
 
   if (S.hasEV) {
     lines.push(`Din elbil styrker investeringen: selvom afgiftsrefusionen reducerer afgiftsbesparelsen en smule, lader du billigst om sommeren direkte fra solen og sparer på ladning fra nettet.`);
@@ -1908,7 +1914,7 @@ function renderVurdering(r) {
   document.getElementById('vurdering-net-sub').textContent = `estimeret nettoresultat over ${v.ejertid} år`;
   document.getElementById('vurdering-prose').textContent   = v.prose;
   document.getElementById('vurdering-assumptions').textContent =
-    `Antagelser: Elprisstigning 4%/år · Boligværdistigning 60% af solcelleanlæg (batterier ekskl.) · Vedligehold ikke inkluderet`;
+    `Antagelser: Elprisstigning 2%/år · Solgt strøm 0,35 kr/kWh uden prisstigning · Paneler taber 0,5%/år · Ny inverter efter 15 år (15.000 kr) · Boligværdi 60% af solcelleanlægget, afskrevet over 25 år (batterier ekskl.)`;
 }
 
 function toggleCheck(key) {
@@ -2568,7 +2574,7 @@ function updateRoofFacesSummary() {
 
 function restart() {
   hide('step3');
-  Object.assign(S, { zipcode:'', address:'', roofOrientation:'S', roofOrientFactor:null, roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasEV2:false, hasHP:false, hasHybrid:false, evKm:15000, ev2Km:15000, evChargesHome:true, ev2ChargesHome:true, hybridKwh:500, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, _manualKwh:false });
+  Object.assign(S, { zipcode:'', address:'', roofOrientation:'S', roofOrientFactor:null, roofAreaM2:null, persons:3, isOwner:true, hasEV:false, hasEV2:false, hasHP:false, hasHybrid:false, evKm:15000, ev2Km:15000, evChargesHome:true, ev2ChargesHome:true, hybridKwh:500, annualKwh:null, hourlyProfile:null, monthlyProfile:null, summerHourlyProfile:null, winterHourlyProfile:null, hourly:null, priceType:'spot', fixedPrice:2.70, spotSurcharge:0, effectiveKwhPrice:2.70, overrideKwp:null, overrideBatKwh:null, overrideSolarCost:null, overrideBatCost:null, _manualKwh:false });
 
   S.roofFaces = null;
   const rfp = document.getElementById('roofFacesPanel'); if (rfp) rfp.style.display = 'none';
@@ -2665,6 +2671,7 @@ async function fetchData() {
     S.actualNettarif= data.actualNettarif  || null;
     S.priceArea     = data.priceArea   || null;
     S.dsoGLN        = data.dsoGLN      || null;
+    S.hourly        = data.hourly      || null;
     // Price: actual bill overrides everything if provided
     const spotOrFixed = data.effectiveKwhPrice || S.fixedPrice || 2.70;
     S.effectiveKwhPrice = S.annualBill && S.annualKwh > 0
@@ -2779,6 +2786,7 @@ function useManualData() {
   S.effectiveKwhPrice   = bill && kwh > 0 ? +(bill / kwh).toFixed(3) : S.fixedPrice || 2.70;
   if (bill) S.annualBill = bill;
   S._manualKwh = true; // flag for result subtitle
+  S.hourly = null;
 
   hide('step2');
   show('stepLoading');
@@ -2815,11 +2823,49 @@ function estimateBatCost(batKwh) {
 }
 
 /* ── RECOMMENDATION ENGINE ── */
+const PRICE_GROWTH  = 0.02;   // elpris og afgift følger inflationen (afgiften reguleres efter nettoprisindekset)
+const SELL_PRICE    = 0.35;   // kr/kWh for solgt strøm, uden årlig vækst (solvægtet spot var 0,55–0,58 kr i 2025/26)
+const PANEL_DEGR    = 0.005;  // paneler taber ca. 0,5 %/år
+const INVERTER_YEAR = 15;     // inverter holder typisk 10–15 år
+const INVERTER_COST = 15000;
+const BAT_LIFESPAN  = 12;     // LFP-batterier: ~12 år realistisk levetid (10 år garanti til 70% kapacitet)
+const BAT_FADE      = 0.025;  // batteriets bidrag falder lineært til ca. 70 % ved levetidens udløb
+const BAT_ROUNDTRIP = 0.90;
+const BAT_C_RATE    = 0.5;    // maks. op-/afladning pr. time som andel af kapaciteten
+const AFGIFT_2028   = 0.76;   // kr/kWh inkl. moms, fra år 3
+const SYSTEMTARIF   = 0.061;
+const HOUSE_VALUE_SHARE = 0.60;
+const HOUSE_VALUE_YEARS = 25; // anlæggets bidrag til boligværdien afskrives lineært
+const M_SCALES = [0.15,0.33,0.57,0.81,0.91,1.0,0.91,0.79,0.60,0.32,0.16,0.11];
+const M_DAYS   = [31,28,31,30,31,30,31,31,30,31,30,31];
+
+function houseValue(sysCost, ejertid) {
+  return Math.round(sysCost * HOUSE_VALUE_SHARE * Math.max(0, 1 - ejertid / HOUSE_VALUE_YEARS));
+}
+
+// Faktisk solproduktion time for time (Energinet), skaleret til modellens månedsfordeling. Summerer til 1.
+function solarShape(H) {
+  if (H._shape !== undefined) return H._shape;
+  const mNorm = M_SCALES.reduce((a,s,i)=>a+s*M_DAYS[i],0);
+  const msum = new Array(12).fill(0);
+  for (let i = 0; i < H.s.length; i++) msum[H.m[i]] += H.s[i];
+  H._shape = msum.some(v => v <= 0)
+    ? null
+    : H.s.map((v,i) => v / msum[H.m[i]] * M_SCALES[H.m[i]] * M_DAYS[H.m[i]] / mNorm);
+  return H._shape;
+}
+
+function paybackFrom(cum) {
+  for (let i = 1; i < cum.length; i++) {
+    if (cum[i-1] < 0 && cum[i] >= 0) return +((i-1) + (-cum[i-1]) / (cum[i] - cum[i-1])).toFixed(1);
+  }
+  return 999;
+}
+
 function calcRec() {
   const irr = getIrradiance(S.zipcode);
   const kwh = S.annualKwh;
 
-  const evKwhTotal = (S.hasEV ? S.evKm * 0.20 : 0) + (S.hasEV2 ? S.ev2Km * 0.20 : 0) + (S.hasHybrid ? S.hybridKwh : 0);
   const evKwhHome  = (S.hasEV ? S.evKm * 0.20 * (S.evChargesHome ? 0.85 : 0.12) : 0)
                    + (S.hasEV2 ? S.ev2Km * 0.20 * (S.ev2ChargesHome ? 0.85 : 0.12) : 0)
                    + (S.hasHybrid ? S.hybridKwh : 0);
@@ -2832,24 +2878,14 @@ function calcRec() {
     0.90, 1.42, 1.55, 1.48, 1.35, 1.20,  // 16-21: evening peak
     0.80, 0.50,                           // 22-23: wind-down
   ];
-
-  // Hourly consumption fractions (normalized — works whether profile is daily or annual totals)
   const profRaw  = S.hourlyProfile || DANISH_DEFAULT_PROFILE;
   const profSum  = profRaw.reduce((a,b)=>a+b,0) || 24;
-  const profFrac = profRaw.map(v => v / profSum); // sums to 1
+  const profFrac = profRaw.map(v => v / profSum);
 
-  // Evening fraction (17-21) for battery sizing, expressed as daily kWh
-  const dailyKwh = kwh / 365;
-  const evenKwh  = profFrac.slice(17, 22).reduce((a,b)=>a+b,0) * dailyKwh;
-
-  // Prereqs needed for kWp sweep — defined before candidate selection
   const orientFactor = S.roofOrientFactor ||
     ({ S:1.00, SW:0.92, SE:0.92, W:0.78, E:0.78, NW:0.55, NE:0.55, N:0.40 }[S.roofOrientation] || 1.00);
 
-  const mScales = [0.15,0.33,0.57,0.81,0.91,1.0,0.91,0.79,0.60,0.32,0.16,0.11];
-  const mDays   = [31,28,31,30,31,30,31,31,30,31,30,31];
-  const mNorm   = mScales.reduce((a,s,i)=>a+s*mDays[i],0); // ~202.9
-
+  const mNorm = M_SCALES.reduce((a,s,i)=>a+s*M_DAYS[i],0);
   const SS = [0,0,0,0,0,0,0,0,0.48,1.93,4.32,6.72,8.16,8.64,7.20,5.28,2.88,1.44,0.19,0,0,0,0,0];
   const ssSum  = SS.reduce((a,b)=>a+b,0);
   const ssNorm = SS.map(v=>v/ssSum);
@@ -2859,197 +2895,169 @@ function calcRec() {
   const nettarifAnnAvg = (nt.summer.reduce((a,b)=>a+b,0) + nt.winter.reduce((a,b)=>a+b,0)) / 48;
 
   // spotEst: real Eloverblik spot avg if available, else conservative 2024-2025 DK estimate
-  const spotEst = S.spotAvg || 0.65;
+  const spotEst  = S.spotAvg || 0.65;
+  const surcharge = S.spotSurcharge || 0;
+  const isFixed  = S.priceType === 'fixed';
 
-  const buyPrice = (S.spotAvg && S.nettarifAvg)
-    ? +((S.spotAvg + (S.spotSurcharge||0) + S.nettarifAvg + ELAGIFT) * 1.25).toFixed(3)
-    : (S.annualBill && S.annualKwh > 0)
-      ? +(S.annualBill / S.annualKwh).toFixed(3)
-      : +((spotEst + (S.spotSurcharge||0) + nettarifAnnAvg + ELAGIFT) * 1.25).toFixed(3);
+  const buyPrice = isFixed
+    ? S.fixedPrice
+    : (S.spotAvg && S.nettarifAvg)
+      ? +((S.spotAvg + surcharge + S.nettarifAvg + ELAGIFT) * 1.25).toFixed(3)
+      : (S.annualBill && S.annualKwh > 0)
+        ? +(S.annualBill / S.annualKwh).toFixed(3)
+        : +((spotEst + surcharge + nettarifAnnAvg + ELAGIFT) * 1.25).toFixed(3);
 
-  // System sizing — joint sweep over (kWp × batteri) to maximise net return over ejertid.
-  // Metric: two-phase NPV — yr 1–2 no afgift (sav26), yr 3+ with afgift (sav28), 4%/yr growth
-  const sizes      = [5,6,7,8,9,10,12,15];
-  // 5 m²/kWp is actual panel footprint — used as cap; roof area already includes all usable segments (S+E+W)
-  const maxKwpRoof = S.roofAreaM2 ? Math.max(3, Math.floor(S.roofAreaM2 / 5)) : Infinity;
   const ejertid    = S.ejertidYr || 15;
-  const BAT_LIFESPAN = 12; // LFP-batterier: ~12 år realistisk levetid (10 år garanti til 70% kapacitet)
-  const gf2  = 1 + 1.04;  // years 1–2 growth factors summed
-  const gf28 = ejertid > 2 ? 1.04 ** 2 * ((1.04 ** (ejertid - 2) - 1) / 0.04) : 0;
-  const houseShareOpt = (S.hasEV || S.hasEV2 || S.hasHybrid) ? Math.max(0, (kwh - evKwhHome) / kwh) : 1.0;
+  const houseShare = (S.hasEV || S.hasEV2 || S.hasHybrid) ? Math.max(0, (kwh - evKwhHome) / kwh) : 1.0;
   const annCostEst = S.annualBill || (kwh * buyPrice);
 
-  let kWp, autoRecBat;
-  if (S.overrideKwp !== null) {
-    kWp = S.overrideKwp;
-    autoRecBat = null; // evaluated after baseself/baseexp known below
+  // evaluate(kWp, bat) → { self, exp, selfVal }: årligt egetforbrug (kWh), salg (kWh) og værdi af egetforbrug (kr, år 1)
+  const evalCache = {};
+  let evalRaw;
+  const shape = S.hourly ? solarShape(S.hourly) : null;
+  if (shape) {
+    // Time-for-time over hele året med faktisk forbrug, faktisk solprofil og faktiske timepriser
+    const H = S.hourly, n = H.c.length;
+    let cSum = 0, nSum = 0, pSum = 0, pCnt = 0;
+    for (let i = 0; i < n; i++) {
+      cSum += H.c[i]; nSum += H.n[i];
+      if (H.p[i] != null) { pSum += H.p[i]; pCnt++; }
+    }
+    const consScale = cSum > 0 ? kwh / cSum : 1;
+    const pAvg = pCnt ? pSum / pCnt : spotEst;
+    const buy = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+      if (isFixed) { buy[i] = S.fixedPrice; continue; }
+      const isWinter = H.m[i] <= 2 || H.m[i] >= 9;
+      const ntH = nSum > 0 ? H.n[i] : (isWinter ? nt.winter : nt.summer)[H.h[i]];
+      buy[i] = ((H.p[i] != null ? H.p[i] : pAvg) + surcharge + ntH + SYSTEMTARIF + ELAGIFT) * 1.25;
+    }
+    const eta = Math.sqrt(BAT_ROUNDTRIP);
+    evalRaw = (sz, bat) => {
+      const k = sz * irr * orientFactor, pMax = bat * BAT_C_RATE;
+      let self = 0, exp = 0, selfVal = 0, soc = 0;
+      for (let i = 0; i < n; i++) {
+        const p = k * shape[i], c = H.c[i] * consScale;
+        if (p >= c) {
+          self += c; selfVal += c * buy[i];
+          const sur = p - c;
+          const ch = bat > 0 ? Math.min(sur, pMax, (bat - soc) / eta) : 0;
+          soc += ch * eta;
+          exp += sur - ch;
+        } else {
+          const dis = bat > 0 ? Math.min(c - p, pMax, soc * eta) : 0;
+          soc -= dis / eta;
+          self += p + dis; selfVal += (p + dis) * buy[i];
+        }
+      }
+      return { self, exp, selfVal };
+    };
   } else {
-    const candidates = sizes.filter(s => s <= maxKwpRoof);
-    if (candidates.length === 0) candidates.push(Math.max(3, Math.min(5, maxKwpRoof)));
-    let bestKwp = candidates[0], bestReturn = -Infinity;
-    autoRecBat = 0;
-    for (const sz of candidates) {
-      let szAnnSelf = 0, szAnnSavSelf = 0;
+    // Uden timedata: gennemsnitsdag pr. måned mod forbrugsprofil
+    const eveningNt = nt.summer.slice(17, 22).reduce((a,b)=>a+b,0) / 5;
+    const eveningPrice = isFixed ? S.fixedPrice : (spotEst + surcharge + eveningNt + ELAGIFT) * 1.25;
+    evalRaw = (sz, bat) => {
+      let annSelf = 0, annSavSelf = 0;
       for (let m = 0; m < 12; m++) {
         const isWinter = m <= 2 || m >= 9;
         const ntt = isWinter ? nt.winter : nt.summer;
-        const dayProd = sz * irr * orientFactor * mScales[m] / mNorm;
-        const dayCons = (S.monthlyProfile ? S.monthlyProfile[m] : kwh * mDays[m] / 365) / mDays[m];
+        const dayProd = sz * irr * orientFactor * M_SCALES[m] / mNorm;
+        const dayCons = (S.monthlyProfile ? S.monthlyProfile[m] : kwh * M_DAYS[m] / 365) / M_DAYS[m];
         for (let h = 0; h < 24; h++) {
           const selfH = Math.min(ssNorm[h] * dayProd, profFrac[h] * dayCons);
-          szAnnSelf    += selfH * mDays[m];
-          szAnnSavSelf += selfH * mDays[m] * (spotEst + (S.spotSurcharge||0) + ntt[h] + ELAGIFT) * 1.25;
+          annSelf    += selfH * M_DAYS[m];
+          annSavSelf += selfH * M_DAYS[m] * (isFixed ? S.fixedPrice : (spotEst + surcharge + ntt[h] + ELAGIFT) * 1.25);
         }
       }
-      const szBaseself = Math.min(Math.round(szAnnSelf), Math.round(kwh * 0.92));
-      const szProd     = Math.round(sz * irr * orientFactor);
-      const szExp      = szProd - szBaseself;
-      let szSavNoBat = 0, szSav28NoBat = 0;
-      for (const bKwh of [0, 5, 10]) {
-        const bShift   = bKwh > 0 ? Math.round(Math.min(bKwh * 0.45 * 365, szExp * 0.60)) : 0;
-        const szSelf   = Math.min(szBaseself + bShift, Math.round(kwh * 0.92));
-        const szExport = szProd - szSelf;
-        const szSavVal = szBaseself > 0 ? szAnnSavSelf * (szSelf / szBaseself) : szSelf * buyPrice;
-        const szSavRaw = szSavVal + szExport * 0.35;
-        const szSav    = Math.round(annCostEst ? Math.min(szSavRaw, annCostEst * 0.88) : szSavRaw);
-        const szAfgift = Math.round(szSelf * houseShareOpt * 0.76);
-        const szSav28  = szSav + szAfgift;
-        if (bKwh === 0) { szSavNoBat = szSav; szSav28NoBat = szSav28; }
-        let netRet;
-        if (bKwh === 0 || ejertid <= BAT_LIFESPAN) {
-          netRet = szSav * gf2 + szSav28 * gf28 - (estimateSolarCost(sz) + estimateBatCost(bKwh));
-        } else {
-          // Batteri udløber ved BAT_LIFESPAN — beregn grossSav i loop med levetidsskifte
-          let szGross = 0;
-          for (let _y = 1; _y <= ejertid; _y++) {
-            const on = _y <= BAT_LIFESPAN;
-            szGross += (_y <= 2 ? (on ? szSav : szSavNoBat) : (on ? szSav28 : szSav28NoBat)) * Math.pow(1.04, _y-1);
-          }
-          netRet = szGross - (estimateSolarCost(sz) + estimateBatCost(bKwh));
-        }
-        if (netRet > bestReturn) { bestReturn = netRet; bestKwp = sz; autoRecBat = bKwh; }
-      }
-    }
-    kWp = bestKwp;
+      const selfCap  = kwh * 0.92;
+      const prod     = sz * irr * orientFactor;
+      const baseself = Math.min(annSelf, selfCap);
+      const baseVal  = annSelf > 0 ? annSavSelf * (baseself / annSelf) : 0;
+      // Batteriet flytter soloverskud til aftenforbruget — med tab undervejs
+      const shifted   = bat > 0 ? Math.min(bat * 0.45 * 365, (prod - baseself) * 0.60) : 0;
+      const delivered = Math.min(shifted * BAT_ROUNDTRIP, selfCap - baseself);
+      const self = baseself + delivered;
+      const exp  = prod - baseself - (delivered > 0 ? delivered / BAT_ROUNDTRIP : 0);
+      let selfVal = baseVal + delivered * eveningPrice;
+      // Besparelsen kan ikke overstige ~88 % af den nuværende elregning
+      if (annCostEst) selfVal = Math.min(selfVal, Math.max(0, annCostEst * 0.88 - exp * SELL_PRICE));
+      return { self, exp, selfVal };
+    };
+  }
+  const evaluate = (sz, bat) => evalCache[sz + '|' + bat] || (evalCache[sz + '|' + bat] = evalRaw(sz, bat));
+
+  // Besparelse i år y (1 = første år). El-afgiften kommer oveni fra år 3 (2028).
+  function yearSaving(y, sz, bat) {
+    const g = Math.pow(1 + PRICE_GROWTH, y - 1);
+    const val = e => (e.selfVal + (y >= 3 ? e.self * houseShare * AFGIFT_2028 : 0)) * g + e.exp * SELL_PRICE;
+    let v = val(evaluate(sz, 0));
+    if (bat > 0 && y <= BAT_LIFESPAN) v += (val(evaluate(sz, bat)) - v) * (1 - BAT_FADE * (y - 1));
+    return v * Math.pow(1 - PANEL_DEGR, y - 1);
+  }
+  function sumSaving(years, sz, bat) {
+    let s = 0;
+    for (let y = 1; y <= years; y++) s += yearSaving(y, sz, bat);
+    return s;
   }
 
-  const prod = Math.round(kWp * irr * orientFactor);
-
-  // Monthly production — needed for month-by-month self-consumption calculation
-  const monthlyProd = mScales.map((s,i)=>Math.round(kWp*irr*orientFactor*s*mDays[i]/mNorm));
-
-  // ── MONTH-BY-MONTH, HOUR-BY-HOUR SELF-CONSUMPTION ──
-  // Sommer (apr–sep) og vinter (okt–mar) bruger forskellige nettariffer.
-  // Spidslast 17–21 er 2–3× højere om vinteren end om sommeren.
-  let annSelf = 0, annSavSelf = 0;
-  for (let m = 0; m < 12; m++) {
-    const isWinter = m <= 2 || m >= 9; // jan-mar + okt-dec
-    const nettarif = isWinter ? nt.winter : nt.summer;
-    const dayProd  = monthlyProd[m] / mDays[m];
-    const monthCons = S.monthlyProfile ? S.monthlyProfile[m] : kwh * mDays[m] / 365;
-    const dayCons  = monthCons / mDays[m];
-    for (let h = 0; h < 24; h++) {
-      const solH  = ssNorm[h] * dayProd;
-      const consH = profFrac[h] * dayCons;
-      const selfH = Math.min(solH, consH);
-      annSelf += selfH * mDays[m];
-      const priceH = (spotEst + (S.spotSurcharge||0) + nettarif[h] + ELAGIFT) * 1.25;
-      annSavSelf  += selfH * mDays[m] * priceH;
-    }
-  }
-
-  // Battery shifts surplus solar (daytime overflow) to cover evening peak — adds to self-consumption
-  const baseself = Math.min(Math.round(annSelf), Math.round(kwh * 0.92));
-  const baseexp  = prod - baseself;
-
-  // annSav26: total annual savings for a given batShift — used by battery evaluation below.
-  function annSav26(bShift) {
-    const sc = Math.min(baseself + bShift, Math.round(kwh * 0.92));
-    const ex = prod - sc;
-    const scVal = baseself > 0 ? annSavSelf * (sc / baseself) : sc * buyPrice;
-    const raw   = scVal + ex * 0.35;
-    const annualCostEst = S.annualBill || (kwh * buyPrice);
-    return Math.round(annualCostEst ? Math.min(raw, annualCostEst * 0.88) : raw);
-  }
-  let batKwh;
-  if (S.overrideBatKwh !== null) {
-    batKwh = S.overrideBatKwh;
-  } else if (autoRecBat !== null) {
-    batKwh = autoRecBat; // chosen by joint kWp×battery sweep above
+  // System sizing — joint sweep over (kWp × batteri) to maximise net return over ejertid.
+  const sizes      = [5,6,7,8,9,10,12,15];
+  // 5 m²/kWp is actual panel footprint — used as cap; roof area already includes all usable segments (S+E+W)
+  const maxKwpRoof = S.roofAreaM2 ? Math.max(3, Math.floor(S.roofAreaM2 / 5)) : Infinity;
+  let kwpCands;
+  if (S.overrideKwp !== null) {
+    kwpCands = [S.overrideKwp];
   } else {
-    // Manual kWp: find best battery size by net return over ejertid (inkl. batteriets levetid)
-    let bestBatRet = -Infinity;
-    batKwh = 0;
-    let bSavNoBat = 0, bSav28NoBat = 0;
-    for (const bKwh of [0, 5, 10]) {
-      const bShift  = bKwh > 0 ? Math.round(Math.min(bKwh * 0.45 * 365, baseexp * 0.60)) : 0;
-      const bSav    = annSav26(bShift);
-      const bSelf   = Math.min(baseself + bShift, Math.round(kwh * 0.92));
-      const bSav28  = bSav + Math.round(bSelf * houseShareOpt * 0.76);
-      if (bKwh === 0) { bSavNoBat = bSav; bSav28NoBat = bSav28; }
-      let netRet;
-      if (bKwh === 0 || ejertid <= BAT_LIFESPAN) {
-        netRet = bSav * gf2 + bSav28 * gf28 - (estimateSolarCost(kWp) + estimateBatCost(bKwh));
-      } else {
-        let bGross = 0;
-        for (let _y = 1; _y <= ejertid; _y++) {
-          const on = _y <= BAT_LIFESPAN;
-          bGross += (_y <= 2 ? (on ? bSav : bSavNoBat) : (on ? bSav28 : bSav28NoBat)) * Math.pow(1.04, _y-1);
-        }
-        netRet = bGross - (estimateSolarCost(kWp) + estimateBatCost(bKwh));
-      }
-      if (netRet > bestBatRet) { bestBatRet = netRet; batKwh = bKwh; }
+    kwpCands = sizes.filter(s => s <= maxKwpRoof);
+    if (kwpCands.length === 0) kwpCands.push(Math.max(3, Math.min(5, maxKwpRoof)));
+  }
+  let kWp = kwpCands[0], batKwh = 0, bestReturn = -Infinity;
+  for (const sz of kwpCands) {
+    for (const b of [0, 5, 10]) {
+      const netRet = sumSaving(ejertid, sz, b) - estimateSolarCost(sz) - estimateBatCost(b);
+      if (netRet > bestReturn) { bestReturn = netRet; kWp = sz; batKwh = b; }
     }
   }
+  if (S.overrideBatKwh !== null) batKwh = +S.overrideBatKwh || 0;
 
-  const batShift = batKwh > 0 ? Math.round(Math.min(batKwh * 0.45 * 365, baseexp * 0.60)) : 0;
-  const selfCons = Math.min(baseself + batShift, Math.round(kwh * 0.92));
-  const exported = prod - selfCons;
+  const ev   = evaluate(kWp, batKwh);
+  const evNo = evaluate(kWp, 0);
+  const prod = Math.round(kWp * irr * orientFactor);
+  const monthlyProd = M_SCALES.map((s,i)=>Math.round(kWp*irr*orientFactor*s*M_DAYS[i]/mNorm));
+
+  const selfCons = Math.round(ev.self);
+  const exported = Math.round(ev.exp);
   const selfPct  = Math.round((selfCons / kwh) * 100);
+  const baseself = Math.round(evNo.self);
+  const baseexp  = Math.round(evNo.exp);
 
-  // Scale tariff-weighted savings proportionally for battery boost
-  const selfConsValue = baseself > 0 ? annSavSelf * (selfCons / baseself) : selfCons * buyPrice;
-
-  const sellPrice  = 0.35;
-  const annualCost = S.annualBill || (S.annualKwh && buyPrice ? Math.round(S.annualKwh * buyPrice) : null);
-  const sav26Raw   = selfConsValue + exported * sellPrice;
-  const sav26      = Math.round(annualCost ? Math.min(sav26Raw, annualCost * 0.88) : sav26Raw);
-  const houseShare = (S.hasEV || S.hasEV2 || S.hasHybrid) ? Math.max(0, (kwh - evKwhHome) / kwh) : 1.0;
-  const afgift     = Math.round(selfCons * houseShare * 0.76);
+  // Årsbesparelse i dagens priser: uden el-afgift (2026–27) og med (fra 2028)
+  const sav26      = Math.round(ev.selfVal + ev.exp * SELL_PRICE);
+  const afgift     = Math.round(ev.self * houseShare * AFGIFT_2028);
   const sav28      = sav26 + afgift;
-  // Average annual saving: simple mean over ejertid (yr1-2 at sav26, yr3+ at sav28, no compounding)
-  const totalSimpleSav = sav26 * Math.min(2, ejertid) + sav28 * Math.max(0, ejertid - 2);
-  const avgAnnualSav = ejertid > 0 ? Math.round(totalSimpleSav / ejertid) : sav26;
+  const sav26NoBat = Math.round(evNo.selfVal + evNo.exp * SELL_PRICE);
+  const sav28NoBat = sav26NoBat + Math.round(evNo.self * houseShare * AFGIFT_2028);
 
   const sysCost = S.overrideSolarCost !== null ? S.overrideSolarCost : estimateSolarCost(kWp);
   const batCost = S.overrideBatCost  !== null ? S.overrideBatCost  : estimateBatCost(batKwh);
   const total   = sysCost + batCost;
 
-  // Baseline savings without battery (bruges til levetidsskifte og sammenligning)
-  const sav26NoBat = annSav26(0);
-  const sav28NoBat = sav26NoBat + Math.round(baseself * houseShare * 0.76);
-
-  // Payback: yr 1–2 no afgift (sav26), yr 3+ with afgift (sav28), 4%/yr growth
-  let payback = 999;
-  if (sav26 > 0) {
-    let _cum = 0;
-    for (let _y = 1; _y <= 40; _y++) {
-      const _base = _y <= 2 ? sav26 : sav28;
-      const _ann = _base * Math.pow(1.04, _y - 1);
-      const _prev = _cum; _cum += _ann;
-      if (_cum >= total) { payback = +((_y - 1) + (total - _prev) / _ann).toFixed(1); break; }
-    }
+  // Kumulativ økonomi år for år: besparelser, batteriets udløb og inverterudskiftning
+  const cum = [-total], cumNoBat = [-sysCost];
+  for (let y = 1; y <= 40; y++) {
+    const inv = y === INVERTER_YEAR ? INVERTER_COST : 0;
+    cum.push(Math.round(cum[y-1] + yearSaving(y, kWp, batKwh) - inv));
+    cumNoBat.push(Math.round(cumNoBat[y-1] + yearSaving(y, kWp, 0) - inv));
   }
+  const payback      = paybackFrom(cum);
+  const paybackNoBat = paybackFrom(cumNoBat);
 
-  // Cumulative savings: batteriet bidrager kun i BAT_LIFESPAN år, derefter falder besparelsen til no-bat niveau
-  let grossSav = 0;
-  for (let _y = 1; _y <= ejertid; _y++) {
-    const batOn = batKwh === 0 || _y <= BAT_LIFESPAN;
-    grossSav += (_y <= 2 ? (batOn ? sav26 : sav26NoBat) : (batOn ? sav28 : sav28NoBat)) * Math.pow(1.04, _y - 1);
-  }
-  grossSav = Math.round(grossSav);
+  const grossSav      = Math.round(sumSaving(ejertid, kWp, batKwh));
+  const grossSavNoBat = Math.round(sumSaving(ejertid, kWp, 0));
+  const maintCost     = ejertid >= INVERTER_YEAR ? INVERTER_COST : 0;
+  const avgAnnualSav  = ejertid > 0 ? Math.round(grossSav / ejertid) : sav26;
 
-  return { kWp, batKwh, prod, selfCons, exported, selfPct, sav26, sav28, sav26NoBat, sav28NoBat, afgift, avgAnnualSav, totalSimpleSav, grossSav, ejertid, sysCost, batCost, total, payback, irr, orientFactor, monthlyProd, buyPrice, baseself, baseexp, BAT_LIFESPAN };
+  return { kWp, batKwh, prod, selfCons, exported, selfPct, sav26, sav28, sav26NoBat, sav28NoBat, afgift, avgAnnualSav, grossSav, grossSavNoBat, maintCost, cum, payback, paybackNoBat, ejertid, sysCost, batCost, total, irr, orientFactor, monthlyProd, buyPrice, baseself, baseexp, BAT_LIFESPAN, hourlyBased: !!shape };
 }
 
 /* ── SLIDER PANEL ── */
@@ -3208,7 +3216,7 @@ function updateExtraTiles(r) {
   document.getElementById('kpi-prod').textContent   = r.prod.toLocaleString('da-DK');
   document.getElementById('kpi-self').textContent   = r.selfPct + '%';
   document.getElementById('kpi-total-sav').textContent = r.grossSav.toLocaleString('da-DK');
-  document.getElementById('kpi-total-sav-sub').textContent = `kr inkl. 4%/år vækst · ${r.ejertid} år`;
+  document.getElementById('kpi-total-sav-sub').textContent = `kr inkl. 2%/år vækst · ${r.ejertid} år`;
 
   const roofM2 = S.roofAreaM2 || 0;
   const neededM2 = r.kWp * 5; // 5 m²/kWp (400W-paneler)
@@ -3272,17 +3280,10 @@ function rebuildAll() {
       // Compare same kWp WITH vs WITHOUT battery — not the optimizer recommendation
       const nbSav26 = r.sav26NoBat || 0;
       const nbSav28 = r.sav28NoBat || 0;
-      const gf2_b  = 1 + 1.04;
-      const gf28_b = ej > 2 ? 1.04 ** 2 * ((1.04 ** (ej - 2) - 1) / 0.04) : 0;
-      const noBatGross = Math.round(nbSav26 * gf2_b + nbSav28 * gf28_b);
-      // No-battery payback: year when cumulative savings >= solar cost
-      let noBatCum = 0, noBatPb = 99;
-      for (let _y = 1; _y <= 35; _y++) {
-        noBatCum += (_y <= 2 ? nbSav26 : nbSav28) * Math.pow(1.04, _y - 1);
-        if (noBatCum >= r.sysCost && noBatPb === 99) { noBatPb = _y; break; }
-      }
-      const origNet = Math.round(noBatGross + r.sysCost * 0.60 - r.sysCost);
-      const curNet  = Math.round(r.grossSav + r.sysCost * 0.60 - r.total);
+      const noBatPb = r.paybackNoBat;
+      const husPris = houseValue(r.sysCost, ej);
+      const origNet = Math.round(r.grossSavNoBat + husPris - r.sysCost - r.maintCost);
+      const curNet  = Math.round(r.grossSav + husPris - r.total - r.maintCost);
       const extraCost = r.batCost;
       const extraSav1 = r.sav26 - nbSav26;
       const batPayback = extraSav1 > 0 ? Math.round(extraCost / extraSav1) : 99;
@@ -3320,7 +3321,7 @@ function rebuildAll() {
   document.getElementById('kpi-savings-2028').textContent = `År 1: ~${r.sav26.toLocaleString('da-DK')} kr · Fra 2028: ~${r.sav28.toLocaleString('da-DK')} kr`;
   document.getElementById('kpi-payback').textContent = '~' + r.payback;
   document.getElementById('kpi-total-sav').textContent = r.grossSav.toLocaleString('da-DK');
-  document.getElementById('kpi-total-sav-sub').textContent = `kr inkl. 4%/år vækst · ${r.ejertid} år`;
+  document.getElementById('kpi-total-sav-sub').textContent = `kr inkl. 2%/år vækst · ${r.ejertid} år`;
 
   // KPI tiles — update on slider change too
   document.getElementById('sit-prod').textContent   = r.prod.toLocaleString('da-DK');
@@ -3450,7 +3451,7 @@ function showResults() {
   document.getElementById('kpi-savings-2028').textContent = `År 1: ~${r.sav26.toLocaleString('da-DK')} kr · Fra 2028: ~${r.sav28.toLocaleString('da-DK')} kr`;
   document.getElementById('kpi-payback').textContent = '~' + r.payback;
   document.getElementById('kpi-total-sav').textContent = r.grossSav.toLocaleString('da-DK');
-  document.getElementById('kpi-total-sav-sub').textContent = `kr inkl. 4%/år vækst · ${r.ejertid} år`;
+  document.getElementById('kpi-total-sav-sub').textContent = `kr inkl. 2%/år vækst · ${r.ejertid} år`;
 
   // Top strip + KPI extra tiles
   const kwh = S.annualKwh || 0;
@@ -3732,27 +3733,9 @@ function buildMonthlyChart(r) {
 }
 
 function buildPaybackChart(r, withAfgift) {
-  const INV = r.total;
-  const BASE26 = r.sav26;
-  const BASE28 = r.sav28;
-  const GROWTH = 0.04; const N = 31;
-  const AFGIFT_YR = 3;
-
-  function cumul(useAfgift) {
-    const a = [-INV];
-    for (let y=1; y<N; y++) {
-      const base = useAfgift && y>=AFGIFT_YR ? BASE28 : BASE26;
-      const sav  = base * Math.pow(1 + GROWTH, y - 1);
-      a.push(Math.round(a[a.length-1] + sav));
-    }
-    return a;
-  }
-  function beYear(d) {
-    for (let i=1; i<d.length; i++) if (d[i-1]<0 && d[i]>=0) return +(i-1+(-d[i-1])/(d[i]-d[i-1])).toFixed(1);
-    return null;
-  }
-  const d1 = cumul(withAfgift || false);
-  const be1 = beYear(d1);
+  const N = 31;
+  const d1 = r.cum.slice(0, N);
+  const be1 = r.payback < N ? r.payback : null;
 
   const paybackPlugin = {
     id:'pb',
@@ -3795,7 +3778,7 @@ function buildPaybackChart(r, withAfgift) {
     data:{
       labels:Array.from({length:N},(_,i)=>i),
       datasets:[
-        { label: withAfgift ? 'Med el-afgift 2028' : 'Uden el-afgift', data:d1, borderColor:'#059669', borderWidth:2.5, pointRadius:2, pointBackgroundColor:'#059669', fill:{target:'origin',above:'rgba(16,185,129,0.15)',below:'rgba(239,68,68,0.18)'}, tension:0.15 },
+        { label: 'Kumulativ økonomi (el-afgift fra 2028)', data:d1, borderColor:'#059669', borderWidth:2.5, pointRadius:2, pointBackgroundColor:'#059669', fill:{target:'origin',above:'rgba(16,185,129,0.15)',below:'rgba(239,68,68,0.18)'}, tension:0.15 },
       ]
     },
     options:{
