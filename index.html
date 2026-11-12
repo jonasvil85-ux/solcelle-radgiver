@@ -35,30 +35,6 @@
   --shadow-sm: 0 1px 4px rgba(0,0,0,0.07), 0 2px 8px rgba(0,0,0,0.05);
   --shadow-md: 0 4px 24px rgba(0,0,0,0.09), 0 1px 4px rgba(0,0,0,0.06);
 }
-[data-theme="dark"] {
-  --bg: #0C1120;
-  --surface: #111827;
-  --surface-2: #1A2438;
-  --surface-solid: #111827;
-  --border: rgba(148,163,184,0.14);
-  --border-light: rgba(148,163,184,0.08);
-  --text-1: #FFFFFF;
-  --text-2: #D4D4D4;
-  --text-3: #A0A0A0;
-  --text-4: #606060;
-  --card-bg: #141414;
-  --emerald: #10B981;
-  --emerald-dk: #059669;
-  --amber: #F59E0B;
-  --sol: #F59E0B;
-  --sol-dk: #D97706;
-  --blue: #3B82F6;
-  --red: #EF4444;
-  --purple: #8B5CF6;
-  --orange: #F97316;
-  --shadow-sm: 0 2px 12px rgba(0,0,0,0.6);
-  --shadow-md: 0 8px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);
-}
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -84,12 +60,6 @@ body {
     radial-gradient(ellipse at 70% 50%, rgba(5,150,105,0.06) 0%, transparent 50%);
   pointer-events: none; z-index: 0;
 }
-[data-theme="dark"] .app::before {
-  background:
-    radial-gradient(ellipse at 30% 20%, rgba(245,158,11,0.07) 0%, transparent 50%),
-    radial-gradient(ellipse at 70% 60%, rgba(245,158,11,0.04) 0%, transparent 50%);
-}
-
 /* HEADER */
 .header {
   display: flex;
@@ -125,20 +95,6 @@ body {
   color: var(--sol);
   margin-top: 2px;
 }
-.theme-btn {
-  font-size: 11px;
-  font-family: inherit;
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-3);
-  padding: 7px 16px;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.15s;
-  font-weight: 500;
-  letter-spacing: 0.03em;
-}
-.theme-btn:hover { color: var(--text-1); border-color: var(--text-3); }
 
 /* PROGRESS */
 .progress {
@@ -775,8 +731,7 @@ body {
         <span class="w2">beregner</span>
       </div>
     </div>
-    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">Mørk tilstand</button>
-    <div id="userBadge" class="user-badge" style="display:none">
+<div id="userBadge" class="user-badge" style="display:none">
       <span id="userEmailEl" class="user-badge-email"></span>
       <button class="signout-btn" onclick="signOut()">Log ud</button>
     </div>
@@ -1767,13 +1722,6 @@ window.addEventListener('scroll', function() {
   bar.style.width = (total > 0 ? Math.min(100, scrolled / total * 100) : 0) + '%';
 }, { passive: true });
 
-/* ── THEME ── */
-function toggleTheme() {
-  const h = document.documentElement;
-  const isDark = h.getAttribute('data-theme') === 'dark';
-  h.setAttribute('data-theme', isDark ? 'light' : 'dark');
-  document.getElementById('themeBtn').textContent = isDark ? 'Mørk tilstand' : 'Lys tilstand';
-}
 
 /* ── PROGRESS ── */
 function setProgress(step) {
