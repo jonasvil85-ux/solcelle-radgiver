@@ -1281,7 +1281,7 @@ body {
           <div class="kpi-sub">ton CO₂/år</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
-          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Andel af det samlede brugbare tagareal brugt til solceller.&#10;&#10;Beregnet som: kWp × 5 m²/kWp ÷ tagareal (400W-paneler kræver ~5 m² pr. kWp).&#10;&#10;Tagarealet inkluderer alle brugbare flader inden for 90° af syd — syd, sydøst, sydvest, øst og vest medregnes alle. Nordvendte flader udelades.&#10;&#10;Prioritering af anlægget:&#10;• Anlægget dimensioneres mod den samlede brugbare flade&#10;• Sydvendte paneler producerer mest (100%) — øst/vest giver ~78% og indgår vægtet i produktionsestimatet&#10;• 'Vægtet udbytte' under husbillede viser den kombinerede effektivitet&#10;&#10;Over 100% betyder at panelerne ikke passer på taget — reducer kWp med slideren.">i</span>
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Andel af de valgte tagflader, som anlægget fylder.&#10;&#10;Beregnet som: kWp × 5 m²/kWp ÷ samlet areal af de tagflader, du har slået til (400W-paneler kræver ~5 m² pr. kWp).&#10;&#10;Panelerne lægges på den bedste flade først — fx sydtaget ved 100% udbytte — og dårligere flader bruges kun, når de bedre er fyldt. Derfor falder udbyttet pr. kWp, når anlægget bliver større end den bedste flade.&#10;&#10;Over 100% betyder at panelerne ikke passer på taget — reducer kWp med slideren.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M2 12L12 3L22 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20H19V9.5" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><rect x="9" y="14" width="6" height="6" rx="0.5" stroke="currentColor" stroke-width="1.2"/></svg></div>
           <div class="kpi-value" id="kpi-roof-pct">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Tagudnyttelse</div>
@@ -2283,7 +2283,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
 
             if (statusEl) {
               statusEl.style.color = '#059669';
-              statusEl.innerHTML = `<span style="color:#059669"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M7 12.5L10.5 16L17 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Google Solar</span> · hældning: ${Math.round(bestSeg.pitchDegrees)}°${solar.sunshineHours ? ` · ${Math.round(solar.sunshineHours)} sol-timer/år` : ''} · vægtet udbytte: <strong style="color:var(--text-2)">${Math.round(weightedFactor*100)}%</strong> af rent sydvendt`;
+              statusEl.innerHTML = `<span style="color:#059669"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M7 12.5L10.5 16L17 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Google Solar</span> · hældning: ${Math.round(bestSeg.pitchDegrees)}°${solar.sunshineHours ? ` · ${Math.round(solar.sunshineHours)} sol-timer/år` : ''}`;
             }
             return;
           }
@@ -2566,7 +2566,7 @@ function updateRoofFacesSummary() {
     ? enabled.reduce((s, f) => s + f.areaM2 * ((ROOF_DIR_META[f.dir]||{factor:0.70}).factor), 0) / totalM2
     : 0;
   el.innerHTML = totalM2 > 0
-    ? `Samlet: <strong style="color:var(--text-2)">${totalM2} m²</strong> · vægtet udbytte: <strong style="color:var(--text-2)">${Math.round(wF*100)}%</strong> af rent sydvendt`
+    ? `Samlet: <strong style="color:var(--text-2)">${totalM2} m²</strong> · paneler lægges på den bedste flade først · bruges hele arealet, er udbyttet i gennemsnit <strong style="color:var(--text-2)">${Math.round(wF*100)}%</strong> af rent sydvendt`
     : `<span style="color:var(--amber)">Ingen tagflader valgt — udfyld mindst ét areal</span>`;
 }
 
