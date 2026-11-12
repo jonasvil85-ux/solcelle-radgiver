@@ -1426,14 +1426,14 @@ body {
 
     <!-- CHART 3: SUMMER FLOW -->
     <div class="chart-card">
-      <div class="chart-card-title">Sommerdag — Energiflow<span class="chart-info" data-tip="Simuleret typisk junidag (maks. solindstråling). Solproduktionen skaleres til din placering og kWp. Batteriet oplader fra soloverskud i dagtimerne og aflader ved dyre aftentimer (17–21). Grid-opladning om natten sker kun hvis sol ikke kan dække aftenforbruget — det vises som lilla søjler 00–05.">i</span></div>
+      <div class="chart-card-title">Sommerdag — Energiflow<span class="chart-info" data-tip="Simuleret typisk junidag (maks. solindstråling). Solproduktionen skaleres til din placering og kWp. Et batteri oplades af soloverskuddet i dagtimerne og aflades, når forbruget overstiger solproduktionen — typisk aften og nat. Det er samme logik som i besparelsesberegningen; opladning fra elnettet er ikke medregnet.">i</span></div>
       <div class="chart-card-sub" id="summerFlowSub">Typisk sommerdag · <span style="color:#059669">■</span> Sol direkte · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion</div>
       <div class="chart-wrap" style="height:220px"><canvas id="summerFlowChart"></canvas></div>
     </div>
 
     <!-- CHART 4: WINTER FLOW -->
     <div class="chart-card">
-      <div class="chart-card-title">Vinterdag — Energiflow<span class="chart-info" data-tip="Simuleret typisk decemberdag. Sol producerer kun 5–10 kWh/dag. Batteriet grid-oplader 00–05 (billig tarif) for at dække aftenforbrug. Grå søjler 00–05 = direkte forbrug fra elnet mens batteriet lader. Teal søjler = batteri aflader om aftenen. Jo større batteri, jo mere dækkes.">i</span></div>
+      <div class="chart-card-title">Vinterdag — Energiflow<span class="chart-info" data-tip="Simuleret typisk decemberdag. Solproduktionen er lav, så der er kun lidt eller intet overskud at gemme. Et batteri oplades kun af soloverskud og står derfor ofte næsten ubrugt om vinteren. Teal søjler = batteri aflader. Opladning fra elnettet er ikke medregnet.">i</span></div>
       <div class="chart-card-sub" id="winterFlowSub">Typisk vinterdag · <span style="color:#059669">■</span> Sol direkte · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion</div>
       <div class="chart-wrap" style="height:220px"><canvas id="winterFlowChart"></canvas></div>
     </div>
@@ -3823,77 +3823,31 @@ function buildPaybackChart(r, withAfgift) {
   });
 }
 
-// Typisk dansk timepris-vægt (lav nettarif nat, høj 17-21)
-const PRICE_W = [0.3,0.3,0.3,0.3,0.3,0.3, 0.6,0.6,0.6,0.6,0.6,0.6, 0.6,0.6,0.6,0.6,0.6,1.0, 1.0,1.0,1.0,0.6,0.5,0.4];
-
+// Samme batterilogik som i besparelsesberegningen: lades kun af soloverskud, aflades når
+// forbruget overstiger solproduktionen. To døgn simuleres, så det viste døgn starter med
+// det batteriniveau, der er tilbage fra aftenen før.
 function runBatterySim(solar, profile, batKwh) {
-  // Pass 0: oplad batteriet fra billig natel (00-05) til at dække alle timer uden sol
-  const gridChargeArr = new Array(24).fill(0);
+  const eta = Math.sqrt(BAT_ROUNDTRIP), pMax = batKwh * BAT_C_RATE;
+  const z = () => new Array(24).fill(0);
+  const direct = z(), batCharge = z(), gridExport = z(), batDischarge = z(), fromGrid = z();
   let soc = 0;
-  if (batKwh > 0) {
-    // Deficit i timer uden sol (alt hvad batteriet skal dække om aftenen/natten)
-    const offSolarDef = Array.from({length:24},(_,h)=>h)
-      .reduce((s,h) => s + Math.max(0, (profile[h]||0) - solar[h]), 0);
-    // Sol-overskud som batteriet kan optage fra sol alene
-    const solarSurplus = solar.reduce((s, v, h) => s + Math.max(0, v - (profile[h]||0)), 0);
-    // Oplad fra net det der ikke kan dækkes af sol-overskud
-    const toCharge = Math.min(batKwh, Math.max(0, offSolarDef - solarSurplus));
-    if (toCharge > 0) {
-      const perHour = toCharge / 6;
-      for (let h = 0; h < 6; h++) { gridChargeArr[h] = perHour; soc += perHour; }
-      soc = Math.min(batKwh, soc);
+  for (let day = 0; day < 2; day++) {
+    for (let h = 0; h < 24; h++) {
+      const cons = Math.max(0, profile[h] || 0), sol = solar[h];
+      if (sol >= cons) {
+        const sur = sol - cons;
+        const ch = batKwh > 0 ? Math.min(sur, pMax, (batKwh - soc) / eta) : 0;
+        soc += ch * eta;
+        direct[h] = cons; batCharge[h] = ch; gridExport[h] = sur - ch; batDischarge[h] = 0; fromGrid[h] = 0;
+      } else {
+        const dis = batKwh > 0 ? Math.min(cons - sol, pMax, soc * eta) : 0;
+        soc -= dis / eta;
+        direct[h] = sol; batCharge[h] = 0; gridExport[h] = 0; batDischarge[h] = dis; fromGrid[h] = cons - sol - dis;
+      }
     }
   }
-
-  // Pass 1: oplad fra solceller — split excess i batCharge + gridExport
-  const directArr = [], batChargeArr = [], gridExportArr = [], deficitArr = [];
-  for (let h = 0; h < 24; h++) {
-    const cons   = Math.max(0, profile[h] || 0);
-    const sol    = solar[h];
-    if (sol >= cons) {
-      directArr[h]    = cons;
-      const excess    = sol - cons;
-      const charge    = batKwh > 0 ? Math.min(excess, Math.max(0, batKwh - soc)) : 0;
-      soc = Math.min(batKwh, soc + charge);
-      batChargeArr[h]  = charge;
-      gridExportArr[h] = excess - charge;
-      deficitArr[h]    = 0;
-    } else {
-      directArr[h]    = sol;
-      batChargeArr[h] = 0;
-      gridExportArr[h]= 0;
-      deficitArr[h]   = cons - sol;
-    }
-  }
-
-  // Pass 2: udlad ved dyreste timer — men IKKE i timer hvor grid oplader batteriet
-  // (kan ikke lade og aflade samtidigt — fysisk umuligt)
-  const disArr  = new Array(24).fill(0);
-  const gridArr = new Array(24).fill(0);
-  const dHours  = Array.from({length:24},(_,h)=>h)
-    .filter(h => deficitArr[h] > 0 && gridChargeArr[h] === 0)
-    .sort((a,b) => PRICE_W[b] - PRICE_W[a]);
-  let avail = soc;
-  for (const h of dHours) {
-    const dis = Math.min(deficitArr[h], avail);
-    avail -= dis;
-    disArr[h]  = dis;
-    gridArr[h] = deficitArr[h] - dis;
-  }
-  // I opladningstimer: forbrug dækkes af elnettet direkte (ikke batteri)
-  for (let h = 0; h < 24; h++) {
-    if (gridChargeArr[h] > 0 && deficitArr[h] > 0) gridArr[h] = deficitArr[h];
-  }
-
-  // batCharge = sol-oplad + net-oplad (lilla søjle)
-  // fromGrid  = KUN forbrug dækket af net (ikke net→batteri, det er i batCharge)
-  return {
-    direct:       directArr.map(v        => Math.max(0, +v.toFixed(3))),
-    batCharge:    batChargeArr.map((v,h) => Math.max(0, +(v + gridChargeArr[h]).toFixed(3))),
-    gridExport:   gridExportArr.map(v    => Math.max(0, +v.toFixed(3))),
-    batDischarge: disArr.map(v           => Math.max(0, +v.toFixed(3))),
-    fromGrid:     gridArr.map(g          => Math.max(0, +g.toFixed(3))),
-  };
+  const r3 = a => a.map(v => Math.max(0, +v.toFixed(3)));
+  return { direct: r3(direct), batCharge: r3(batCharge), gridExport: r3(gridExport), batDischarge: r3(batDischarge), fromGrid: r3(fromGrid) };
 }
 
 function buildFlowChart(r, season) {
