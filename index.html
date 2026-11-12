@@ -461,6 +461,7 @@ body {
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
+.kpi-value[data-unit]::after { content: attr(data-unit); font-size: 0.5em; font-weight: 600; margin-left: 4px; opacity: 0.7; letter-spacing: 0; }
 .kpi-value {
   font-size: 20px;
   font-weight: 800;
@@ -1062,21 +1063,21 @@ body {
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Din gennemsnitlige elpris inkl. alle afgifter og moms.&#10;&#10;Med Eloverblik-data: beregnet time for time som (spotpris + nettarif + systemtarif) × 1,25 vægtet af dit faktiske forbrug.&#10;&#10;Med årsregning: din regning ÷ dit forbrug.&#10;&#10;Estimeret (default): spotpris ~0,65 + DK1-nettarif ~0,23 + systemtarif 0,06 kr/kWh × 1,25 ≈ 1,17 kr/kWh.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M13 2L4.5 13H11L10 22L19.5 11H13Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="currentColor" fill-opacity="0.15"/></svg></div>
-          <div class="kpi-value" id="sit-price">—</div>
+          <div class="kpi-value" data-unit="kr/kWh" id="sit-price">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Din elpris</div>
           <div class="kpi-sub" id="sit-price-sub">kr/kWh</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Totalt elforbrug de seneste 12 måneder.&#10;&#10;Med Eloverblik-token: summen af alle timeaflæsninger fra din måler.&#10;&#10;Uden Eloverblik: estimeret fra din husstørrelse eller manuel indtastning.&#10;&#10;Bruges som grundlag for alle besparelsesberegninger.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
-          <div class="kpi-value" id="sit-kwh">—</div>
+          <div class="kpi-value" data-unit="kWh" id="sit-kwh">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Dit forbrug</div>
           <div class="kpi-sub">kWh/år</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Estimeret samlet elregning pr. år uden solceller.&#10;&#10;Beregnet som: dit forbrug (kWh) × din gennemsnitlige elpris (kr/kWh).&#10;&#10;Bruges som udgangspunkt til at beregne din besparelse og ny elregning med sol.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6 2V22L8.5 20.5L11 22L13.5 20.5L16 22L18 20.5V2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M9.5 8H15M9.5 11.5H15M9.5 15H13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
-          <div class="kpi-value" id="sit-bill">—</div>
+          <div class="kpi-value" data-unit="kr" id="sit-bill">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">El-udgift nu</div>
           <div class="kpi-sub">kr/år</div>
         </div>
@@ -1194,7 +1195,7 @@ body {
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:6px;right:6px" data-tip="Gennemsnit af din årlige besparelse over ejertiden (samlet besparelse ÷ antal år):&#10;• Første 2 år (2026–2027): uden el-afgift&#10;• Fra 2028: med el-afgift (0,91 kr/kWh inkl. moms i 2026-priser)&#10;&#10;Besparelsen består af:&#10;• Solenergi brugt direkte × din elpris i de timer&#10;• Solgt overskud × 0,35 kr/kWh&#10;• Batteri: soloverskud gemt til aftentimerne&#10;&#10;Elprisen følger inflationen (2%/år), og panelerne taber 0,5%/år.&#10;&#10;Elbil-ladning har refusion og giver ingen afgiftsbesparelse. Med elvarme eller varmepumpe regnes kun afgift af netkøb under 4.000 kWh/år.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><polyline points="22,7 13.5,15.5 8.5,10.5 2,17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><polyline points="16,7 22,7 22,13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          <div class="kpi-value emerald" id="kpi-savings">—</div>
+          <div class="kpi-value emerald" data-unit="kr" id="kpi-savings">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Årsbesparelse</div>
           <div class="kpi-sub" id="kpi-savings-sub">kr/år</div>
           <div id="kpi-savings-2028" style="font-size:10px;color:var(--text-3);margin-top:4px"></div>
@@ -1202,35 +1203,35 @@ body {
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Din forventede elregning efter solceller er installeret.&#10;&#10;Beregnet som: nuværende el-udgift − årsbesparelse (første år, uden afgift).&#10;&#10;Du betaler stadig for den strøm du køber fra nettet — om natten og på overskyede dage.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
-          <div class="kpi-value" id="kpi-new-bill">—</div>
+          <div class="kpi-value" data-unit="kr" id="kpi-new-bill">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Ny elregning</div>
           <div class="kpi-sub">kr/år efter sol</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Samlet anlægspris inkl. moms for solceller + eventuelt batteri.&#10;&#10;Beregnet som: estimeret solcellepris + batteripris. Justér med egne tilbudspriser i panelet ovenfor.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><line x1="2" y1="10" x2="22" y2="10" stroke="currentColor" stroke-width="2"/><rect x="4" y="13.5" width="5" height="2.5" rx="0.5" fill="currentColor" opacity="0.6"/></svg></div>
-          <div class="kpi-value" id="kpi-invest">—</div>
+          <div class="kpi-value" data-unit="kr" id="kpi-invest">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Total investering</div>
           <div class="kpi-sub">kr inkl. moms</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Antal år til din investering er tilbagebetalt af løbende besparelser.&#10;&#10;Elprisen følger inflationen (2%/år), panelerne taber 0,5%/år, og en ny inverter (15.000 kr) fratrækkes i år 15. Et batteris bidrag falder gradvist og ophører efter 12 år.&#10;&#10;El-afgift:&#10;• År 1–2 (2026–2027): uden el-afgift&#10;• Fra 2028: 0,91 kr/kWh inkl. moms (2026-priser)&#10;&#10;Elbil-ladning har refusion og giver ingen afgiftsbesparelse. Med elvarme eller varmepumpe regnes kun afgift af netkøb under 4.000 kWh/år.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M12 7V12L15 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          <div class="kpi-value" id="kpi-payback">—</div>
+          <div class="kpi-value" data-unit="år" id="kpi-payback">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Break-even</div>
-          <div class="kpi-sub">år</div>
+          <div class="kpi-sub">til anlægget er tjent hjem</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Solenergi du producerer ud over dit eget forbrug og sælger til elnettet.&#10;&#10;Beregnet som: total solproduktion − selvforbrugt energi, time for time.&#10;&#10;Solgt strøm er forsigtigt regnet til 0,35 kr/kWh uden årlig prisstigning. Jo bedre dit forbrugsmønster matcher solprofilen, jo mindre eksporteres.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3V15M7 8L12 3L17 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 16V19C20 20.1 19.1 21 18 21H6C4.9 21 4 20.1 4 19V16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
-          <div class="kpi-value" id="sit-export">—</div>
+          <div class="kpi-value" data-unit="kWh" id="sit-export">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Salg til net</div>
-          <div class="kpi-sub">kWh/år · ~35 øre/kWh</div>
+          <div class="kpi-sub" id="sit-export-sub">kWh/år · ~35 øre/kWh</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Samlet elbesparelse over ejertiden. Elprisen følger inflationen (2%/år), og panelerne taber 0,5%/år:&#10;• Første 2 år (2026–2027): årsbesparelse uden el-afgift&#10;• Fra 2028: årsbesparelse med el-afgift (0,91 kr/kWh inkl. moms i 2026-priser)&#10;&#10;Samme beregningsmodel som tilbagebetalingstiden og anbefalingen. Investering, inverterudskiftning og boligværdi er ikke med her — de indgår i vurderingen nedenfor.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L15.1 8.3L22 9.3L17 14.1L18.2 21L12 17.8L5.8 21L7 14.1L2 9.3L8.9 8.3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="currentColor" fill-opacity="0.1"/></svg></div>
-          <div class="kpi-value emerald" id="kpi-total-sav">—</div>
+          <div class="kpi-value emerald" data-unit="kr" id="kpi-total-sav">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Samlet elbesparelse</div>
           <div class="kpi-sub" id="kpi-total-sav-sub">kr inkl. 2%/år inflation</div>
         </div>
@@ -1262,7 +1263,7 @@ body {
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Solcelleanlæggets samlede årsproduktion.&#10;&#10;Beregnet fra dit kWp-antal, din tagretning og danske irradians-data (måned for måned sæsonfaktorer). Sydvendt tag = 100% udbytte — sydøst/sydvest ~92%, øst/vest ~78%, nord ~40%.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M13 2L4.5 13H11L10 22L19.5 11H13Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="currentColor" fill-opacity="0.15"/></svg></div>
-          <div class="kpi-value emerald" id="kpi-prod">—</div>
+          <div class="kpi-value emerald" data-unit="kWh" id="kpi-prod">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Årsproduktion</div>
           <div class="kpi-sub">kWh/år</div>
         </div>
@@ -3432,13 +3433,14 @@ function rebuildAll() {
   document.getElementById('kpi-savings').textContent = r.avgAnnualSav.toLocaleString('da-DK');
   document.getElementById('kpi-savings-sub').textContent = `kr/år · gns. over ${r.ejertid} år`;
   document.getElementById('kpi-savings-2028').textContent = `År 1: ~${r.sav26.toLocaleString('da-DK')} kr · Fra 2028: ~${r.sav28.toLocaleString('da-DK')} kr`;
-  document.getElementById('kpi-payback').textContent = '~' + r.payback;
+  document.getElementById('kpi-payback').textContent = '~' + String(r.payback).replace('.', ',');
   document.getElementById('kpi-total-sav').textContent = r.grossSav.toLocaleString('da-DK');
   document.getElementById('kpi-total-sav-sub').textContent = `kr inkl. 2%/år inflation · ${r.ejertid} år`;
 
   // KPI tiles — update on slider change too
   document.getElementById('sit-prod').textContent   = r.prod.toLocaleString('da-DK');
   document.getElementById('sit-export').textContent = r.exported.toLocaleString('da-DK');
+  document.getElementById('sit-export-sub').textContent = `kWh/år · ≈ ${Math.round(r.exported * SELL_PRICE).toLocaleString('da-DK')} kr/år ved 35 øre/kWh`;
   const _kwh2 = S.annualKwh || 0;
   const _curBill2 = S.annualBill || Math.round(_kwh2 * r.buyPrice);
   document.getElementById('kpi-new-bill').textContent = Math.max(0, _curBill2 - r.sav26).toLocaleString('da-DK');
@@ -3562,7 +3564,7 @@ function showResults() {
   document.getElementById('kpi-savings').textContent = r.avgAnnualSav.toLocaleString('da-DK');
   document.getElementById('kpi-savings-sub').textContent = `kr/år · gns. over ${r.ejertid} år`;
   document.getElementById('kpi-savings-2028').textContent = `År 1: ~${r.sav26.toLocaleString('da-DK')} kr · Fra 2028: ~${r.sav28.toLocaleString('da-DK')} kr`;
-  document.getElementById('kpi-payback').textContent = '~' + r.payback;
+  document.getElementById('kpi-payback').textContent = '~' + String(r.payback).replace('.', ',');
   document.getElementById('kpi-total-sav').textContent = r.grossSav.toLocaleString('da-DK');
   document.getElementById('kpi-total-sav-sub').textContent = `kr inkl. 2%/år inflation · ${r.ejertid} år`;
 
@@ -3576,6 +3578,7 @@ function showResults() {
   document.getElementById('sit-kwh').textContent    = kwh.toLocaleString('da-DK');
   document.getElementById('sit-prod').textContent   = r.prod.toLocaleString('da-DK');
   document.getElementById('sit-export').textContent = r.exported.toLocaleString('da-DK');
+  document.getElementById('sit-export-sub').textContent = `kWh/år · ≈ ${Math.round(r.exported * SELL_PRICE).toLocaleString('da-DK')} kr/år ved 35 øre/kWh`;
   const currentBill = S.annualBill || Math.round(kwh * r.buyPrice);
   document.getElementById('sit-bill').textContent   = currentBill > 0 ? currentBill.toLocaleString('da-DK') : '—';
   const newBill = Math.max(0, currentBill - r.sav26);
