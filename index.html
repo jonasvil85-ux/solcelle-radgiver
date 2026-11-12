@@ -233,6 +233,7 @@ body {
   transition: all 0.15s;
   user-select: none;
   background: var(--surface);
+  white-space: nowrap;
 }
 .toggle-opt:hover { border-color: var(--sol); color: var(--text-1); background: var(--surface); }
 .toggle-opt.selected {
@@ -897,12 +898,12 @@ body {
       <div class="field">
         <label>Hvor mange år planlægger du at blive boende?</label>
         <div class="toggle-group" style="flex-wrap:wrap;gap:6px;">
-          <div class="toggle-opt" id="ej-5"  onclick="selectEjertid(5)">Under 5 år</div>
-          <div class="toggle-opt" id="ej-10" onclick="selectEjertid(10)">5–10 år</div>
-          <div class="toggle-opt selected" id="ej-15" onclick="selectEjertid(15)">10–15 år</div>
-          <div class="toggle-opt" id="ej-20" onclick="selectEjertid(20)">15–20 år</div>
-          <div class="toggle-opt" id="ej-25" onclick="selectEjertid(25)">20–25 år</div>
-          <div class="toggle-opt" id="ej-30" onclick="selectEjertid(30)">25+ år</div>
+          <div class="toggle-opt" id="ej-5"  onclick="selectEjertid(5)"  style="flex:0 0 auto">Under 5 år</div>
+          <div class="toggle-opt" id="ej-10" onclick="selectEjertid(10)" style="flex:0 0 auto">5–10 år</div>
+          <div class="toggle-opt selected" id="ej-15" onclick="selectEjertid(15)" style="flex:0 0 auto">10–15 år</div>
+          <div class="toggle-opt" id="ej-20" onclick="selectEjertid(20)" style="flex:0 0 auto">15–20 år</div>
+          <div class="toggle-opt" id="ej-25" onclick="selectEjertid(25)" style="flex:0 0 auto">20–25 år</div>
+          <div class="toggle-opt" id="ej-30" onclick="selectEjertid(30)" style="flex:0 0 auto">25+ år</div>
         </div>
       </div>
 
