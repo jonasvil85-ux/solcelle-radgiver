@@ -1878,7 +1878,7 @@ function calcVurdering(r) {
 
   const husTxt = husPris > 0
     ? `Hertil kommer en anslået boligværdistigning på ca. ${fmt(husPris)} kr: danske bolighandler viser, at 50–65% af de forventede fremtidige energibesparelser afspejles i salgsprisen, og her er regnet med 55% af den besparelse på elregningen, anlægget har tilbage ved salg (batterier og indtægt fra salg til nettet regnes ikke med).`
-    : `Der er ikke regnet med boligværdistigning, da anlægget er ${ejertid} år gammelt ved salg.`;
+    : `Der er ikke regnet med boligværdistigning, da anlægget er ${ejertid} år gammelt ved salg${ejertid > SYSTEM_LIFE ? `, og besparelsen er kun regnet for panelernes levetid på ${SYSTEM_LIFE} år` : ''}.`;
   const fradrag = [
     r.maintCost > 0 ? `en ny inverter efter ca. ${INVERTER_YEAR} år (${fmt(r.maintCost)} kr)` : '',
     S.financing === 'loan' ? `låneomkostninger på ca. ${fmt(loanCost)} kr` : '',
@@ -2879,8 +2879,18 @@ function calcRec() {
   const profSum  = profRaw.reduce((a,b)=>a+b,0) || 24;
   const profFrac = profRaw.map(v => v / profSum);
 
-  const orientFactor = S.roofOrientFactor ||
+  const baseOrient = S.roofOrientFactor ||
     ({ S:1.00, SW:0.92, SE:0.92, W:0.78, E:0.78, NW:0.55, NE:0.55, N:0.40 }[S.roofOrientation] || 1.00);
+  // Paneler lægges på den bedste tagflade først; dårligere flader bruges kun, når de bedre er fyldt
+  const faces = (S.roofFaces || []).filter(f => f.enabled && f.areaM2 > 0)
+    .map(f => ({ cap: f.areaM2 / 5, factor: (ROOF_DIR_META[f.dir] || { factor: 0.70 }).factor }))
+    .sort((a, b) => b.factor - a.factor);
+  const orientFor = sz => {
+    if (!faces.length) return baseOrient;
+    let left = sz, sum = 0;
+    for (const f of faces) { const k = Math.min(left, f.cap); sum += k * f.factor; left -= k; }
+    return (sum + left * faces[faces.length - 1].factor) / sz;
+  };
 
   const mNorm = M_SCALES.reduce((a,s,i)=>a+s*M_DAYS[i],0);
   const SS = [0,0,0,0,0,0,0,0,0.48,1.93,4.32,6.72,8.16,8.64,7.20,5.28,2.88,1.44,0.19,0,0,0,0,0];
@@ -2931,7 +2941,7 @@ function calcRec() {
     }
     const eta = Math.sqrt(BAT_ROUNDTRIP);
     evalRaw = (sz, bat) => {
-      const k = sz * irr * orientFactor, pMax = bat * BAT_C_RATE;
+      const k = sz * irr * orientFor(sz), pMax = bat * BAT_C_RATE;
       let self = 0, exp = 0, selfVal = 0, soc = 0;
       for (let i = 0; i < n; i++) {
         const p = k * shape[i], c = H.c[i] * consScale;
@@ -2958,7 +2968,7 @@ function calcRec() {
       for (let m = 0; m < 12; m++) {
         const isWinter = m <= 2 || m >= 9;
         const ntt = isWinter ? nt.winter : nt.summer;
-        const dayProd = sz * irr * orientFactor * M_SCALES[m] / mNorm;
+        const dayProd = sz * irr * orientFor(sz) * M_SCALES[m] / mNorm;
         const dayCons = (S.monthlyProfile ? S.monthlyProfile[m] : kwh * M_DAYS[m] / 365) / M_DAYS[m];
         for (let h = 0; h < 24; h++) {
           const selfH = Math.min(ssNorm[h] * dayProd, profFrac[h] * dayCons);
@@ -2967,7 +2977,7 @@ function calcRec() {
         }
       }
       const selfCap  = kwh * 0.92;
-      const prod     = sz * irr * orientFactor;
+      const prod     = sz * irr * orientFor(sz);
       const baseself = Math.min(annSelf, selfCap);
       const baseVal  = annSelf > 0 ? annSavSelf * (baseself / annSelf) : 0;
       // Batteriet flytter soloverskud til aftenforbruget — med tab undervejs
@@ -2994,6 +3004,7 @@ function calcRec() {
 
   // Besparelse i år y (1 = første år). El-afgiften kommer oveni fra år 3 (2028).
   function yearSaving(y, sz, bat, billOnly) {
+    if (y > SYSTEM_LIFE) return 0;
     const g = Math.pow(1 + PRICE_GROWTH, y - 1);
     const val = e => (e.selfVal + (y >= 3 ? afgiftSaving(e.self) : 0)) * g + (billOnly ? 0 : e.exp * SELL_PRICE);
     let v = val(evaluate(sz, 0));
@@ -3039,6 +3050,7 @@ function calcRec() {
 
   const ev   = evaluate(kWp, batKwh);
   const evNo = evaluate(kWp, 0);
+  const orientFactor = orientFor(kWp);
   const prod = Math.round(kWp * irr * orientFactor);
   const monthlyProd = M_SCALES.map((s,i)=>Math.round(kWp*irr*orientFactor*s*M_DAYS[i]/mNorm));
 
