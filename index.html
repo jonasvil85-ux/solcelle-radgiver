@@ -1374,7 +1374,7 @@ body {
 
     <!-- CONSUMPTION PROFILE CHART -->
     <div class="chart-card">
-      <div class="chart-card-title">Dit faktiske forbrug — gennemsnitsdag (årsgennemsnit)<span class="chart-info" data-tip="Dine rigtige Eloverblik-data vises som timegennemsnit over hele året. Solproduktionen (orange linje) er beregnet for dit kWp-anlæg og tagretning. Grønt = solel du bruger direkte. Gult = overskud eksporteret til nettet. Grå = hvad du stadig køber fra elnettet.">i</span></div>
+      <div class="chart-card-title">Dit faktiske forbrug — gennemsnitsdag (årsgennemsnit)<span class="chart-info" data-tip="Hver søjle er gennemsnittet af samme klokkeslæt over alle årets dage, beregnet time for time. Derfor kan samme time både vise eksport (solrige dage) og køb fra elnettet (mørke dage). Grønt = solel du bruger direkte. Gult = overskud solgt til nettet. Grå = hvad du stadig køber fra elnettet. Orange linje = gennemsnitlig solproduktion for dit anlæg.">i</span></div>
       <div class="chart-card-sub" id="profileSub">Baseret på dine rigtige Eloverblik-data · <span style="color:#059669">■</span> Sol direkte · <span style="color:#F59E0B">■</span> Eksport til net · <span style="color:#94A3B8">■</span> Fra elnet (inkl. natlad, vask osv.) · <span style="color:#EA580C">—</span> Solproduktion</div>
       <div class="chart-wrap" style="height:200px"><canvas id="profileChart"></canvas></div>
     </div>
@@ -2929,7 +2929,7 @@ function calcRec() {
 
   // evaluate(kWp, bat) → { self, exp, selfVal }: årligt egetforbrug (kWh), salg (kWh) og værdi af egetforbrug (kr, år 1)
   const evalCache = {};
-  let evalRaw;
+  let evalRaw, flowFn;
   const shape = S.hourly ? solarShape(S.hourly) : null;
   if (shape) {
     // Time-for-time over hele året med faktisk forbrug, faktisk solprofil og faktiske timepriser
@@ -2968,6 +2968,29 @@ function calcRec() {
       }
       return { self, exp, selfVal };
     };
+    // Gennemsnitligt døgn: hver time er gennemsnittet af samme klokkeslæt over alle årets dage
+    flowFn = (sz, bat) => {
+      const k = sz * irr * orientFor(sz), pMax = bat * BAT_C_RATE, days = n / 24;
+      const f = { solar: [], direct: [], toBat: [], exp: [], fromBat: [], grid: [] };
+      for (const key in f) f[key] = new Array(24).fill(0);
+      let soc = 0;
+      for (let i = 0; i < n; i++) {
+        const p = k * shape[i], c = H.c[i] * consScale, h = H.h[i];
+        f.solar[h] += p;
+        if (p >= c) {
+          const sur = p - c;
+          const ch = bat > 0 ? Math.min(sur, pMax, (bat - soc) / eta) : 0;
+          soc += ch * eta;
+          f.direct[h] += c; f.toBat[h] += ch; f.exp[h] += sur - ch;
+        } else {
+          const dis = bat > 0 ? Math.min(c - p, pMax, soc * eta) : 0;
+          soc -= dis / eta;
+          f.direct[h] += p; f.fromBat[h] += dis; f.grid[h] += c - p - dis;
+        }
+      }
+      for (const key in f) f[key] = f[key].map(v => +(v / days).toFixed(3));
+      return f;
+    };
   } else {
     // Uden timedata: gennemsnitsdag pr. måned mod forbrugsprofil
     const eveningNt = nt.summer.slice(17, 22).reduce((a,b)=>a+b,0) / 5;
@@ -2998,6 +3021,22 @@ function calcRec() {
       // Besparelsen kan ikke overstige ~88 % af den nuværende elregning
       if (annCostEst) selfVal = Math.min(selfVal, Math.max(0, annCostEst * 0.88 - exp * SELL_PRICE));
       return { self, exp, selfVal };
+    };
+    // Gennemsnitligt døgn: beregnet måned for måned og vægtet med antal dage (uden batteri)
+    flowFn = (sz) => {
+      const f = { solar: [], direct: [], toBat: [], exp: [], fromBat: [], grid: [] };
+      for (const key in f) f[key] = new Array(24).fill(0);
+      for (let m = 0; m < 12; m++) {
+        const dayProd = sz * irr * orientFor(sz) * M_SCALES[m] / mNorm;
+        const dayCons = (S.monthlyProfile ? S.monthlyProfile[m] : kwh * M_DAYS[m] / 365) / M_DAYS[m];
+        for (let h = 0; h < 24; h++) {
+          const p = ssNorm[h] * dayProd, c = profFrac[h] * dayCons, w = M_DAYS[m] / 365;
+          f.solar[h] += p * w; f.direct[h] += Math.min(p, c) * w;
+          f.exp[h] += Math.max(0, p - c) * w; f.grid[h] += Math.max(0, c - p) * w;
+        }
+      }
+      for (const key in f) f[key] = f[key].map(v => +v.toFixed(3));
+      return f;
     };
   }
   const evaluate = (sz, bat) => evalCache[sz + '|' + bat] || (evalCache[sz + '|' + bat] = evalRaw(sz, bat));
@@ -3097,7 +3136,7 @@ function calcRec() {
 
   const husPris = houseValue(kWp);
 
-  return { husPris, kWp, batKwh, prod, selfCons, exported, selfPct, sav26, sav28, sav26NoBat, sav28NoBat, afgift, avgAnnualSav, grossSav, grossSavNoBat, maintCost, cum, payback, paybackNoBat, ejertid, sysCost, batCost, total, irr, orientFactor, monthlyProd, buyPrice, baseself, baseexp, BAT_LIFESPAN, hourlyBased: !!shape };
+  return { dayFlow: flowFn(kWp, batKwh), husPris, kWp, batKwh, prod, selfCons, exported, selfPct, sav26, sav28, sav26NoBat, sav28NoBat, afgift, avgAnnualSav, grossSav, grossSavNoBat, maintCost, cum, payback, paybackNoBat, ejertid, sysCost, batCost, total, irr, orientFactor, monthlyProd, buyPrice, baseself, baseexp, BAT_LIFESPAN, hourlyBased: !!shape };
 }
 
 /* ── SLIDER PANEL ── */
@@ -3666,20 +3705,8 @@ const HOURS = Array.from({length:24},(_,i)=>String(i).padStart(2,'0')+':00');
 function profileBase() { return { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { position:'bottom', labels: { boxWidth:16, boxHeight:2, padding:14, color:C.text3, font:{size:10.5} } }, tooltip: { backgroundColor: isDark()?'#1E293B':'#fff', titleColor:isDark()?'#F1F5F9':'#111', bodyColor:C.text3, borderColor:'#E5E7EB', borderWidth:1, padding:10 } }, scales: { x: { grid:{display:false}, ticks:{color:C.text3, font:{size:10}, maxRotation:45, minRotation:0, callback:(_,i)=>i%2===0?HOURS[i]:''} }, y: { grid:{color:C.grid}, ticks:{color:C.text3, font:{size:10.5}}, border:{dash:[3,3]} } } }; }
 
 function buildProfileChart(r) {
-  const prof = S.hourlyProfile;
-  const mScales = [0.15,0.33,0.57,0.81,0.91,1.0,0.91,0.79,0.60,0.32,0.16,0.11];
-  const mDays   = [31,28,31,30,31,30,31,31,30,31,30,31];
-  const summerSolar = [0,0,0,0,0,0,0,0,0.48,1.93,4.32,6.72,8.16,8.64,7.20,5.28,2.88,1.44,0.19,0,0,0,0,0];
-  const kWpScale = r.kWp / 10;
-  const solar = Array.from({length:24}, (_,h) => {
-    let w = 0;
-    for (let m=0; m<12; m++) w += summerSolar[h]*kWpScale*mScales[m]*mDays[m];
-    return Math.max(0, +(w/365).toFixed(3));
-  });
-  // Same breakdown as flow charts
-  const selfC    = prof.map((v,h) => Math.max(0, +Math.min(v, solar[h]).toFixed(3)));
-  const exported = prof.map((v,h) => Math.max(0, +(solar[h] - v).toFixed(3)));
-  const bought   = prof.map((v,h) => Math.max(0, +(v - solar[h]).toFixed(3)));
+  const f = r.dayFlow, solar = f.solar;
+  const hasBat = f.fromBat.some(v => v > 0);
 
   if (charts.profile) { charts.profile.destroy(); delete charts.profile; }
   const dark = isDark(), txt = dark?'#B8C5D0':'#6B7280', grid = dark?'rgba(148,163,184,0.12)':'rgba(107,114,128,0.10)';
@@ -3689,9 +3716,11 @@ function buildProfileChart(r) {
     data: {
       labels: HOURS,
       datasets: [
-        { label:'Solel direkte',  data: selfC,    backgroundColor:'rgba(5,150,105,0.75)',  stack:'s' },
-        { label:'Eksport til net',data: exported, backgroundColor:'rgba(245,158,11,0.55)', stack:'s' },
-        { label:'Fra elnet',      data: bought,   backgroundColor:'rgba(148,163,184,0.55)',stack:'s' },
+        { label:'Solel direkte',  data: f.direct, backgroundColor:'rgba(5,150,105,0.75)',  stack:'s' },
+        ...(hasBat ? [{ label:'Til batteri', data: f.toBat, backgroundColor:'rgba(124,58,237,0.45)', stack:'s' }] : []),
+        { label:'Eksport til net',data: f.exp,    backgroundColor:'rgba(245,158,11,0.55)', stack:'s' },
+        ...(hasBat ? [{ label:'Fra batteri', data: f.fromBat, backgroundColor:'rgba(8,145,178,0.70)', stack:'s' }] : []),
+        { label:'Fra elnet',      data: f.grid,   backgroundColor:'rgba(148,163,184,0.55)',stack:'s' },
         { type:'line', label:'Solproduktion', data: solar,
           borderColor:'#EA580C', backgroundColor:'transparent',
           borderWidth:2.5, pointRadius:0, tension:0.4 },
