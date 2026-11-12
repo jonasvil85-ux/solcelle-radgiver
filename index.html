@@ -944,7 +944,7 @@ body {
       </div>
 
       <div id="tokenReturnHint" style="display:none;background:rgba(5,150,105,.07);border:1px solid rgba(5,150,105,.25);border-radius:8px;padding:10px 13px;font-size:12.5px;color:var(--emerald);margin-bottom:14px">
-        ✅ Du er tilbage — indsæt nu dit token herunder og klik "Hent mine data"
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M7 12.5L10.5 16L17 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Du er tilbage — indsæt nu dit token herunder og klik "Hent mine data"
       </div>
 
       <div class="field">
@@ -1038,28 +1038,28 @@ body {
       <div class="kpi-grid" style="margin-bottom:0">
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Din gennemsnitlige elpris inkl. alle afgifter og moms.&#10;&#10;Med Eloverblik-data: beregnet time for time som (spotpris + nettarif + systemtarif) × 1,25 vægtet af dit faktiske forbrug.&#10;&#10;Med årsregning: din regning ÷ dit forbrug.&#10;&#10;Estimeret (default): spotpris ~0,65 + DK1-nettarif ~0,23 + systemtarif 0,06 kr/kWh × 1,25 ≈ 1,17 kr/kWh.">i</span>
-          <div style="font-size:1.4rem;line-height:1;margin-bottom:4px">⚡</div>
+          <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M13 2L4.5 13H11L10 22L19.5 11H13Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="currentColor" fill-opacity="0.15"/></svg></div>
           <div class="kpi-value" id="sit-price">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Din elpris</div>
           <div class="kpi-sub" id="sit-price-sub">kr/kWh</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Totalt elforbrug de seneste 12 måneder.&#10;&#10;Med Eloverblik-token: summen af alle timeaflæsninger fra din måler.&#10;&#10;Uden Eloverblik: estimeret fra din husstørrelse eller manuel indtastning.&#10;&#10;Bruges som grundlag for alle besparelsesberegninger.">i</span>
-          <div style="font-size:1.4rem;line-height:1;margin-bottom:4px">🏠</div>
+          <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
           <div class="kpi-value" id="sit-kwh">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Dit forbrug</div>
           <div class="kpi-sub">kWh/år</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Estimeret samlet elregning pr. år uden solceller.&#10;&#10;Beregnet som: dit forbrug (kWh) × din gennemsnitlige elpris (kr/kWh).&#10;&#10;Bruges som udgangspunkt til at beregne din besparelse og ny elregning med sol.">i</span>
-          <div style="font-size:1.4rem;line-height:1;margin-bottom:4px">💸</div>
+          <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6 2V22L8.5 20.5L11 22L13.5 20.5L16 22L18 20.5V2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M9.5 8H15M9.5 11.5H15M9.5 15H13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
           <div class="kpi-value" id="sit-bill">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">El-udgift nu</div>
           <div class="kpi-sub">kr/år</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Dit nuværende CO₂-aftryk fra elforbrug.&#10;&#10;Beregnet som: dit forbrug × 130 g CO₂/kWh (dansk elnet gennemsnit 2024).&#10;&#10;Sammenlign med 'CO₂-besparelse' nedenfor for at se din grønne effekt.">i</span>
-          <div style="font-size:1.4rem;line-height:1;margin-bottom:4px">🌍</div>
+          <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><ellipse cx="12" cy="12" rx="4" ry="9" stroke="currentColor" stroke-width="1.2"/><line x1="3.5" y1="9" x2="20.5" y2="9" stroke="currentColor" stroke-width="1.2"/><line x1="3.5" y1="15" x2="20.5" y2="15" stroke="currentColor" stroke-width="1.2"/></svg></div>
           <div class="kpi-value" id="kpi-co2-now">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">CO₂-aftryk nu</div>
           <div class="kpi-sub">ton CO₂/år</div>
@@ -1074,7 +1074,7 @@ body {
         <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(0,0,0,0.45));pointer-events:none;"></div>
       </div>
       <div style="padding:14px 16px 13px;display:flex;align-items:flex-start;gap:11px;">
-        <div style="font-size:22px;line-height:1;margin-top:1px;flex-shrink:0;">🏠</div>
+        <div style="line-height:1;margin-top:1px;flex-shrink:0;color:var(--text-3)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
         <div style="flex:1;min-width:0;">
           <div id="step3Address" style="font-size:14px;font-weight:700;color:var(--text-1);letter-spacing:-0.02em;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
           <div id="roofDetectStatus" style="font-size:11.5px;color:var(--text-3);line-height:1.5;"></div>
@@ -1101,7 +1101,7 @@ body {
       <div style="display:flex;flex-direction:column;gap:16px">
         <!-- Solceller -->
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <div style="font-size:13px;font-weight:600;min-width:130px">☀️ Solcelleanlæg</div>
+          <div style="font-size:13px;font-weight:600;min-width:130px;display:flex;align-items:center;gap:5px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.6"/><path d="M12 2V5M12 19V22M2 12H5M19 12H22M5.6 5.6L7.8 7.8M16.2 16.2L18.4 18.4M5.6 18.4L7.8 16.2M16.2 7.8L18.4 5.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg> Solcelleanlæg</div>
           <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:160px">
             <input type="range" id="sliderKwp" min="3" max="40" step="1" style="flex:1;accent-color:#059669;cursor:pointer" oninput="onSliderKwp(this.value)">
             <span id="sliderKwpVal" style="font-size:13px;font-weight:700;color:var(--emerald);min-width:52px;text-align:right">—</span>
@@ -1110,7 +1110,7 @@ body {
 
         <!-- Batteri -->
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <div style="font-size:13px;font-weight:600;min-width:130px">🔋 Batteri</div>
+          <div style="font-size:13px;font-weight:600;min-width:130px;display:flex;align-items:center;gap:5px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><rect x="2" y="7" width="17" height="10" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M19 10.5V13.5" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/><rect x="4" y="9" width="7" height="6" rx="1" fill="currentColor" opacity="0.5"/></svg> Batteri</div>
           <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:160px">
             <input type="range" id="sliderBat" min="0" max="80" step="1" style="flex:1;accent-color:#059669;cursor:pointer" oninput="onSliderBat(parseInt(this.value))">
             <span id="sliderBatVal" style="font-size:13px;font-weight:700;color:var(--emerald);min-width:52px;text-align:right">—</span>
@@ -1130,7 +1130,7 @@ body {
 
         <!-- Solcelle tilbudspris -->
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <div style="font-size:13px;font-weight:600;min-width:130px;display:flex;align-items:center;gap:5px">💰 Pris solceller
+          <div style="font-size:13px;font-weight:600;min-width:130px;display:flex;align-items:center;gap:5px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><text x="12" y="16" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor" font-family="system-ui,sans-serif">kr</text></svg> Pris solceller
             <span class="chart-info" data-tip="Estimeret pris inkluderer:&#10;• Solpaneler&#10;• Hybridinverter&#10;• Monteringssystem til tag&#10;• El-installation og tilmelding til net&#10;• Opstartsvejledning&#10;&#10;Eksempler på markedspriser 2026 (inkl. moms):&#10;6 kWp komplet: 60.000–80.000 kr&#10;10 kWp komplet: 85.000–110.000 kr&#10;&#10;Hardware-only uden montering er billigere, men kræver separat autoriseret elektriker til montering og el-installation (typisk +20.000–35.000 kr).">i</span>
           </div>
           <div style="display:flex;align-items:center;gap:6px">
@@ -1144,7 +1144,7 @@ body {
 
         <!-- Batteri tilbudspris -->
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <div style="font-size:13px;font-weight:600;min-width:130px;display:flex;align-items:center;gap:5px">💰 Pris batteri
+          <div style="font-size:13px;font-weight:600;min-width:130px;display:flex;align-items:center;gap:5px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><text x="12" y="16" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor" font-family="system-ui,sans-serif">kr</text></svg> Pris batteri
             <span class="chart-info" data-tip="Estimeret pris inkluderer:&#10;• Lithiumbatteri (typisk LFP)&#10;• Tilslutning til hybridinverter&#10;• El-installation og opsætning&#10;• Konfiguration og idriftsættelse&#10;&#10;Eksempler på markedspriser 2026 (inkl. moms):&#10;10 kWh batteri komplet: 55.000–70.000 kr&#10;15 kWh batteri komplet: 80.000–100.000 kr&#10;20 kWh batteri komplet: 105.000–130.000 kr&#10;80 kWh er et semi-kommercielt anlæg og koster typisk 270.000–350.000 kr&#10;&#10;Hardware-only koster mindre, men kræver separat montage og el-installation oveni.">i</span>
           </div>
           <div style="display:flex;align-items:center;gap:6px">
@@ -1170,7 +1170,7 @@ body {
       <div class="kpi-grid" style="margin-bottom:8px;grid-template-columns:repeat(3,1fr)">
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:6px;right:6px" data-tip="Simpelt gennemsnit af din årlige besparelse over ejertiden:&#10;• Første 2 år (2026–2027): uden el-afgift&#10;• Resterende år (fra 2028): med el-afgift (~0,76 kr/kWh inkl. moms)&#10;&#10;Beregnet time for time:&#10;• Solenergi brugt direkte × din elpris&#10;• Eksporteret overskud × salgspris (~0,35 kr/kWh)&#10;• Batteri: soloverskud forskudt til aftentimer&#10;&#10;Elprisvækst (4%/år) indgår ikke i dette gennemsnit — men er inkluderet i break-even og payback-kurven.&#10;&#10;Elbil er undtaget — ladning til bil har refusion og medregnes ikke.">i</span>
-          <div style="font-size:1.4rem;line-height:1;margin-bottom:4px">💰</div>
+          <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><polyline points="22,7 13.5,15.5 8.5,10.5 2,17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><polyline points="16,7 22,7 22,13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
           <div class="kpi-value emerald" id="kpi-savings">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Årsbesparelse</div>
           <div class="kpi-sub" id="kpi-savings-sub">kr/år</div>
@@ -1178,35 +1178,35 @@ body {
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Din forventede elregning efter solceller er installeret.&#10;&#10;Beregnet som: nuværende el-udgift − årsbesparelse (første år, uden afgift).&#10;&#10;Du betaler stadig for den strøm du køber fra nettet — om natten og på overskyede dage.">i</span>
-          <div style="font-size:1.4rem;line-height:1;margin-bottom:4px">🏡</div>
+          <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
           <div class="kpi-value" id="kpi-new-bill">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Ny elregning</div>
           <div class="kpi-sub">kr/år efter sol</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Samlet anlægspris inkl. moms for solceller + eventuelt batteri.&#10;&#10;Beregnet som: estimeret solcellepris + batteripris. Justér med egne tilbudspriser i panelet ovenfor.">i</span>
-          <div style="font-size:1.4rem;line-height:1;margin-bottom:4px">💳</div>
+          <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><line x1="2" y1="10" x2="22" y2="10" stroke="currentColor" stroke-width="2"/><rect x="4" y="13.5" width="5" height="2.5" rx="0.5" fill="currentColor" opacity="0.6"/></svg></div>
           <div class="kpi-value" id="kpi-invest">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Total investering</div>
           <div class="kpi-sub">kr inkl. moms</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Antal år til din investering er tilbagebetalt af løbende besparelser.&#10;&#10;Beregnet med 4%/år elprisvækst og el-afgift modellen:&#10;• År 1–2 (2026–2027): uden el-afgift&#10;• År 3+ (2028+): med el-afgift (~0,76 kr/kWh inkl. moms)&#10;&#10;Elbil-ladning er undtaget via refusionsordningen og medregnes ikke.">i</span>
-          <div style="font-size:1.4rem;line-height:1;margin-bottom:4px">⏱️</div>
+          <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M12 7V12L15 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
           <div class="kpi-value" id="kpi-payback">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Break-even</div>
           <div class="kpi-sub">år</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Solenergi du producerer ud over dit eget forbrug og sælger til elnettet.&#10;&#10;Beregnet som: total solproduktion − selvforbrugt energi, time for time.&#10;&#10;Afregningspris er typisk ~0,35 kr/kWh (nettarifdelen). Jo bedre dit forbrugsmønster matcher solprofilen, jo mindre eksporteres.">i</span>
-          <div style="font-size:1.4rem;line-height:1;margin-bottom:4px">📤</div>
+          <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3V15M7 8L12 3L17 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 16V19C20 20.1 19.1 21 18 21H6C4.9 21 4 20.1 4 19V16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
           <div class="kpi-value" id="sit-export">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Salg til net</div>
           <div class="kpi-sub">kWh/år · ~35 øre/kWh</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Samlet elbesparelse over ejertiden med 4%/år elprisvækst:&#10;• Første 2 år (2026–2027): årsbesparelse uden el-afgift&#10;• Resterende år (fra 2028): årsbesparelse med el-afgift (~0,76 kr/kWh inkl. moms)&#10;&#10;Samme beregningsmodel som break-even og anbefalingen. Inkluderer ikke boligværdistigning eller fratrukket investering — det vises i 'Kan det svare sig?' nedenfor.">i</span>
-          <div style="font-size:1.4rem;line-height:1;margin-bottom:4px">🏆</div>
+          <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L15.1 8.3L22 9.3L17 14.1L18.2 21L12 17.8L5.8 21L7 14.1L2 9.3L8.9 8.3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="currentColor" fill-opacity="0.1"/></svg></div>
           <div class="kpi-value emerald" id="kpi-total-sav">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Samlet elbesparelse</div>
           <div class="kpi-sub" id="kpi-total-sav-sub">kr inkl. 4%/år vækst</div>
@@ -1218,7 +1218,7 @@ body {
       <div class="kpi-grid" style="margin-bottom:0;grid-template-columns:repeat(3,1fr);gap:8px">
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Anlægsstørrelsen valgt ved at afprøve alle kombinationer af kWp (3–20) og batteri (0, 5, 10 kWh).&#10;&#10;Den kombination vælges, som giver størst nettogevinst:&#10;Kumulativ besparelse med 4%/år elprisvækst over din ejertid − total investering.&#10;&#10;Justér selv med slideren for at se andre scenarier.">i</span>
-          <div style="font-size:1.4rem;line-height:1;margin-bottom:4px">☀️</div>
+          <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.5"/><path d="M12 2V4.5M12 19.5V22M2 12H4.5M19.5 12H22M5.6 5.6L7.4 7.4M16.6 16.6L18.4 18.4M5.6 18.4L7.4 16.6M16.6 7.4L18.4 5.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
           <div class="kpi-value emerald" id="kpi-kwp">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Anbefalet anlæg</div>
           <div class="kpi-sub" id="kpi-kwp-sub">kWp</div>
@@ -1228,7 +1228,7 @@ body {
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Batteri anbefales når det øger nettogevinsten over din ejertid.&#10;&#10;Beregnet ved at sammenligne tre scenarier: 0, 5 og 10 kWh batteri. Batteriet gemmer soloverskud fra dagen til aftenforbruget, så du køber mindre fra nettet.&#10;&#10;Anbefales ikke hvis batteripris > ekstra besparelse over ejertid.">i</span>
-          <div style="font-size:1.4rem;line-height:1;margin-bottom:4px">🔋</div>
+          <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="17" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M19 10.5V13.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><rect x="4" y="9" width="7" height="6" rx="1" fill="currentColor" opacity="0.5"/></svg></div>
           <div class="kpi-value" id="kpi-bat">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Batteri</div>
           <div class="kpi-sub" id="kpi-bat-sub"></div>
@@ -1238,28 +1238,28 @@ body {
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Solcelleanlæggets samlede årsproduktion.&#10;&#10;Beregnet fra dit kWp-antal, din tagretning og danske irradians-data (måned for måned sæsonfaktorer). Sydvendt tag = 100% udbytte — øst/vest giver ~85%, nord ~60%.">i</span>
-          <div style="font-size:1.4rem;line-height:1;margin-bottom:4px">⚡</div>
+          <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M13 2L4.5 13H11L10 22L19.5 11H13Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="currentColor" fill-opacity="0.15"/></svg></div>
           <div class="kpi-value emerald" id="kpi-prod">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Årsproduktion</div>
           <div class="kpi-sub">kWh/år</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Andel af dit elforbrug dækket af solceller direkte (inkl. batteri).&#10;&#10;Beregnet time for time: selvforbrugt solenergi ÷ dit samlede forbrug × 100. Et batteri øger selvforsyningen ved at gemme dagsoverskud til aftenforbrug.">i</span>
-          <div style="font-size:1.4rem;line-height:1;margin-bottom:4px">🔆</div>
+          <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M17 2L21 6L17 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 11A9 9 0 0 1 20.9 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M7 22L3 18L7 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 13A9 9 0 0 1 3.1 16.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
           <div class="kpi-value emerald" id="kpi-self">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Selvforsyning</div>
           <div class="kpi-sub">% af dit forbrug</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="CO₂ du undgår at udlede ved at bruge din egen solstrøm direkte.&#10;&#10;Beregnet som: selvforbrugt solenergi × 130 g CO₂/kWh (dansk elnet gennemsnit).&#10;&#10;Kun direkte selvforbrug tæller — eksporteret overskud erstatter fossil energi på nettet, men medregnes konservativt ikke her.">i</span>
-          <div style="font-size:1.4rem;line-height:1;margin-bottom:4px">🌱</div>
+          <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6.5 21C6.5 21 7 11 17.5 7C17.5 7 21 15 12 21Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="6.5" y1="21" x2="12" y2="13.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" opacity="0.6"/></svg></div>
           <div class="kpi-value" id="kpi-co2">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">CO₂-besparelse</div>
           <div class="kpi-sub">ton CO₂/år</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
           <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Andel af det samlede brugbare tagareal brugt til solceller.&#10;&#10;Beregnet som: kWp × 5 m²/kWp ÷ tagareal (400W-paneler kræver ~5 m² pr. kWp).&#10;&#10;Tagarealet inkluderer alle brugbare flader inden for 90° af syd — syd, sydøst, sydvest, øst og vest medregnes alle. Nordvendte flader udelades.&#10;&#10;Prioritering af anlægget:&#10;• Anlægget dimensioneres mod den samlede brugbare flade&#10;• Sydvendte paneler producerer mest (100%) — øst/vest giver ~78% og indgår vægtet i produktionsestimatet&#10;• 'Vægtet udbytte' under husbillede viser den kombinerede effektivitet&#10;&#10;Over 100% betyder at panelerne ikke passer på taget — reducer kWp med slideren.">i</span>
-          <div style="font-size:1.4rem;line-height:1;margin-bottom:4px">🏗️</div>
+          <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M2 12L12 3L22 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20H19V9.5" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><rect x="9" y="14" width="6" height="6" rx="0.5" stroke="currentColor" stroke-width="1.2"/></svg></div>
           <div class="kpi-value" id="kpi-roof-pct">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Tagudnyttelse</div>
           <div class="kpi-sub" id="kpi-roof-sub">% af sydvendt tag</div>
@@ -1268,12 +1268,12 @@ body {
     </div>
     <!-- Tagudnyttelse advarsel -->
     <div id="roof-oversize-warn" style="display:none;background:rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.35);border-radius:9px;padding:10px 14px;font-size:12px;color:var(--text-1);margin-bottom:12px;line-height:1.5">
-      ⚠️ <strong>Anlægget er for stort til taget:</strong> <span id="roof-oversize-text"></span> Reducer kWp med slideren ovenfor.
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;flex-shrink:0"><path d="M10.3 3.5L2.5 18C2.1 18.7 2.6 19.5 3.5 19.5H20.5C21.4 19.5 21.9 18.7 21.5 18L13.7 3.5C13.3 2.8 12.7 2.5 12 2.5C11.3 2.5 10.7 2.8 10.3 3.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><line x1="12" y1="10" x2="12" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1" fill="currentColor"/></svg> <strong>Anlægget er for stort til taget:</strong> <span id="roof-oversize-text"></span> Reducer kWp med slideren ovenfor.
     </div>
 
     <!-- EL-AFGIFT INFO BOX -->
     <div id="afgift-info" style="display:none;font-size:12px;color:var(--text-2);background:rgba(5,150,105,0.06);border:1px solid rgba(5,150,105,0.22);border-radius:9px;padding:11px 15px;margin-bottom:14px;line-height:1.6">
-      <strong style="color:var(--text-1);font-size:12.5px">ℹ️ Om el-afgift fra 2028</strong><br>
+      <strong style="color:var(--text-1);font-size:12.5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><line x1="12" y1="11" x2="12" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="7.5" r="1.2" fill="currentColor"/></svg> Om el-afgift fra 2028</strong><br>
       El-afgiften forventes genindført i 2028. Den samlede el-afgift for private forbrugere udgør ca. <strong>0,70 kr/kWh ekskl. moms</strong> (≈ 0,76 kr/kWh inkl. moms) — svarende til niveauet før de midlertidige lempelser. Beregningen viser den ekstra besparelse, du opnår ved at bruge din solcellestrøm direkte fremfor at købe den fra nettet.<br>
       <span style="color:var(--text-3);margin-top:4px;display:block">Bemærk: Strøm til <strong>elbil</strong> er undtaget — her gælder en særlig refusionsordning, så elbilens ladning regnes ikke med i afgiftsbesparelsen.</span>
     </div>
@@ -1294,7 +1294,7 @@ body {
     <!-- VURDERING CARD -->
     <div class="rec-card" id="vurdering-card" style="display:none;border-left:4px solid var(--emerald)">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-        <div id="vurdering-icon" style="font-size:28px;line-height:1"></div>
+        <div id="vurdering-icon" style="line-height:1"></div>
         <div>
           <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:2px">Kan det svare sig?</div>
           <div id="vurdering-verdict" style="font-size:18px;font-weight:800;letter-spacing:-0.02em"></div>
@@ -1366,7 +1366,7 @@ body {
     <!-- CHART 2: OPTIMIZED PROFILE -->
     <div class="chart-card">
       <div class="chart-card-title">Hvad sker der hvis du flytter forbrug til soltimerne?<span class="chart-info" data-tip="Simulerer hvad der sker hvis du rykker 35% af nat- og aftenforbrug (00–05, 21–23) ind i soltimerne (09–16) — fx vaskemaskine, opvaskemaskine og elbil-opladning. Jo mere forbrug du rammer solproduktionen, jo mindre køber du fra nettet. Viser den måned hvor sol dækker ~50% af forbrug, da her er gevinsten størst. Det er ikke prisoptimering baseret på spotpriser — det er solar selvforbrugsoptimering.">i</span></div>
-      <div style="display:inline-block;font-size:10.5px;font-weight:600;color:#D97706;background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.30);border-radius:5px;padding:2px 8px;margin-bottom:8px">⚠️ Simulering — viser ikke dit faktiske forbrug</div>
+      <div style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:600;color:#D97706;background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.30);border-radius:5px;padding:2px 8px;margin-bottom:8px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M10.3 3.5L2.5 18C2.1 18.7 2.6 19.5 3.5 19.5H20.5C21.4 19.5 21.9 18.7 21.5 18L13.7 3.5C13.3 2.8 12.7 2.5 12 2.5C11.3 2.5 10.7 2.8 10.3 3.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><line x1="12" y1="10" x2="12" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1" fill="currentColor"/></svg> Simulering — viser ikke dit faktiske forbrug</div>
       <div class="chart-card-sub" id="optimalFlowSub"><span style="color:#059669">■</span> Sol direkte · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion · <span id="optimalExtra" style="color:var(--emerald);font-weight:600"></span></div>
       <div style="font-size:11.5px;color:var(--text-3);line-height:1.6;margin:8px 0 12px;padding:10px 12px;background:rgba(5,150,105,0.04);border-radius:6px;border-left:3px solid var(--emerald)">
         <span id="optimalChartSub"></span> — simulerer at 35% af dit nat- og aftenforbrug flyttes til soltimerne (09–16). Grå søjler bliver grønne: du køber mindre fra nettet og bruger din egen sol. Dit <strong style="color:var(--text-2)">faktiske forbrug uden optimering</strong> ses i graferne nedenfor.
@@ -1567,11 +1567,11 @@ function calcVurdering(r) {
   // Verdict
   let icon, verdictText, borderColor;
   if (netResult > 25000 && ejertid >= payback) {
-    icon = '✅'; verdictText = 'Ja — solceller kan sandsynligvis betale sig'; borderColor = '#10B981';
+    icon = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#10B981" fill-opacity="0.15" stroke="#10B981" stroke-width="1.5"/><path d="M7 12.5L10.5 16L17 9" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'; verdictText = 'Ja — solceller kan sandsynligvis betale sig'; borderColor = '#10B981';
   } else if (netResult > 0 || (ejertid >= payback * 0.80)) {
-    icon = '⚠️'; verdictText = 'Sandsynligvis ja — med forbehold'; borderColor = '#F59E0B';
+    icon = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M10.3 3.5L2.5 18C2.1 18.7 2.6 19.5 3.5 19.5H20.5C21.4 19.5 21.9 18.7 21.5 18L13.7 3.5C13.3 2.8 12.7 2.5 12 2.5C11.3 2.5 10.7 2.8 10.3 3.5Z" fill="#F59E0B" fill-opacity="0.15" stroke="#F59E0B" stroke-width="1.5" stroke-linejoin="round"/><line x1="12" y1="10" x2="12" y2="14" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1" fill="#F59E0B"/></svg>'; verdictText = 'Sandsynligvis ja — med forbehold'; borderColor = '#F59E0B';
   } else {
-    icon = '🔴'; verdictText = 'Overvej nøje — usikker økonomi'; borderColor = '#EF4444';
+    icon = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#EF4444" fill-opacity="0.15" stroke="#EF4444" stroke-width="1.5"/><path d="M8 8L16 16M16 8L8 16" stroke="#EF4444" stroke-width="2" stroke-linecap="round"/></svg>'; verdictText = 'Overvej nøje — usikker økonomi'; borderColor = '#EF4444';
   }
 
   // Prose
@@ -1605,7 +1605,7 @@ function renderVurdering(r) {
   if (!card) return;
   card.style.display = '';
   card.style.borderLeftColor = v.borderColor;
-  document.getElementById('vurdering-icon').textContent    = v.icon;
+  document.getElementById('vurdering-icon').innerHTML      = v.icon;
   document.getElementById('vurdering-verdict').textContent = v.verdictText;
   const netEl = document.getElementById('vurdering-net');
   netEl.textContent = (v.netResult >= 0 ? '+' : '') + Math.round(v.netResult).toLocaleString('da-DK') + ' kr';
@@ -1889,9 +1889,9 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
     if (statusEl) {
       statusEl.style.color = '#059669';
       if (bbrData?.bebyggetAreal > 0) {
-        statusEl.innerHTML = `✅ BBR + OSM — tagretning: <strong>${dirNames[best]||best}</strong> · sydvendt tagflade: <strong>~${southAreaM2} m²</strong> · BBR-fodaftryk: ${footprintM2} m²${bbrData.byggeaar ? ` · opført ${bbrData.byggeaar}` : ''} <span style="color:var(--text-3);font-weight:400">(justér herunder ved behov)</span>`;
+        statusEl.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M7 12.5L10.5 16L17 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> BBR + OSM — tagretning: <strong>${dirNames[best]||best}</strong> · sydvendt tagflade: <strong>~${southAreaM2} m²</strong> · BBR-fodaftryk: ${footprintM2} m²${bbrData.byggeaar ? ` · opført ${bbrData.byggeaar}` : ''} <span style="color:var(--text-3);font-weight:400">(justér herunder ved behov)</span>`;
       } else {
-        statusEl.innerHTML = `✅ OSM-bygning fundet — tagretning: <strong>${dirNames[best]||best}</strong> · sydvendt areal: <strong>~${southAreaM2} m²</strong> · beregnet fodaftryk: ${Math.round(osmFootprintM2)} m² <span style="color:var(--text-3);font-weight:400">(estimeret — justér herunder ved behov)</span>`;
+        statusEl.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M7 12.5L10.5 16L17 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> OSM-bygning fundet — tagretning: <strong>${dirNames[best]||best}</strong> · sydvendt areal: <strong>~${southAreaM2} m²</strong> · beregnet fodaftryk: ${Math.round(osmFootprintM2)} m² <span style="color:var(--text-3);font-weight:400">(estimeret — justér herunder ved behov)</span>`;
       }
     }
     return true;
@@ -1983,7 +1983,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
 
             if (statusEl) {
               statusEl.style.color = '#059669';
-              statusEl.innerHTML = `<span style="color:#059669">✅ Google Solar</span> · hældning: ${Math.round(bestSeg.pitchDegrees)}°${solar.sunshineHours ? ` · ${Math.round(solar.sunshineHours)} sol-timer/år` : ''} · vægtet udbytte: <strong style="color:var(--text-2)">${Math.round(weightedFactor*100)}%</strong> af rent sydvendt`;
+              statusEl.innerHTML = `<span style="color:#059669"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M7 12.5L10.5 16L17 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Google Solar</span> · hældning: ${Math.round(bestSeg.pitchDegrees)}°${solar.sunshineHours ? ` · ${Math.round(solar.sunshineHours)} sol-timer/år` : ''} · vægtet udbytte: <strong style="color:var(--text-2)">${Math.round(weightedFactor*100)}%</strong> af rent sydvendt`;
             }
             return;
           }
@@ -2101,7 +2101,7 @@ function hide(id) { document.getElementById(id).classList.add('hidden'); }
           refreshRecommendation(); // async: recalc recommendation if user hasn't overridden slider
           if (statusEl) {
             statusEl.style.color = '#059669';
-            statusEl.innerHTML = `✅ BBR-data fundet — fodaftryk: <strong>${footprintM2} m²</strong> · estimeret sydvendt areal: <strong>~${southAreaM2} m²</strong>${bbrData.byggeaar ? ` · opført ${bbrData.byggeaar}` : ''} <span style="color:var(--text-3);font-weight:400">Justér tagflader herunder</span>`;
+            statusEl.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M7 12.5L10.5 16L17 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> BBR-data fundet — fodaftryk: <strong>${footprintM2} m²</strong> · estimeret sydvendt areal: <strong>~${southAreaM2} m²</strong>${bbrData.byggeaar ? ` · opført ${bbrData.byggeaar}` : ''} <span style="color:var(--text-3);font-weight:400">Justér tagflader herunder</span>`;
           }
           return;
         }
@@ -2803,7 +2803,7 @@ function updateBatEconomyPanel(batKwh) {
     const optimalKwh = Math.ceil(Math.min(capFromExport, capFromConsump));
     if (batKwh > optimalKwh * 1.2 && optimalKwh >= 1) {
       overEl.style.display = 'block';
-      overEl.innerHTML = `📊 <strong>Dit anlæg kan max udnytte ~${optimalKwh} kWh batteri</strong> med din nuværende sol og dit forbrug — et ${batKwh} kWh batteri giver samme besparelse som et ${optimalKwh} kWh, fordi der ikke er mere soleksport at gemme. Et større batteri kan stadig give mening for <em>strøm ved netsvigt</em>, men ikke for økonomi.`;
+      overEl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M8 12h8M8 8h8M8 16h5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> <strong>Dit anlæg kan max udnytte ~${optimalKwh} kWh batteri</strong> med din nuværende sol og dit forbrug — et ${batKwh} kWh batteri giver samme besparelse som et ${optimalKwh} kWh, fordi der ikke er mere soleksport at gemme. Et større batteri kan stadig give mening for <em>strøm ved netsvigt</em>, men ikke for økonomi.`;
     } else {
       overEl.style.display = 'none';
     }
@@ -3004,9 +3004,9 @@ function estimateRoofFromConsumption() {
   const raInput = document.getElementById('roofAreaInput'); if (raInput) raInput.value = southM2;
   document.querySelectorAll('#roofPresets .toggle-opt').forEach(b => b.classList.remove('selected'));
   const ds = document.getElementById('roofDetectStatus');
-  if (ds && !ds.textContent.includes('✅')) {
+  if (ds && !ds.innerHTML.includes('BBR') && !ds.innerHTML.includes('Solar')) {
     ds.style.color = '#0891B2';
-    ds.textContent = `📊 Tagestimering fra forbrug: ~${southM2} m² (${Math.round(floorM2)} m² boligareal · ${Math.round(netKwh)} kWh netto) — justér herunder`;
+    ds.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M8 12h8M8 16h5M8 8h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> Tagestimering fra forbrug: ~${southM2} m² (${Math.round(floorM2)} m² boligareal · ${Math.round(netKwh)} kWh netto) — justér herunder`;
   }
 }
 
@@ -3089,7 +3089,7 @@ function showResults() {
   if (priceWarn) {
     if (r.buyPrice < 1.0 && !S.spotAvg) {
       priceWarn.style.display = '';
-      priceWarn.innerHTML = `⚠️ <strong>${r.buyPrice.toFixed(2).replace('.',',')} kr/kWh</strong> er lavt for en dansk husholdning — typisk betaler man <strong>2,50–4,00 kr/kWh</strong> inkl. nettarif og moms. En lav elpris reducerer batteriets rentabilitet markant. Tast din fulde årsregning og kWh-forbrug ind for en mere præcis beregning.`;
+      priceWarn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px"><path d="M10.3 3.5L2.5 18C2.1 18.7 2.6 19.5 3.5 19.5H20.5C21.4 19.5 21.9 18.7 21.5 18L13.7 3.5C13.3 2.8 12.7 2.5 12 2.5C11.3 2.5 10.7 2.8 10.3 3.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><line x1="12" y1="10" x2="12" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1" fill="currentColor"/></svg> <strong>${r.buyPrice.toFixed(2).replace('.',',')} kr/kWh</strong> er lavt for en dansk husholdning — typisk betaler man <strong>2,50–4,00 kr/kWh</strong> inkl. nettarif og moms. En lav elpris reducerer batteriets rentabilitet markant. Tast din fulde årsregning og kWh-forbrug ind for en mere præcis beregning.`;
     } else {
       priceWarn.style.display = 'none';
     }
@@ -3111,7 +3111,7 @@ function showResults() {
       <div style="font-size:11.5px;line-height:1.7">
         <div style="font-weight:600;margin-bottom:8px;color:var(--text-1)">Prisberegning fra dine data (${S.priceArea || 'DK1'}${S.dsoGLN ? ' · DSO ' + S.dsoGLN : ''})</div>
         <div style="display:grid;grid-template-columns:1fr auto auto;gap:3px 14px;align-items:baseline">
-          <span>⚡ Spotpris (vægtet gns.)</span>
+          <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px"><path d="M13 2L4.5 13H11L10 22L19.5 11H13Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="currentColor" fill-opacity="0.15"/></svg> Spotpris (vægtet gns.)</span>
           <span style="font-weight:600;font-variant-numeric:tabular-nums">${fmt(S.spotAvg)} kr/kWh</span>
           <span style="color:#059669;font-size:10px">✓ præcist</span>
 
