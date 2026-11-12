@@ -1725,19 +1725,17 @@ window.addEventListener('scroll', function() {
 
 /* ── PROGRESS ── */
 function setProgress(step) {
-  const navFns = [null, goStep1, goStep2Back];
+  const navFns = [null, goStep1, navToStep2, goStep2];
   [1,2,3].forEach(i => {
     const dot = document.getElementById('dot'+i);
     const lbl = document.getElementById('lbl'+i);
     const isDone = i < step;
-    // Step 3 is also "clickable" from step 1 when results already exist
-    const hasResults = i === 3 && step === 1 && S.annualKwh;
-    const showDone = isDone || hasResults;
+    const isFwdAvail = i > step && S.annualKwh;
+    const showDone = isDone || isFwdAvail;
     dot.className = 'prog-dot' + (showDone ? ' done' : i === step ? ' active' : '');
     lbl.className = 'prog-label' + (i === step ? ' active' : '') + (showDone ? ' done' : '');
-    const fn = isDone && navFns[i] ? navFns[i] : hasResults ? goStep2 : null;
-    dot.onclick = fn;
-    lbl.onclick = fn;
+    dot.onclick = showDone ? navFns[i] : null;
+    lbl.onclick = showDone ? navFns[i] : null;
     if (i < 3) {
       const line = document.getElementById('line'+i);
       line.className = 'prog-line' + (showDone ? ' done' : '');
@@ -2378,7 +2376,7 @@ function goStep1() {
   const btn = document.getElementById('step1NextBtn');
   if (btn && S.annualKwh) btn.textContent = 'Opdatér beregning →';
 }
-function goStep2Back() { hide('step3'); show('step2'); setProgress(2); }
+function navToStep2() { hide('step1'); hide('step3'); show('step2'); setProgress(2); }
 
 // Eloverblik: åbn i popup i højre halvdel af skærmen
 let _eloverblikOpened = false;
@@ -2415,7 +2413,7 @@ async function goStep2() {
   S.spotSurcharge = parseFloat(document.getElementById('spotSurcharge').value) || 0;
   // Skip step 2 if consumption data already loaded — recalculate directly (user already authed)
   if (S.annualKwh) {
-    hide('step1'); show('stepLoading'); setProgress(3);
+    hide('step1'); hide('step2'); show('stepLoading'); setProgress(3);
     document.getElementById('loadingLabel').textContent = 'Beregner din solcelleanbefaling…';
     setTimeout(() => { hide('stepLoading'); destroyCharts(); showResults(); }, 400);
     return;
