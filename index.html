@@ -1266,6 +1266,33 @@ body {
         </div>
       </div>
     </div>
+
+    <!-- Batteri-sammenligningspanel — vises når bruger tilføjer batteri der ikke anbefales -->
+    <div id="bat-compare-panel" style="display:none;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.28);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:var(--text-2)">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:12px;font-weight:700;color:var(--text-1)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="color:#D97706;flex-shrink:0"><path d="M10.3 3.5L2.5 18C2.1 18.7 2.6 19.5 3.5 19.5H20.5C21.4 19.5 21.9 18.7 21.5 18L13.7 3.5C13.3 2.8 12.7 2.5 12 2.5C11.3 2.5 10.7 2.8 10.3 3.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><line x1="12" y1="10" x2="12" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1" fill="currentColor"/></svg>
+        Batteriet anbefales ikke — se tallene
+      </div>
+      <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:5px 14px;align-items:baseline">
+        <div></div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3)">Uden batteri</div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3)">Med <span id="bcp-kwh">?</span> kWh (dit valg)</div>
+        <div style="color:var(--text-3);white-space:nowrap">Investering</div>
+        <div id="bcp-orig-invest" style="font-weight:600;color:var(--text-1)"></div>
+        <div id="bcp-cur-invest" style="font-weight:600;color:var(--text-1)"></div>
+        <div style="color:var(--text-3);white-space:nowrap">Årsbesparelse år 1</div>
+        <div id="bcp-orig-sav" style="font-weight:600;color:var(--emerald)"></div>
+        <div id="bcp-cur-sav" style="font-weight:600;color:var(--emerald)"></div>
+        <div style="color:var(--text-3);white-space:nowrap">Break-even</div>
+        <div id="bcp-orig-payback" style="font-weight:600;color:var(--text-1)"></div>
+        <div id="bcp-cur-payback" style="font-weight:600;color:var(--text-1)"></div>
+        <div style="color:var(--text-3);white-space:nowrap">Nettoresultat <span id="bcp-ejertid">20</span> år</div>
+        <div id="bcp-orig-net" style="font-weight:700;color:var(--emerald)"></div>
+        <div id="bcp-cur-net" style="font-weight:700;color:var(--emerald)"></div>
+      </div>
+      <div id="bcp-note" style="margin-top:10px;padding-top:9px;border-top:1px solid rgba(251,191,36,0.2);font-size:11.5px;line-height:1.6;color:var(--text-2)"></div>
+    </div>
+
     <!-- Tagudnyttelse advarsel -->
     <div id="roof-oversize-warn" style="display:none;background:rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.35);border-radius:9px;padding:10px 14px;font-size:12px;color:var(--text-1);margin-bottom:12px;line-height:1.5">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;flex-shrink:0"><path d="M10.3 3.5L2.5 18C2.1 18.7 2.6 19.5 3.5 19.5H20.5C21.4 19.5 21.9 18.7 21.5 18L13.7 3.5C13.3 2.8 12.7 2.5 12 2.5C11.3 2.5 10.7 2.8 10.3 3.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><line x1="12" y1="10" x2="12" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1" fill="currentColor"/></svg> <strong>Anlægget er for stort til taget:</strong> <span id="roof-oversize-text"></span> Reducer kWp med slideren ovenfor.
@@ -2914,6 +2941,45 @@ function rebuildAll() {
     batOvr.style.display = batDiff ? 'block' : 'none';
     if (batDiff) document.getElementById('kpi-bat-override-val').textContent = r.batKwh > 0 ? r.batKwh + ' kWh' : 'Ingen batteri';
   }
+
+  // Battery comparison panel — show when user adds a battery the optimizer didn't recommend
+  const bcpPanel = document.getElementById('bat-compare-panel');
+  if (bcpPanel) {
+    if (batDiff && orig.batKwh === 0 && r.batKwh > 0) {
+      const ej = S.ejertidYr || 15;
+      const origNet = Math.round(orig.grossSav + orig.total * 0.60 - orig.total);
+      const curNet  = Math.round(r.grossSav   + r.total   * 0.60 - r.total);
+      const extraCost = r.total - orig.total;
+      const extraSav1 = r.sav26 - orig.sav26;
+      const batPayback = extraSav1 > 0 ? Math.round(extraCost / extraSav1) : 99;
+      const netDiff   = curNet - origNet;
+      const fmtN = n => Math.round(Math.abs(n)).toLocaleString('da-DK');
+      document.getElementById('bcp-kwh').textContent      = r.batKwh;
+      document.getElementById('bcp-ejertid').textContent  = ej;
+      document.getElementById('bcp-orig-invest').textContent = fmtN(orig.total) + ' kr';
+      document.getElementById('bcp-cur-invest').textContent  = fmtN(r.total)    + ' kr  (+' + fmtN(extraCost) + ')';
+      document.getElementById('bcp-orig-sav').textContent = fmtN(orig.sav26) + ' kr/år';
+      document.getElementById('bcp-cur-sav').textContent  = fmtN(r.sav26)   + ' kr/år  (+' + fmtN(extraSav1) + ')';
+      document.getElementById('bcp-orig-payback').textContent = '~' + orig.payback + ' år';
+      document.getElementById('bcp-cur-payback').textContent  = '~' + r.payback    + ' år';
+      document.getElementById('bcp-orig-net').textContent = (origNet >= 0 ? '+' : '−') + fmtN(origNet) + ' kr';
+      document.getElementById('bcp-cur-net').textContent  = (curNet  >= 0 ? '+' : '−') + fmtN(curNet)  + ' kr';
+      const noteEl = document.getElementById('bcp-note');
+      if (noteEl) {
+        const batVerdict = netDiff >= 0
+          ? `giver <strong>+${fmtN(netDiff)} kr mere</strong> i nettoresultat`
+          : `giver <strong>${fmtN(Math.abs(netDiff))} kr mindre</strong> i nettoresultat`;
+        noteEl.innerHTML =
+          `Batteriet koster <strong>+${fmtN(extraCost)} kr ekstra</strong>, men øger kun årsbesparelsen med <strong>+${fmtN(extraSav1)} kr/år</strong>. ` +
+          `Batteriet har alene en tilbagebetalingstid på <strong>~${batPayback} år</strong>. ` +
+          `Over ${ej} år ${batVerdict} sammenlignet med ingen batteri.`;
+      }
+      bcpPanel.style.display = '';
+    } else {
+      bcpPanel.style.display = 'none';
+    }
+  }
+
   document.getElementById('kpi-savings').textContent = r.avgAnnualSav.toLocaleString('da-DK');
   document.getElementById('kpi-savings-sub').textContent = `kr/år · gns. over ${r.ejertid} år`;
   document.getElementById('kpi-savings-2028').textContent = `År 1: ~${r.sav26.toLocaleString('da-DK')} kr · Fra 2028: ~${r.sav28.toLocaleString('da-DK')} kr`;
