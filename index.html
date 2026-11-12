@@ -1192,7 +1192,7 @@ body {
       <div style="font-size:9.5px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:7px;padding-left:2px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/><text x="8" y="12" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor">kr</text></svg>Økonomi</div>
       <div class="kpi-grid" style="margin-bottom:8px;grid-template-columns:repeat(3,1fr)">
         <div class="kpi-tile" style="text-align:center;position:relative">
-          <span class="chart-info" style="position:absolute;top:6px;right:6px" data-tip="Simpelt gennemsnit af din årlige besparelse over ejertiden:&#10;• Første 2 år (2026–2027): uden el-afgift&#10;• Resterende år (fra 2028): med el-afgift (~0,76 kr/kWh inkl. moms)&#10;&#10;Beregnet time for time:&#10;• Solenergi brugt direkte × din elpris&#10;• Eksporteret overskud × salgspris (~0,35 kr/kWh)&#10;• Batteri: soloverskud forskudt til aftentimer&#10;&#10;Elprisvækst (4%/år) indgår ikke i dette gennemsnit — men er inkluderet i break-even og payback-kurven.&#10;&#10;Elbil er undtaget — ladning til bil har refusion og medregnes ikke.">i</span>
+          <span class="chart-info" style="position:absolute;top:6px;right:6px" data-tip="Gennemsnit af din årlige besparelse over ejertiden (samlet besparelse ÷ antal år):&#10;• Første 2 år (2026–2027): uden el-afgift&#10;• Fra 2028: med el-afgift (0,91 kr/kWh inkl. moms i 2026-priser)&#10;&#10;Besparelsen består af:&#10;• Solenergi brugt direkte × din elpris i de timer&#10;• Solgt overskud × 0,35 kr/kWh&#10;• Batteri: soloverskud gemt til aftentimerne&#10;&#10;Elprisen følger inflationen (2%/år), og panelerne taber 0,5%/år.&#10;&#10;Elbil-ladning har refusion og giver ingen afgiftsbesparelse. Med elvarme eller varmepumpe regnes kun afgift af netkøb under 4.000 kWh/år.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><polyline points="22,7 13.5,15.5 8.5,10.5 2,17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><polyline points="16,7 22,7 22,13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
           <div class="kpi-value emerald" id="kpi-savings">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Årsbesparelse</div>
@@ -1214,7 +1214,7 @@ body {
           <div class="kpi-sub">kr inkl. moms</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
-          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Antal år til din investering er tilbagebetalt af løbende besparelser.&#10;&#10;Beregnet med 2%/år elprisvækst, 0,5%/år paneltab, ny inverter efter 15 år og el-afgift modellen:&#10;• År 1–2 (2026–2027): uden el-afgift&#10;• År 3+ (2028+): med el-afgift (~0,76 kr/kWh inkl. moms)&#10;&#10;Elbil-ladning er undtaget via refusionsordningen og medregnes ikke.">i</span>
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Antal år til din investering er tilbagebetalt af løbende besparelser.&#10;&#10;Elprisen følger inflationen (2%/år), panelerne taber 0,5%/år, og en ny inverter (15.000 kr) fratrækkes i år 15. Et batteris bidrag falder gradvist og ophører efter 12 år.&#10;&#10;El-afgift:&#10;• År 1–2 (2026–2027): uden el-afgift&#10;• Fra 2028: 0,91 kr/kWh inkl. moms (2026-priser)&#10;&#10;Elbil-ladning har refusion og giver ingen afgiftsbesparelse. Med elvarme eller varmepumpe regnes kun afgift af netkøb under 4.000 kWh/år.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M12 7V12L15 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
           <div class="kpi-value" id="kpi-payback">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Break-even</div>
@@ -1228,11 +1228,11 @@ body {
           <div class="kpi-sub">kWh/år · ~35 øre/kWh</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
-          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Samlet elbesparelse over ejertiden med 2%/år elprisvækst og 0,5%/år paneltab:&#10;• Første 2 år (2026–2027): årsbesparelse uden el-afgift&#10;• Resterende år (fra 2028): årsbesparelse med el-afgift (~0,76 kr/kWh inkl. moms)&#10;&#10;Samme beregningsmodel som break-even og anbefalingen. Inkluderer ikke boligværdistigning eller fratrukket investering — det vises i 'Kan det svare sig?' nedenfor.">i</span>
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Samlet elbesparelse over ejertiden. Elprisen følger inflationen (2%/år), og panelerne taber 0,5%/år:&#10;• Første 2 år (2026–2027): årsbesparelse uden el-afgift&#10;• Fra 2028: årsbesparelse med el-afgift (0,91 kr/kWh inkl. moms i 2026-priser)&#10;&#10;Samme beregningsmodel som tilbagebetalingstiden og anbefalingen. Investering, inverterudskiftning og boligværdi er ikke med her — de indgår i vurderingen nedenfor.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L15.1 8.3L22 9.3L17 14.1L18.2 21L12 17.8L5.8 21L7 14.1L2 9.3L8.9 8.3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="currentColor" fill-opacity="0.1"/></svg></div>
           <div class="kpi-value emerald" id="kpi-total-sav">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Samlet elbesparelse</div>
-          <div class="kpi-sub" id="kpi-total-sav-sub">kr inkl. 2%/år vækst</div>
+          <div class="kpi-sub" id="kpi-total-sav-sub">kr inkl. 2%/år inflation</div>
         </div>
       </div>
 
@@ -1240,7 +1240,7 @@ body {
       <div style="font-size:9.5px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:7px;padding-left:2px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><polygon points="9,1 3,9 8,9 7,15 13,7 8,7" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" fill="currentColor" opacity="0.7"/></svg>Anlæg & produktion</div>
       <div class="kpi-grid" style="margin-bottom:0;grid-template-columns:repeat(3,1fr);gap:8px">
         <div class="kpi-tile" style="text-align:center;position:relative">
-          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Anlægsstørrelsen valgt ved at afprøve alle kombinationer af kWp (3–20) og batteri (0, 5, 10 kWh).&#10;&#10;Den kombination vælges, som giver størst nettogevinst:&#10;Kumulativ besparelse med 2%/år elprisvækst over din ejertid − total investering.&#10;&#10;Justér selv med slideren for at se andre scenarier.">i</span>
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Anlægsstørrelsen er valgt ved at afprøve kombinationer af solceller (5–15 kWp, begrænset af dit tagareal) og batteri (0, 5 eller 10 kWh).&#10;&#10;Den kombination vælges, som giver størst nettogevinst:&#10;Samlet besparelse over din ejertid − total investering.&#10;&#10;Justér selv med slideren for at se andre scenarier.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.5"/><path d="M12 2V4.5M12 19.5V22M2 12H4.5M19.5 12H22M5.6 5.6L7.4 7.4M16.6 16.6L18.4 18.4M5.6 18.4L7.4 16.6M16.6 7.4L18.4 5.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
           <div class="kpi-value emerald" id="kpi-kwp">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Anbefalet anlæg</div>
@@ -1250,7 +1250,7 @@ body {
           </div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
-          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Batteri anbefales når det øger nettogevinsten over din ejertid.&#10;&#10;Beregnet ved at sammenligne tre scenarier: 0, 5 og 10 kWh batteri. Batteriet gemmer soloverskud fra dagen til aftenforbruget, så du køber mindre fra nettet.&#10;&#10;Anbefales ikke hvis batteripris > ekstra besparelse over ejertid.">i</span>
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Batteri anbefales når det øger nettogevinsten over din ejertid.&#10;&#10;Beregnet ved at sammenligne tre scenarier: 0, 5 og 10 kWh batteri. Batteriet gemmer soloverskud fra dagen til aftenforbruget, så du køber mindre fra nettet.&#10;&#10;Der regnes med 10% tab ved op- og afladning, gradvist faldende kapacitet og 12 års levetid.&#10;&#10;Anbefales ikke, hvis batteriet koster mere end den ekstra besparelse, det giver over ejertiden.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="17" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M19 10.5V13.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><rect x="4" y="9" width="7" height="6" rx="1" fill="currentColor" opacity="0.5"/></svg></div>
           <div class="kpi-value" id="kpi-bat">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Batteri</div>
@@ -1260,14 +1260,14 @@ body {
           </div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
-          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Solcelleanlæggets samlede årsproduktion.&#10;&#10;Beregnet fra dit kWp-antal, din tagretning og danske irradians-data (måned for måned sæsonfaktorer). Sydvendt tag = 100% udbytte — øst/vest giver ~85%, nord ~60%.">i</span>
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Solcelleanlæggets samlede årsproduktion.&#10;&#10;Beregnet fra dit kWp-antal, din tagretning og danske irradians-data (måned for måned sæsonfaktorer). Sydvendt tag = 100% udbytte — sydøst/sydvest ~92%, øst/vest ~78%, nord ~40%.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M13 2L4.5 13H11L10 22L19.5 11H13Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="currentColor" fill-opacity="0.15"/></svg></div>
           <div class="kpi-value emerald" id="kpi-prod">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Årsproduktion</div>
           <div class="kpi-sub">kWh/år</div>
         </div>
         <div class="kpi-tile" style="text-align:center;position:relative">
-          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Andel af dit elforbrug dækket af solceller direkte (inkl. batteri).&#10;&#10;Beregnet time for time: selvforbrugt solenergi ÷ dit samlede forbrug × 100. Et batteri øger selvforsyningen ved at gemme dagsoverskud til aftenforbrug.">i</span>
+          <span class="chart-info" style="position:absolute;top:8px;right:8px" data-tip="Andel af dit elforbrug dækket af solceller direkte (inkl. batteri).&#10;&#10;Beregnet som selvforbrugt solenergi ÷ dit samlede forbrug × 100. Med Eloverblik-data regnes der time for time over hele året med faktisk solproduktion; ellers ud fra en typisk dag pr. måned. Et batteri øger selvforsyningen ved at gemme dagsoverskud til aftenforbrug.">i</span>
           <div style="line-height:1;margin-bottom:6px;color:var(--text-3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M17 2L21 6L17 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 11A9 9 0 0 1 20.9 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M7 22L3 18L7 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 13A9 9 0 0 1 3.1 16.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
           <div class="kpi-value emerald" id="kpi-self">—</div>
           <div class="kpi-label" style="margin-top:3px;margin-bottom:0">Selvforsyning</div>
@@ -1324,8 +1324,8 @@ body {
     <!-- EL-AFGIFT INFO BOX -->
     <div id="afgift-info" style="display:none;font-size:12px;color:var(--text-2);background:rgba(5,150,105,0.06);border:1px solid rgba(5,150,105,0.22);border-radius:9px;padding:11px 15px;margin-bottom:14px;line-height:1.6">
       <strong style="color:var(--text-1);font-size:12.5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><line x1="12" y1="11" x2="12" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="7.5" r="1.2" fill="currentColor"/></svg> Om el-afgift fra 2028</strong><br>
-      El-afgiften forventes genindført i 2028. Den samlede el-afgift for private forbrugere udgør ca. <strong>0,70 kr/kWh ekskl. moms</strong> (≈ 0,76 kr/kWh inkl. moms) — svarende til niveauet før de midlertidige lempelser. Beregningen viser den ekstra besparelse, du opnår ved at bruge din solcellestrøm direkte fremfor at købe den fra nettet.<br>
-      <span style="color:var(--text-3);margin-top:4px;display:block">Bemærk: Strøm til <strong>elbil</strong> er undtaget — her gælder en særlig refusionsordning, så elbilens ladning regnes ikke med i afgiftsbesparelsen.</span>
+      El-afgiften er nedsat til 0,8 øre/kWh i 2026 og 2027 og vender efter loven tilbage 1. januar 2028. Den almindelige sats er <strong>72,7 øre/kWh ekskl. moms</strong> i 2026-priser (≈ 0,91 kr/kWh inkl. moms) og reguleres årligt med prisudviklingen. Beregningen viser den ekstra besparelse, du opnår ved at bruge din solcellestrøm direkte fremfor at købe den fra nettet.<br>
+      <span style="color:var(--text-3);margin-top:4px;display:block">Bemærk: Strøm til <strong>elbil</strong> er undtaget — her gælder en særlig refusionsordning, så elbilens ladning regnes ikke med i afgiftsbesparelsen. Boliger med <strong>elvarme eller varmepumpe</strong> betaler kun minimumsafgift af forbrug over 4.000 kWh/år, så her regnes kun afgiftsbesparelse af netkøb under den grænse.</span>
     </div>
 
     <!-- hidden compat spans for removed rec-card IDs -->
@@ -1408,8 +1408,8 @@ body {
 
     <!-- PAYBACK CHART -->
     <div class="chart-card">
-      <div class="chart-card-title">Hvornår har du tjent anlægget hjem?<span class="chart-info" data-tip="Kumulativ økonomi over 30 år. År 0 = din samlede investering. Hvert år lægges årsbesparelsen til med 2%/år elprisvækst og 0,5%/år paneltab. Batteriets bidrag ophører efter 12 år, og i år 15 fratrækkes en ny inverter. Boligværdistigning er ikke medregnet her — den vises separat i vurderingspanelet.">i</span></div>
-      <div class="chart-card-sub">Kumulativ økonomi over 30 år · 2 %/år elprisvækst · Boligværdi ikke inkluderet</div>
+      <div class="chart-card-title">Hvornår har du tjent anlægget hjem?<span class="chart-info" data-tip="Kumulativ økonomi over 30 år. År 0 = din samlede investering. Hvert år lægges årsbesparelsen til: elprisen følger inflationen (2%/år), panelerne taber 0,5%/år, og el-afgiften kommer med fra 2028. Batteriets bidrag ophører efter 12 år, og i år 15 fratrækkes en ny inverter. Boligværdistigning er ikke medregnet her — den vises separat i vurderingspanelet.">i</span></div>
+      <div class="chart-card-sub">Kumulativ økonomi over 30 år · elprisen følger inflationen (2 %/år) · Boligværdi ikke inkluderet</div>
       <div class="chart-wrap" style="height:200px"><canvas id="paybackChart"></canvas></div>
     </div>
 
@@ -1426,7 +1426,7 @@ body {
 
     <!-- CHART 3: SUMMER FLOW -->
     <div class="chart-card">
-      <div class="chart-card-title">Sommerdag — Energiflow<span class="chart-info" data-tip="Simuleret typisk juldag (maks. solindstråling). Solproduktionen skaleres til din placering og kWp. Batteriet oplader fra soloverskud i dagtimerne og aflader ved dyre aftentimer (17–21). Grid-opladning om natten sker kun hvis sol ikke kan dække aftenforbruget — det vises som lilla søjler 00–05.">i</span></div>
+      <div class="chart-card-title">Sommerdag — Energiflow<span class="chart-info" data-tip="Simuleret typisk junidag (maks. solindstråling). Solproduktionen skaleres til din placering og kWp. Batteriet oplader fra soloverskud i dagtimerne og aflader ved dyre aftentimer (17–21). Grid-opladning om natten sker kun hvis sol ikke kan dække aftenforbruget — det vises som lilla søjler 00–05.">i</span></div>
       <div class="chart-card-sub" id="summerFlowSub">Typisk sommerdag · <span style="color:#059669">■</span> Sol direkte · <span style="color:#F59E0B">■</span> Eksport · <span style="color:#94A3B8">■</span> Fra elnet · <span style="color:#EA580C">—</span> Solproduktion</div>
       <div class="chart-wrap" style="height:220px"><canvas id="summerFlowChart"></canvas></div>
     </div>
@@ -1844,9 +1844,7 @@ function calcVurdering(r) {
 
   const cumSav = r.grossSav;
 
-  // Boligværdi: skøn på 60% af solcelleanlæggets pris, afskrevet efter anlæggets alder ved salg.
-  // Batterier regnes ikke med.
-  const husPris = houseValue(r.sysCost, ejertid);
+  const husPris = r.husPris;
 
   // Loan cost (simplified: avg outstanding = 60% of loan over term)
   let loanCost = 0;
@@ -1879,13 +1877,13 @@ function calcVurdering(r) {
   }
 
   const husTxt = husPris > 0
-    ? `Hertil kommer en anslået boligværdistigning på ca. ${fmt(husPris)} kr (skøn: 60% af solcelleanlæggets pris, afskrevet efter anlæggets alder ved salg — batterier regnes ikke med).`
+    ? `Hertil kommer en anslået boligværdistigning på ca. ${fmt(husPris)} kr: danske bolighandler viser, at 50–65% af de forventede fremtidige energibesparelser afspejles i salgsprisen, og her er regnet med 55% af anlæggets resterende besparelser ved salg (batterier regnes ikke med).`
     : `Der er ikke regnet med boligværdistigning, da anlægget er ${ejertid} år gammelt ved salg.`;
   const fradrag = [
     r.maintCost > 0 ? `en ny inverter efter ca. ${INVERTER_YEAR} år (${fmt(r.maintCost)} kr)` : '',
     S.financing === 'loan' ? `låneomkostninger på ca. ${fmt(loanCost)} kr` : '',
   ].filter(Boolean);
-  lines.push(`Over ${ejertid} år estimeres en samlet elbesparelse på ca. ${fmt(cumSav)} kr (${fmt(sav26)} kr det første år, med 2%/år elprisvækst og el-afgift fra 2028). ${husTxt} Fratrukket investeringen${fradrag.length ? ', ' + fradrag.join(' og ') + ',' : ''} giver det et estimeret nettoresultat på ${netResult >= 0 ? '+' : ''}${fmt(netResult)} kr.`);
+  lines.push(`Over ${ejertid} år estimeres en samlet elbesparelse på ca. ${fmt(cumSav)} kr (${fmt(sav26)} kr det første år; elprisen følger inflationen på 2%/år, og el-afgiften vender tilbage i 2028). ${husTxt} Fratrukket investeringen${fradrag.length ? ', ' + fradrag.join(' og ') + ',' : ''} giver det et estimeret nettoresultat på ${netResult >= 0 ? '+' : ''}${fmt(netResult)} kr.`);
 
   if (S.hasEV) {
     lines.push(`Din elbil styrker investeringen: selvom afgiftsrefusionen reducerer afgiftsbesparelsen en smule, lader du billigst om sommeren direkte fra solen og sparer på ladning fra nettet.`);
@@ -1914,7 +1912,7 @@ function renderVurdering(r) {
   document.getElementById('vurdering-net-sub').textContent = `estimeret nettoresultat over ${v.ejertid} år`;
   document.getElementById('vurdering-prose').textContent   = v.prose;
   document.getElementById('vurdering-assumptions').textContent =
-    `Antagelser: Elprisstigning 2%/år · Solgt strøm 0,35 kr/kWh uden prisstigning · Paneler taber 0,5%/år · Ny inverter efter 15 år (15.000 kr) · Boligværdi 60% af solcelleanlægget, afskrevet over 25 år (batterier ekskl.)`;
+    `Antagelser: Elprisen følger inflationen (2%/år) · El-afgift fra 2028: 0,91 kr/kWh inkl. moms (2026-priser) · Solgt strøm 0,35 kr/kWh uden prisstigning · Paneler taber 0,5%/år og holder 25 år · Ny inverter efter 15 år (15.000 kr) · Boligværdi: 55% af anlæggets resterende besparelser ved salg (Energistyrelsen 2015: 50–65%), batterier ekskl.`;
 }
 
 function toggleCheck(key) {
@@ -2832,16 +2830,15 @@ const BAT_LIFESPAN  = 12;     // LFP-batterier: ~12 år realistisk levetid (10 �
 const BAT_FADE      = 0.025;  // batteriets bidrag falder lineært til ca. 70 % ved levetidens udløb
 const BAT_ROUNDTRIP = 0.90;
 const BAT_C_RATE    = 0.5;    // maks. op-/afladning pr. time som andel af kapaciteten
-const AFGIFT_2028   = 0.76;   // kr/kWh inkl. moms, fra år 3
+// Fra 2028: 72,7 øre/kWh ekskl. moms i 2026-priser (Skatteministeriet), reguleres efter nettoprisindekset
+const AFGIFT_2028   = 0.91;   // kr/kWh inkl. moms
+const ELVARME_GRAENSE = 4000; // elopvarmede boliger betaler kun minimumsafgift af forbrug over 4.000 kWh/år
 const SYSTEMTARIF   = 0.061;
-const HOUSE_VALUE_SHARE = 0.60;
-const HOUSE_VALUE_YEARS = 25; // anlæggets bidrag til boligværdien afskrives lineært
+// Energistyrelsen/Copenhagen Economics (2015): 50–65 % af forventede energibesparelser afspejles i salgsprisen
+const HOUSE_CAPITALIZATION = 0.55;
+const SYSTEM_LIFE   = 25;     // år — panelernes forventede levetid
 const M_SCALES = [0.15,0.33,0.57,0.81,0.91,1.0,0.91,0.79,0.60,0.32,0.16,0.11];
 const M_DAYS   = [31,28,31,30,31,30,31,31,30,31,30,31];
-
-function houseValue(sysCost, ejertid) {
-  return Math.round(sysCost * HOUSE_VALUE_SHARE * Math.max(0, 1 - ejertid / HOUSE_VALUE_YEARS));
-}
 
 // Faktisk solproduktion time for time (Energinet), skaleret til modellens månedsfordeling. Summerer til 1.
 function solarShape(H) {
@@ -2986,10 +2983,19 @@ function calcRec() {
   }
   const evaluate = (sz, bat) => evalCache[sz + '|' + bat] || (evalCache[sz + '|' + bat] = evalRaw(sz, bat));
 
+  // Afgiftsbesparelse i dagens priser. Elbil-ladning er undtaget (refusion), og elopvarmede
+  // boliger sparer kun afgift af den del af netkøbet, der ligger under 4.000 kWh/år.
+  function afgiftSaving(self) {
+    const liable = S.hasHP
+      ? Math.max(0, Math.min(kwh, ELVARME_GRAENSE) - Math.min(Math.max(0, kwh - self), ELVARME_GRAENSE))
+      : self;
+    return liable * houseShare * AFGIFT_2028;
+  }
+
   // Besparelse i år y (1 = første år). El-afgiften kommer oveni fra år 3 (2028).
   function yearSaving(y, sz, bat) {
     const g = Math.pow(1 + PRICE_GROWTH, y - 1);
-    const val = e => (e.selfVal + (y >= 3 ? e.self * houseShare * AFGIFT_2028 : 0)) * g + e.exp * SELL_PRICE;
+    const val = e => (e.selfVal + (y >= 3 ? afgiftSaving(e.self) : 0)) * g + e.exp * SELL_PRICE;
     let v = val(evaluate(sz, 0));
     if (bat > 0 && y <= BAT_LIFESPAN) v += (val(evaluate(sz, bat)) - v) * (1 - BAT_FADE * (y - 1));
     return v * Math.pow(1 - PANEL_DEGR, y - 1);
@@ -3033,10 +3039,10 @@ function calcRec() {
 
   // Årsbesparelse i dagens priser: uden el-afgift (2026–27) og med (fra 2028)
   const sav26      = Math.round(ev.selfVal + ev.exp * SELL_PRICE);
-  const afgift     = Math.round(ev.self * houseShare * AFGIFT_2028);
+  const afgift     = Math.round(afgiftSaving(ev.self));
   const sav28      = sav26 + afgift;
   const sav26NoBat = Math.round(evNo.selfVal + evNo.exp * SELL_PRICE);
-  const sav28NoBat = sav26NoBat + Math.round(evNo.self * houseShare * AFGIFT_2028);
+  const sav28NoBat = sav26NoBat + Math.round(afgiftSaving(evNo.self));
 
   const sysCost = S.overrideSolarCost !== null ? S.overrideSolarCost : estimateSolarCost(kWp);
   const batCost = S.overrideBatCost  !== null ? S.overrideBatCost  : estimateBatCost(batKwh);
@@ -3057,7 +3063,16 @@ function calcRec() {
   const maintCost     = ejertid >= INVERTER_YEAR ? INVERTER_COST : 0;
   const avgAnnualSav  = ejertid > 0 ? Math.round(grossSav / ejertid) : sav26;
 
-  return { kWp, batKwh, prod, selfCons, exported, selfPct, sav26, sav28, sav26NoBat, sav28NoBat, afgift, avgAnnualSav, grossSav, grossSavNoBat, maintCost, cum, payback, paybackNoBat, ejertid, sysCost, batCost, total, irr, orientFactor, monthlyProd, buyPrice, baseself, baseexp, BAT_LIFESPAN, hourlyBased: !!shape };
+  // Boligværdi ved salg: andel af solcelleanlæggets resterende besparelser (uden batteri),
+  // opgjort i salgsårets priser og fratrukket en inverterudskiftning, køberen selv skal betale
+  let restSav = 0;
+  for (let y = ejertid + 1; y <= SYSTEM_LIFE; y++) {
+    restSav += yearSaving(y, kWp, 0) / Math.pow(1 + PRICE_GROWTH, y - ejertid);
+  }
+  if (ejertid < INVERTER_YEAR && SYSTEM_LIFE > INVERTER_YEAR) restSav -= INVERTER_COST;
+  const husPris = Math.round(HOUSE_CAPITALIZATION * Math.max(0, restSav));
+
+  return { husPris, kWp, batKwh, prod, selfCons, exported, selfPct, sav26, sav28, sav26NoBat, sav28NoBat, afgift, avgAnnualSav, grossSav, grossSavNoBat, maintCost, cum, payback, paybackNoBat, ejertid, sysCost, batCost, total, irr, orientFactor, monthlyProd, buyPrice, baseself, baseexp, BAT_LIFESPAN, hourlyBased: !!shape };
 }
 
 /* ── SLIDER PANEL ── */
@@ -3216,7 +3231,7 @@ function updateExtraTiles(r) {
   document.getElementById('kpi-prod').textContent   = r.prod.toLocaleString('da-DK');
   document.getElementById('kpi-self').textContent   = r.selfPct + '%';
   document.getElementById('kpi-total-sav').textContent = r.grossSav.toLocaleString('da-DK');
-  document.getElementById('kpi-total-sav-sub').textContent = `kr inkl. 2%/år vækst · ${r.ejertid} år`;
+  document.getElementById('kpi-total-sav-sub').textContent = `kr inkl. 2%/år inflation · ${r.ejertid} år`;
 
   const roofM2 = S.roofAreaM2 || 0;
   const neededM2 = r.kWp * 5; // 5 m²/kWp (400W-paneler)
@@ -3255,7 +3270,7 @@ function rebuildAll() {
   } else {
     document.getElementById('kpi-bat').textContent = '—';
     document.getElementById('kpi-bat').className = 'kpi-value';
-    document.getElementById('kpi-bat-sub').textContent = 'Anbefales ikke · tilbagebetalingstid > 15 år';
+    document.getElementById('kpi-bat-sub').textContent = 'Anbefales ikke · øger ikke nettogevinsten';
   }
 
   // Override indicators: show when user has deviated from recommendation
@@ -3281,7 +3296,7 @@ function rebuildAll() {
       const nbSav26 = r.sav26NoBat || 0;
       const nbSav28 = r.sav28NoBat || 0;
       const noBatPb = r.paybackNoBat;
-      const husPris = houseValue(r.sysCost, ej);
+      const husPris = r.husPris;
       const origNet = Math.round(r.grossSavNoBat + husPris - r.sysCost - r.maintCost);
       const curNet  = Math.round(r.grossSav + husPris - r.total - r.maintCost);
       const extraCost = r.batCost;
@@ -3321,7 +3336,7 @@ function rebuildAll() {
   document.getElementById('kpi-savings-2028').textContent = `År 1: ~${r.sav26.toLocaleString('da-DK')} kr · Fra 2028: ~${r.sav28.toLocaleString('da-DK')} kr`;
   document.getElementById('kpi-payback').textContent = '~' + r.payback;
   document.getElementById('kpi-total-sav').textContent = r.grossSav.toLocaleString('da-DK');
-  document.getElementById('kpi-total-sav-sub').textContent = `kr inkl. 2%/år vækst · ${r.ejertid} år`;
+  document.getElementById('kpi-total-sav-sub').textContent = `kr inkl. 2%/år inflation · ${r.ejertid} år`;
 
   // KPI tiles — update on slider change too
   document.getElementById('sit-prod').textContent   = r.prod.toLocaleString('da-DK');
@@ -3451,7 +3466,7 @@ function showResults() {
   document.getElementById('kpi-savings-2028').textContent = `År 1: ~${r.sav26.toLocaleString('da-DK')} kr · Fra 2028: ~${r.sav28.toLocaleString('da-DK')} kr`;
   document.getElementById('kpi-payback').textContent = '~' + r.payback;
   document.getElementById('kpi-total-sav').textContent = r.grossSav.toLocaleString('da-DK');
-  document.getElementById('kpi-total-sav-sub').textContent = `kr inkl. 2%/år vækst · ${r.ejertid} år`;
+  document.getElementById('kpi-total-sav-sub').textContent = `kr inkl. 2%/år inflation · ${r.ejertid} år`;
 
   // Top strip + KPI extra tiles
   const kwh = S.annualKwh || 0;
