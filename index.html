@@ -932,7 +932,7 @@ body {
       </div>
 
       <div class="error-box" id="err1"></div>
-      <button class="btn btn-primary" onclick="goStep2()">Næste: Hent dit forbrug →</button>
+      <button class="btn btn-primary" id="step1NextBtn" onclick="goStep2()">Næste: Hent dit forbrug →</button>
 
       <p style="font-size:11px;color:var(--text-4);line-height:1.6;margin-top:20px;padding-top:16px;border-top:1px solid var(--border-light)">
         Beregningerne på dette site er udelukkende vejledende og baseret på generelle estimater, historiske elpriser og typiske forbrugsprofiler. Resultaterne udgør ikke et tilbud, en garanti eller rådgivning. Faktiske besparelser og tilbagebetalingstider kan afvige som følge af ændringer i elpriser, forbrugsmønstre, tagforhold, anlægsvalg og lovgivning. Solcelleberegner.dk påtager sig intet ansvar for beslutninger truffet på baggrund af disse beregninger. Indhent altid tilbud fra en autoriseret installatør.
@@ -2203,7 +2203,11 @@ if (_compassGrid) _compassGrid.addEventListener('click', function (e) {
   S.roofOrientation = btn.dataset.dir;
 });
 
-function goStep1() { hide('step2'); hide('step3'); show('step1'); setProgress(1); }
+function goStep1() {
+  hide('step2'); hide('step3'); show('step1'); setProgress(1);
+  const btn = document.getElementById('step1NextBtn');
+  if (btn && S.annualKwh) btn.textContent = 'Opdatér beregning →';
+}
 function goStep2Back() { hide('step3'); show('step2'); setProgress(2); }
 
 // Eloverblik: åbn i popup i højre halvdel af skærmen
@@ -2239,6 +2243,15 @@ function goStep2() {
   S.persons = parseInt(document.getElementById('persons').value);
   S.fixedPrice = parseFloat(document.getElementById('fixedPrice').value) || 2.70;
   S.spotSurcharge = parseFloat(document.getElementById('spotSurcharge').value) || 0;
+  // Skip step 2 if consumption data already loaded — recalculate directly
+  if (S.annualKwh) {
+    hide('step1');
+    show('stepLoading');
+    setProgress(3);
+    document.getElementById('loadingLabel').textContent = 'Beregner din solcelleanbefaling…';
+    setTimeout(() => { hide('stepLoading'); showResults(); }, 400);
+    return;
+  }
   hide('step1'); show('step2'); setProgress(2);
 }
 
