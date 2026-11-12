@@ -216,7 +216,8 @@ module.exports = async function (req, res) {
     if (priceType === 'spot' && totalKwh > 0) {
       const avgSpot     = totalSpotCost / totalKwh;
       const avgNettarif = totalNettarifCost / totalKwh;
-      effectiveKwhPrice = +((avgSpot + spotSurcharge + avgNettarif + SYSTEMTARIF) * 1.25).toFixed(3);
+      const ELAFGIFT = 0.008; // minimumssats 2026–2027
+      effectiveKwhPrice = +((avgSpot + spotSurcharge + avgNettarif + SYSTEMTARIF + ELAFGIFT) * 1.25).toFixed(3);
       processed.spotAvg              = +avgSpot.toFixed(4);
       processed.nettarifAvg          = +avgNettarif.toFixed(4);
       processed.priceArea            = priceArea;
