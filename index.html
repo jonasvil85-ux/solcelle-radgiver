@@ -2771,8 +2771,8 @@ function useManualData() {
 
   // Annual hourly totals (used in charts)
   const hourlyProfile = normFrac.map(v=>+(v * kwh).toFixed(1));
-  const summerHourlyProfile = normSum.map(v=>+(v * (kwh / 12 * 4.5)).toFixed(3)); // avg summer month
-  const winterHourlyProfile = normWin.map(v=>+(v * (kwh / 12 * 1.12)).toFixed(3)); // avg winter month
+  const summerHourlyProfile = normSum.map(v=>+(v * (kwh / 365 * 0.83)).toFixed(3)); // kWh pr. time på en gennemsnitlig sommerdag
+  const winterHourlyProfile = normWin.map(v=>+(v * (kwh / 365 * 1.11)).toFixed(3)); // kWh pr. time på en gennemsnitlig vinterdag
 
 
   S.annualKwh           = kwh;
