@@ -1471,6 +1471,14 @@ let _authMode      = 'signup';
 
 sb.auth.onAuthStateChange(async (event, session) => {
   updateUserUI(session);
+  if (event === 'PASSWORD_RECOVERY') {
+    showAuthMain();
+    document.getElementById('authMainView').style.display = 'none';
+    document.getElementById('authResetView').style.display = 'block';
+    document.getElementById('authModal').classList.remove('hidden');
+    setTimeout(() => document.getElementById('newPassword')?.focus(), 150);
+    return;
+  }
   if (event === 'SIGNED_IN') {
     if (_pendingToken) {
       const shouldSave = document.getElementById('saveTokenCheck')?.checked !== false;
@@ -1530,7 +1538,59 @@ function switchAuthTab(mode) {
   document.getElementById('authTabSignup').className = 'auth-tab' + (mode === 'signup' ? ' active' : '');
   document.getElementById('authTabLogin').className  = 'auth-tab' + (mode === 'login'  ? ' active' : '');
   document.getElementById('authSubmitBtn').textContent = mode === 'signup' ? 'Opret konto' : 'Log ind';
+  document.getElementById('forgotPwLink').style.display = mode === 'login' ? 'block' : 'none';
   showErr('authErr', '');
+}
+
+function showAuthMain() {
+  document.getElementById('authMainView').style.display = 'block';
+  document.getElementById('authForgotView').style.display = 'none';
+  document.getElementById('authResetView').style.display = 'none';
+}
+
+function showForgotPw() {
+  const email = document.getElementById('authEmail').value.trim();
+  document.getElementById('authMainView').style.display = 'none';
+  document.getElementById('authForgotView').style.display = 'block';
+  document.getElementById('authResetView').style.display = 'none';
+  if (email) document.getElementById('forgotEmail').value = email;
+  showErr('forgotErr', '');
+  setTimeout(() => document.getElementById('forgotEmail').focus(), 50);
+}
+
+async function submitForgotPw() {
+  const email = document.getElementById('forgotEmail').value.trim();
+  if (!email) { showErr('forgotErr', 'Indtast din email'); return; }
+  const btn = document.getElementById('forgotSubmitBtn');
+  btn.textContent = '…'; btn.disabled = true;
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+  btn.disabled = false;
+  if (error) {
+    showErr('forgotErr', error.message);
+    btn.textContent = 'Send nulstillingslink';
+  } else {
+    document.getElementById('authForgotView').innerHTML =
+      '<div class="auth-title">Email sendt ✓</div>' +
+      '<p style="font-size:13px;color:var(--text-3);margin-top:10px">Tjek din indbakke — vi har sendt et nulstillingslink til <strong>' + email + '</strong>.</p>';
+  }
+}
+
+async function submitNewPassword() {
+  const pw = document.getElementById('newPassword').value;
+  if (pw.length < 6) { showErr('resetErr', 'Adgangskoden skal være mindst 6 tegn'); return; }
+  const btn = document.getElementById('resetSubmitBtn');
+  btn.textContent = '…'; btn.disabled = true;
+  const { error } = await sb.auth.updateUser({ password: pw });
+  btn.disabled = false;
+  if (error) {
+    showErr('resetErr', error.message);
+    btn.textContent = 'Gem ny adgangskode';
+  } else {
+    document.getElementById('authResetView').innerHTML =
+      '<div class="auth-title">Adgangskode opdateret ✓</div>' +
+      '<p style="font-size:13px;color:var(--text-3);margin-top:10px">Du er nu logget ind med din nye adgangskode.</p>';
+    setTimeout(() => hide('authModal'), 2500);
+  }
 }
 
 async function submitAuth() {
@@ -1583,6 +1643,7 @@ function scheduleAuthCheck() {
 
 function _showAuthGate() {
   _authCallback = () => {};
+  showAuthMain();
   const saveRow = document.getElementById('saveTokenRow');
   if (saveRow) saveRow.style.display = _pendingToken ? 'flex' : 'none';
   show('authModal');
@@ -4060,27 +4121,62 @@ restoreState();
 <div id="authModal" class="auth-modal hidden">
   <div class="auth-backdrop"></div>
   <div class="auth-box">
-    <div class="auth-title">Se din anbefaling</div>
-    <div class="auth-tabs">
-      <button id="authTabSignup" class="auth-tab active" onclick="switchAuthTab('signup')">Opret konto</button>
-      <button id="authTabLogin"  class="auth-tab"        onclick="switchAuthTab('login')">Log ind</button>
+
+    <!-- Main: signup / login -->
+    <div id="authMainView">
+      <div class="auth-title">Se din anbefaling</div>
+      <div class="auth-tabs">
+        <button id="authTabSignup" class="auth-tab active" onclick="switchAuthTab('signup')">Opret konto</button>
+        <button id="authTabLogin"  class="auth-tab"        onclick="switchAuthTab('login')">Log ind</button>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="authEmail" placeholder="din@email.dk" autocomplete="email"
+               onkeydown="if(event.key==='Enter')submitAuth()">
+      </div>
+      <div class="field">
+        <label>Adgangskode</label>
+        <input type="password" id="authPassword" placeholder="Mindst 6 tegn" autocomplete="current-password"
+               onkeydown="if(event.key==='Enter')submitAuth()">
+      </div>
+      <div id="forgotPwLink" style="display:none;text-align:right;margin-top:4px">
+        <button onclick="showForgotPw()" style="background:none;border:none;color:var(--sol);font-size:12px;cursor:pointer;padding:0;font-family:inherit">Glemt adgangskode?</button>
+      </div>
+      <div id="saveTokenRow" style="display:none;align-items:center;gap:8px;margin:10px 0 0;font-size:12.5px;color:var(--text-3)">
+        <input type="checkbox" id="saveTokenCheck" checked style="accent-color:var(--sol);width:15px;height:15px;cursor:pointer;flex-shrink:0">
+        <label for="saveTokenCheck" style="cursor:pointer;line-height:1.4">Gem mit Eloverblik-token til næste gang</label>
+      </div>
+      <div class="error-box" id="authErr"></div>
+      <button class="btn btn-primary" id="authSubmitBtn" onclick="submitAuth()" style="width:100%;margin-top:4px">Opret konto</button>
     </div>
-    <div class="field">
-      <label>Email</label>
-      <input type="email" id="authEmail" placeholder="din@email.dk" autocomplete="email"
-             onkeydown="if(event.key==='Enter')submitAuth()">
+
+    <!-- Forgot password -->
+    <div id="authForgotView" style="display:none">
+      <div class="auth-title">Glemt adgangskode</div>
+      <p style="font-size:13px;color:var(--text-3);margin:6px 0 18px">Vi sender dig et link til at nulstille din adgangskode.</p>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="forgotEmail" placeholder="din@email.dk" autocomplete="email"
+               onkeydown="if(event.key==='Enter')submitForgotPw()">
+      </div>
+      <div class="error-box" id="forgotErr"></div>
+      <button class="btn btn-primary" id="forgotSubmitBtn" onclick="submitForgotPw()" style="width:100%;margin-top:4px">Send nulstillingslink</button>
+      <button onclick="showAuthMain()" style="background:none;border:none;color:var(--text-3);font-size:12px;cursor:pointer;padding:6px 0 0;font-family:inherit;display:block;width:100%;text-align:center">← Tilbage til login</button>
     </div>
-    <div class="field">
-      <label>Adgangskode</label>
-      <input type="password" id="authPassword" placeholder="Mindst 6 tegn" autocomplete="current-password"
-             onkeydown="if(event.key==='Enter')submitAuth()">
+
+    <!-- Set new password (after clicking reset link) -->
+    <div id="authResetView" style="display:none">
+      <div class="auth-title">Ny adgangskode</div>
+      <p style="font-size:13px;color:var(--text-3);margin:6px 0 18px">Vælg en ny adgangskode til din konto.</p>
+      <div class="field">
+        <label>Ny adgangskode</label>
+        <input type="password" id="newPassword" placeholder="Mindst 6 tegn"
+               onkeydown="if(event.key==='Enter')submitNewPassword()">
+      </div>
+      <div class="error-box" id="resetErr"></div>
+      <button class="btn btn-primary" id="resetSubmitBtn" onclick="submitNewPassword()" style="width:100%;margin-top:4px">Gem ny adgangskode</button>
     </div>
-    <div id="saveTokenRow" style="display:none;align-items:center;gap:8px;margin:10px 0 0;font-size:12.5px;color:var(--text-3)">
-      <input type="checkbox" id="saveTokenCheck" checked style="accent-color:var(--sol);width:15px;height:15px;cursor:pointer;flex-shrink:0">
-      <label for="saveTokenCheck" style="cursor:pointer;line-height:1.4">Gem mit Eloverblik-token til næste gang</label>
-    </div>
-    <div class="error-box" id="authErr"></div>
-    <button class="btn btn-primary" id="authSubmitBtn" onclick="submitAuth()" style="width:100%;margin-top:4px">Opret konto</button>
+
   </div>
 </div>
 </body>
